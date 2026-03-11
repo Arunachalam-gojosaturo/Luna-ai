@@ -1,0 +1,362 @@
+/* ═══════════════════════════════════════════════════
+   LUNA AI v5.0 — Dark Holographic Hacker Theme
+   ═══════════════════════════════════════════════════ */
+
+QMainWindow, QDialog, QWidget {
+    background: #060b12;
+    color: #c4d8ee;
+    font-family: "Segoe UI", "SF Pro Text", "Ubuntu", sans-serif;
+    font-size: 13px;
+}
+
+/* ── Header ─────────────────────────────────────── */
+#headerBar {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 #080e1c, stop:0.5 #09111f, stop:1 #06090f);
+    border-bottom: 1px solid rgba(0,200,255,0.12);
+}
+
+#logoLabel {
+    color: #00ccff;
+    font-size: 19px; font-weight: 900;
+    letter-spacing: 6px;
+    font-family: "Courier New", "Consolas", monospace;
+}
+#subLabel {
+    color: rgba(0,200,255,0.32);
+    font-size: 10px; letter-spacing: 3px;
+    font-family: "Consolas", monospace;
+    margin-top: 3px;
+}
+#statusText {
+    color: #00cc88; font-size: 9px;
+    letter-spacing: 2px;
+    font-family: "Consolas", monospace;
+}
+#timeLabel {
+    color: rgba(0,210,255,0.60);
+    font-family: "Consolas", monospace;
+    font-size: 14px; letter-spacing: 1.5px;
+}
+
+#headerBtn {
+    background: rgba(16,28,50,0.80);
+    border: 1px solid rgba(0,155,255,0.18);
+    border-radius: 7px;
+    color: rgba(0,180,255,0.65);
+    font-size: 12px; padding: 0 12px;
+}
+#headerBtn:hover {
+    background: rgba(0,60,120,0.60);
+    border-color: rgba(0,210,255,0.45);
+    color: #00ccff;
+}
+
+/* ── Body / Left panel ───────────────────────────── */
+#bodyArea { background: transparent; }
+#leftPanel { background: transparent; }
+
+#infoCard {
+    background: rgba(8,14,26,0.78);
+    border: 1px solid rgba(0,200,255,0.09);
+    border-radius: 8px;
+}
+#infoLine {
+    color: rgba(0,185,255,0.50);
+    font-size: 10px; letter-spacing: 0.3px;
+    font-family: "Consolas", monospace;
+}
+
+/* ── Chat panel ──────────────────────────────────── */
+#chatPanel {
+    background: rgba(7,12,22,0.85);
+    border: 1px solid rgba(0,175,255,0.10);
+    border-radius: 12px;
+}
+#chatHeader {
+    color: rgba(0,200,255,0.40);
+    font-size: 9px; letter-spacing: 3px;
+    font-family: "Consolas", monospace;
+    background: rgba(0,0,0,0);
+    border-radius: 12px 12px 0 0;
+}
+#divider { background: rgba(0,170,255,0.10); }
+
+#chatScroll { background: transparent; border: none; }
+#msgContainer { background: transparent; }
+
+QScrollBar:vertical {
+    background: transparent; width: 5px; margin: 0;
+}
+QScrollBar::handle:vertical {
+    background: rgba(0,180,255,0.24); border-radius: 2px; min-height: 16px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height:0; }
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background:none; }
+
+/* ── Chat bubbles ─────────────────────────────────── */
+#bubbleUser {
+    background: rgba(0,80,200,0.14);
+    border: 1px solid rgba(0,130,255,0.22);
+    border-radius: 12px 4px 12px 12px;
+    color: #c4d8f8; padding: 10px 14px;
+    font-size: 13px; line-height: 1.6;
+}
+#bubbleAI {
+    background: rgba(0,180,100,0.08);
+    border: 1px solid rgba(0,200,120,0.18);
+    border-radius: 4px 12px 12px 12px;
+    color: #c2e8d5; padding: 10px 14px;
+    font-size: 13px; line-height: 1.6;
+}
+#bubbleSystem {
+    background: rgba(0,80,130,0.08);
+    border-left: 3px solid rgba(0,160,220,0.40);
+    border-radius: 0 6px 6px 0;
+    color: rgba(0,180,255,0.70); padding: 8px 12px;
+    font-size: 12px; font-family: "Consolas", monospace;
+}
+#bubbleTaskOk {
+    background: rgba(0,150,80,0.10);
+    border-left: 3px solid rgba(0,220,110,0.50);
+    border-radius: 0 6px 6px 0;
+    color: #60ee9a; padding: 8px 12px;
+    font-size: 12px; font-family: "Consolas", monospace;
+}
+#bubbleTaskErr {
+    background: rgba(180,30,30,0.10);
+    border-left: 3px solid rgba(255,60,60,0.45);
+    border-radius: 0 6px 6px 0;
+    color: #f08080; padding: 8px 12px;
+    font-size: 12px; font-family: "Consolas", monospace;
+}
+#taskOutput {
+    background: rgba(4,10,18,0.90);
+    border: 1px solid rgba(0,150,255,0.14);
+    border-radius: 6px;
+    color: #88ccaa; padding: 10px 14px;
+    font-size: 11px;
+}
+
+/* ── Code block ──────────────────────────────────── */
+#codeHeader {
+    background: rgba(0,20,42,0.96);
+    border: 1px solid rgba(0,160,255,0.16);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+}
+#codeLangLabel {
+    color: rgba(0,200,255,0.70);
+    font-size: 10px; font-weight: bold;
+    letter-spacing: 2px;
+    font-family: "Consolas", monospace;
+}
+#codeArea {
+    background: rgba(3,8,16,0.97);
+    border: 1px solid rgba(0,150,255,0.14);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    color: #c8ddf4;
+    padding: 10px 14px;
+    selection-background-color: rgba(0,100,200,0.40);
+}
+QScrollBar:horizontal {
+    background: transparent; height: 5px;
+}
+QScrollBar::handle:horizontal {
+    background: rgba(0,180,255,0.24); border-radius: 2px;
+}
+
+#codeActionBtn {
+    background: rgba(10,25,50,0.88);
+    border: 1px solid rgba(0,140,255,0.25);
+    border-radius: 5px;
+    color: rgba(0,185,255,0.80);
+    font-size: 11px; padding: 0 10px;
+}
+#codeActionBtn:hover {
+    background: rgba(0,55,110,0.75);
+    border-color: rgba(0,210,255,0.55);
+    color: #00ccff;
+}
+#codeActionBtnOk {
+    background: rgba(0,80,40,0.75);
+    border: 1px solid rgba(0,200,100,0.45);
+    border-radius: 5px;
+    color: #40ee80; font-size: 11px; padding: 0 10px;
+}
+#codeActionBtnErr {
+    background: rgba(80,20,20,0.75);
+    border: 1px solid rgba(220,60,60,0.45);
+    border-radius: 5px;
+    color: #ee6060; font-size: 11px; padding: 0 10px;
+}
+
+/* ── Input bar ───────────────────────────────────── */
+#inputBar {
+    background: rgba(6,10,18,0.97);
+    border-top: 1px solid rgba(0,175,255,0.10);
+}
+#inputField {
+    background: rgba(9,18,34,0.94);
+    border: 1px solid rgba(0,165,255,0.22);
+    border-radius: 22px; padding: 10px 20px;
+    color: #ddeeff; font-size: 13px;
+    selection-background-color: rgba(0,130,255,0.35);
+}
+#inputField:focus {
+    border-color: rgba(0,210,255,0.52);
+    background: rgba(9,20,40,0.97);
+}
+#sendBtn {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 #005bcc, stop:1 #0079ff);
+    border: none; border-radius: 22px;
+    color: white; font-weight: bold;
+    font-size: 12px; letter-spacing: 1.5px;
+}
+#sendBtn:hover {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 #006cdd, stop:1 #0090ff);
+}
+#sendBtn:pressed { background: #0048aa; }
+#sendBtn:disabled { background: rgba(0,75,155,0.35); color: rgba(255,255,255,0.22); }
+
+#micBtn {
+    background: rgba(22,10,44,0.85);
+    border: 1px solid rgba(160,55,255,0.35);
+    border-radius: 22px; font-size: 18px; color: #9933ee;
+}
+#micBtn:hover {
+    background: rgba(65,22,105,0.85);
+    border-color: rgba(195,85,255,0.62);
+    color: #bb55ff;
+}
+#micBtn:disabled {
+    background: rgba(14,8,24,0.72);
+    color: rgba(135,75,195,0.38);
+}
+
+/* ── Settings dialog ─────────────────────────────── */
+QDialog { background: #080d18; }
+
+#settingsTitleBar {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 #0b1422, stop:1 #07101d);
+    border-bottom: 1px solid rgba(0,200,255,0.16);
+}
+#settingsTitle {
+    color: #00ccff; font-size: 13px; font-weight: bold;
+    letter-spacing: 3px; font-family: "Consolas", monospace;
+}
+QTabWidget::pane {
+    background: #070c16;
+    border: 1px solid rgba(0,155,255,0.12); border-top: none;
+}
+QTabBar::tab {
+    background: #0a1120; color: rgba(0,175,255,0.46);
+    padding: 10px 16px; border: none; font-size: 12px;
+}
+QTabBar::tab:selected {
+    background: #070c16; color: #00ccff;
+    border-bottom: 2px solid #00ccff;
+}
+QTabBar::tab:hover:!selected {
+    background: #0c1726; color: rgba(0,200,255,0.72);
+}
+#settingsSectionLabel {
+    color: rgba(0,190,255,0.44);
+    font-size: 9px; letter-spacing: 2.5px;
+    font-family: "Consolas", monospace;
+}
+#settingsCombo, #settingsInput {
+    background: rgba(8,16,32,0.94);
+    border: 1px solid rgba(0,150,255,0.26);
+    border-radius: 7px; padding: 8px 12px;
+    color: #c8ddf5; font-size: 13px; min-height: 36px;
+}
+#settingsCombo:focus, #settingsInput:focus {
+    border-color: rgba(0,210,255,0.52);
+}
+#settingsInput:disabled {
+    color: rgba(95,125,155,0.38);
+    background: rgba(8,13,22,0.60);
+}
+QComboBox::drop-down { border: none; padding-right: 8px; }
+QComboBox::down-arrow {
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 6px solid rgba(0,200,255,0.68);
+}
+QComboBox QAbstractItemView {
+    background: #0b1726;
+    border: 1px solid rgba(0,145,255,0.26);
+    color: #c4d8f0;
+    selection-background-color: rgba(0,95,195,0.45);
+    outline: none; padding: 4px;
+}
+QSlider::groove:horizontal {
+    background: rgba(0,95,175,0.20); height: 4px; border-radius: 2px;
+}
+QSlider::handle:horizontal {
+    background: #00ccff; width: 16px; height: 16px;
+    margin: -6px 0; border-radius: 8px; border: 2px solid #07101d;
+}
+QSlider::sub-page:horizontal {
+    background: rgba(0,185,255,0.52); border-radius: 2px;
+}
+#settingsBtnBar {
+    background: rgba(6,10,19,0.97);
+    border-top: 1px solid rgba(0,150,255,0.11);
+}
+#saveBtn {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 #005a94, stop:1 #0078c8);
+    border: none; border-radius: 8px;
+    padding: 10px 26px; color: white;
+    font-weight: bold; font-size: 13px; letter-spacing: 1px;
+}
+#saveBtn:hover {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 #0068a8, stop:1 #008ee0);
+}
+#cancelBtn {
+    background: rgba(36,16,16,0.82);
+    border: 1px solid rgba(175,55,55,0.26);
+    border-radius: 8px; padding: 10px 20px;
+    color: rgba(195,115,115,0.80); font-size: 13px;
+}
+#cancelBtn:hover { border-color: rgba(215,75,75,0.52); color: #ee8888; }
+
+#testBtn {
+    background: rgba(12,36,20,0.85);
+    border: 1px solid rgba(0,195,95,0.26);
+    border-radius: 8px; padding: 10px 20px;
+    color: rgba(0,205,115,0.85); font-size: 13px;
+}
+#testBtn:hover { border-color: rgba(0,225,125,0.52); color: #00e88a; }
+#testBtn:disabled { color: rgba(0,135,75,0.32); }
+
+#valueLabel {
+    color: #00ccff; font-family: "Consolas", monospace;
+    font-size: 12px; font-weight: bold;
+}
+#linkLabel a { color: #00ccff; text-decoration: none; }
+#linkLabel a:hover { text-decoration: underline; }
+
+#iconBtn {
+    background: rgba(16,26,44,0.78);
+    border: 1px solid rgba(0,155,255,0.18);
+    border-radius: 8px; color: rgba(0,175,255,0.62); font-size: 15px;
+}
+#iconBtn:hover {
+    background: rgba(0,52,108,0.62);
+    border-color: rgba(0,210,255,0.44); color: #00ccff;
+}
+
+QLabel { background: transparent; }
+QToolTip {
+    background: #0d1b2e;
+    border: 1px solid rgba(0,178,255,0.28);
+    color: #bcd8f0; padding: 4px 8px; border-radius: 4px;
+}
