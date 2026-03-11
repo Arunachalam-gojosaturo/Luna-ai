@@ -1,29 +1,27 @@
-<!-- ============================================================ -->
-<!--                    LUNA AI — README.md                      -->
-<!--           Replace YOUR_USERNAME with your GitHub handle     -->
-<!-- ============================================================ -->
+<!-- ================================================================ -->
+<!--               LUNA AI — README.md                              -->
+<!--         Replace YOUR_USERNAME with your GitHub handle          -->
+<!-- ================================================================ -->
 
 <div align="center">
 
-<!-- ═══════════════════ HERO HEADER ═══════════════════ -->
-<img width="100%" src="https://capsule-render.vercel.app/api?type=venom&color=0:000000,30:0d0d1a,70:0a0f2e,100:000d26&height=220&section=header&text=🌙%20Luna%20AI&fontSize=72&fontColor=00d4ff&animation=fadeIn&fontAlignY=40&desc=Modular%20AI%20Desktop%20Assistant%20for%20Linux%20Power%20Users&descAlignY=62&descColor=7c83fd&descSize=18&stroke=00d4ff&strokeWidth=0.5" />
+<!-- ══════════════ HERO BANNER ══════════════ -->
+<img width="100%" src="https://capsule-render.vercel.app/api?type=venom&color=0:000000,30:0d0d1a,70:0a0f2e,100:000d26&height=250&section=header&text=Luna%20AI&fontSize=90&fontColor=00d4ff&animation=fadeIn&fontAlignY=42&desc=Modular%20AI%20Desktop%20Assistant%20for%20Linux%20Power%20Users&descAlignY=64&descColor=7c83fd&descSize=20" />
 
 <br/>
 
-<!-- ═══════════════════ ANIMATED TAGLINE ═══════════════════ -->
-<a href="https://git.io/typing-svg">
-  <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=20&duration=2800&pause=900&color=00D4FF&center=true&vCenter=true&width=650&height=45&lines=🤖+AI-Powered+Conversation+Engine;🎙️+ElevenLabs+Premium+Voice+Synthesis;🧠+Persistent+Contextual+Memory;⚡+Built+for+Linux+%7C+Arch+%7C+Automation;🔌+Extensible+Plugin+Architecture" alt="Typing SVG" />
-</a>
+<!-- ══════════════ TYPING SVG — FIXED ══════════════ -->
+<img src="https://readme-typing-svg.herokuapp.com?font=JetBrains+Mono&weight=700&size=22&duration=3000&pause=1000&color=00D4FF&center=true&vCenter=true&width=700&height=50&lines=AI-Powered+Conversation+Engine;ElevenLabs+Premium+Voice+Synthesis;Persistent+Contextual+Memory+System;Built+for+Linux+%7C+Arch+%7C+Power+Users;Extensible+Plugin+Architecture" alt="Typing Animation" />
 
 <br/><br/>
 
-<!-- ═══════════════════ BADGE ROW 1 ═══════════════════ -->
+<!-- ══════════════ BADGE ROW 1 ══════════════ -->
 ![Python](https://img.shields.io/badge/Python-3.10+-00d4ff?style=for-the-badge&logo=python&logoColor=white&labelColor=0d0d1a)
 ![Linux](https://img.shields.io/badge/Platform-Linux-7c83fd?style=for-the-badge&logo=linux&logoColor=white&labelColor=0d0d1a)
 ![Arch](https://img.shields.io/badge/Arch_Linux-Tested-1793d1?style=for-the-badge&logo=arch-linux&logoColor=white&labelColor=0d0d1a)
 ![License](https://img.shields.io/badge/License-MIT-00ff88?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=0d0d1a)
 
-<!-- ═══════════════════ BADGE ROW 2 ═══════════════════ -->
+<!-- ══════════════ BADGE ROW 2 ══════════════ -->
 ![ElevenLabs](https://img.shields.io/badge/Voice-ElevenLabs-ff6b6b?style=for-the-badge&logo=soundcloud&logoColor=white&labelColor=0d0d1a)
 ![AI](https://img.shields.io/badge/AI-Modular_Engine-a855f7?style=for-the-badge&logo=openai&logoColor=white&labelColor=0d0d1a)
 ![GUI](https://img.shields.io/badge/UI-Desktop_GUI-ffd93d?style=for-the-badge&logo=qt&logoColor=white&labelColor=0d0d1a)
@@ -31,14 +29,14 @@
 
 <br/>
 
-<!-- ═══════════════════ SOCIAL STATS ═══════════════════ -->
-[![Stars](https://img.shields.io/github/stars/YOUR_USERNAME/luna-ai?style=social&label=⭐%20Stars)](https://github.com/YOUR_USERNAME/luna-ai/stargazers)
+<!-- ══════════════ SOCIAL STATS ══════════════ -->
+[![Stars](https://img.shields.io/github/stars/YOUR_USERNAME/luna-ai?style=social&label=Stars)](https://github.com/YOUR_USERNAME/luna-ai/stargazers)
 &nbsp;&nbsp;
-[![Forks](https://img.shields.io/github/forks/YOUR_USERNAME/luna-ai?style=social&label=🍴%20Forks)](https://github.com/YOUR_USERNAME/luna-ai/network/members)
+[![Forks](https://img.shields.io/github/forks/YOUR_USERNAME/luna-ai?style=social&label=Forks)](https://github.com/YOUR_USERNAME/luna-ai/network/members)
 &nbsp;&nbsp;
-[![Issues](https://img.shields.io/github/issues/YOUR_USERNAME/luna-ai?style=social&label=🛠%20Issues)](https://github.com/YOUR_USERNAME/luna-ai/issues)
+[![Issues](https://img.shields.io/github/issues/YOUR_USERNAME/luna-ai?style=social&label=Issues)](https://github.com/YOUR_USERNAME/luna-ai/issues)
 &nbsp;&nbsp;
-[![Watchers](https://img.shields.io/github/watchers/YOUR_USERNAME/luna-ai?style=social&label=👀%20Watch)](https://github.com/YOUR_USERNAME/luna-ai/watchers)
+[![Watchers](https://img.shields.io/github/watchers/YOUR_USERNAME/luna-ai?style=social&label=Watch)](https://github.com/YOUR_USERNAME/luna-ai/watchers)
 
 </div>
 
@@ -48,13 +46,13 @@
 
 <br/>
 
-<!-- ═══════════════════ INTRO SECTION ═══════════════════ -->
+<!-- ══════════════ WHAT IS LUNA AI ══════════════ -->
 
 <table>
 <tr>
-<td width="60%" valign="top">
+<td width="58%" valign="top">
 
-## 🌌 What is Luna AI?
+## What is Luna AI?
 
 **Luna AI** is a modular, hackable AI desktop assistant engineered for Linux power users who demand full control over their AI stack.
 
@@ -62,35 +60,37 @@ No black boxes. No forced cloud. Pure extensible architecture.
 
 <br/>
 
-> 💬 *"Build tools that empower creators and automate complexity."*
+> *"Build tools that empower creators and automate complexity."*
 
 <br/>
 
-**Core integrations:**
+**Core Integrations:**
 
-🤖 &nbsp;Pluggable AI conversation engines  
-🎙️ &nbsp;ElevenLabs streaming voice synthesis  
-🖥️ &nbsp;Native Linux system control  
-🪟 &nbsp;Clean Python desktop GUI  
-🧠 &nbsp;Persistent contextual memory  
-🔌 &nbsp;Modular plugin architecture  
+- Pluggable AI conversation engines
+- ElevenLabs streaming voice synthesis
+- Native Linux system control
+- Clean Python desktop GUI
+- Persistent contextual memory
+- Modular plugin architecture
 
 </td>
-<td width="40%" valign="top" align="center">
+<td width="42%" valign="top" align="center">
+
+<br/><br/>
+
+```
+  ╔════════════════════════╗
+  ║      L U N A  A I      ║
+  ║  ────────────────────  ║
+  ║  > Listening...   [o]  ║
+  ║  > Processing...  [*]  ║
+  ║  > Responding...  [>]  ║
+  ║  ────────────────────  ║
+  ║  [AI]  [Voice]  [Mem]  ║
+  ╚════════════════════════╝
+```
 
 <br/>
-
-```
-  ╔══════════════════════╗
-  ║    🌙 L U N A  AI    ║
-  ║  ──────────────────  ║
-  ║  > Listening...  🎙️  ║
-  ║  > Processing... 🤖  ║
-  ║  > Responding... 💬  ║
-  ║  ──────────────────  ║
-  ║  [AI]  [Voice] [Mem] ║
-  ╚══════════════════════╝
-```
 
 [![forthebadge](https://forthebadge.com/images/badges/built-with-love.svg)](https://forthebadge.com)
 
@@ -104,19 +104,19 @@ No black boxes. No forced cloud. Pure extensible architecture.
 
 <br/>
 
-<!-- ═══════════════════ FEATURES ═══════════════════ -->
+<!-- ══════════════ FEATURES ══════════════ -->
 
-## ✨ Feature Showcase
+## Features
 
 <div align="center">
 
 <table>
 <thead>
 <tr>
-<th align="center">🤖 AI Engine</th>
-<th align="center">🎙️ Voice Engine</th>
-<th align="center">🖥️ Desktop UI</th>
-<th align="center">⚙️ System Layer</th>
+<th align="center">AI Engine</th>
+<th align="center">Voice Engine</th>
+<th align="center">Desktop UI</th>
+<th align="center">System Layer</th>
 </tr>
 </thead>
 <tbody>
@@ -155,31 +155,30 @@ No black boxes. No forced cloud. Pure extensible architecture.
 
 <br/>
 
-<!-- ═══════════════════ ARCHITECTURE ═══════════════════ -->
+<!-- ══════════════ ARCHITECTURE ══════════════ -->
 
-## 🏗️ System Architecture
+## System Architecture
 
 <div align="center">
 
 ```
 ╔═══════════════════════════════════════════════════════════════════╗
-║                        🌙 LUNA AI SYSTEM                         ║
+║                         LUNA AI SYSTEM                           ║
 ╠═══════════════════════════════════════════════════════════════════╣
 ║                                                                   ║
 ║   ┌─────────────┐         ┌─────────────────────────────────┐    ║
 ║   │  friday.py  │────────▶│           CORE LAYER            │    ║
-║   │  🚀 Entry   │         │  ┌───────────┐ ┌─────────────┐  │    ║
+║   │   Entry     │         │  ┌───────────┐ ┌─────────────┐  │    ║
 ║   └─────────────┘         │  │ ai_engine │ │voice_engine │  │    ║
-║                           │  │    🤖     │ │    🎙️       │  │    ║
+║                           │  │    AI     │ │    Voice    │  │    ║
 ║   ┌─────────────┐         │  └───────────┘ └─────────────┘  │    ║
 ║   │  UI LAYER   │◀────────│  ┌───────────┐ ┌─────────────┐  │    ║
 ║   │ main_window │         │  │  memory   │ │   config    │  │    ║
-║   │    🖥️        │         │  │    🧠     │ │    ⚙️        │  │    ║
 ║   └─────────────┘         │  └───────────┘ └─────────────┘  │    ║
 ║                           └─────────────────────────────────┘    ║
 ║                                                                   ║
 ║   ┌───────────────────────────────────────────────────────────┐   ║
-║   │                   🔌 PLUGIN LAYER                         │   ║
+║   │                     PLUGIN LAYER                          │   ║
 ║   │   [system_control]  [browser]  [smart_home]  [automation] │   ║
 ║   └───────────────────────────────────────────────────────────┘   ║
 ╚═══════════════════════════════════════════════════════════════════╝
@@ -193,35 +192,35 @@ No black boxes. No forced cloud. Pure extensible architecture.
 
 <br/>
 
-<!-- ═══════════════════ PROJECT STRUCTURE ═══════════════════ -->
+<!-- ══════════════ PROJECT STRUCTURE ══════════════ -->
 
-## 📂 Project Structure
+## Project Structure
 
 ```bash
-🌙 luna-ai/
+luna-ai/
 │
-├── 🚀 friday.py                    # Main entry point — start here
+├── friday.py                    # Main entry point
 │
-├── 🧠 core/                        # Core AI functionality
-│   ├── 🤖 ai_engine.py             # AI processing & response generation
-│   ├── 🎙️  voice_engine.py          # Voice synthesis via ElevenLabs
-│   └── 💾 memory.py                # Persistent AI memory system
+├── core/                        # Core AI functionality
+│   ├── ai_engine.py             # AI processing & response generation
+│   ├── voice_engine.py          # Voice synthesis via ElevenLabs
+│   └── memory.py                # Persistent AI memory system
 │
-├── 🖥️  ui/                          # User interface layer
-│   ├── 🪟 main_window.py            # Primary GUI window
-│   └── 🎨 styles/                  # Theme & style definitions
+├── ui/                          # User interface layer
+│   ├── main_window.py           # Primary GUI window
+│   └── styles/                  # Theme & style definitions
 │
-├── ⚙️  config/
-│   └── 📋 settings.json            # Global configuration file
+├── config/
+│   └── settings.json            # Global configuration file
 │
-├── 🔌 plugins/                     # Plugin directory (Planned)
-│   ├── 🖥️  system_control/          # Linux system automation
-│   ├── 🌐 browser_control/         # Web browsing automation
-│   ├── 🏠 smart_home/              # IoT & home automation
-│   └── 🔁 automation/              # Workflow & task automation
+├── plugins/                     # Plugin directory (Planned)
+│   ├── system_control/          # Linux system automation
+│   ├── browser_control/         # Web browsing automation
+│   ├── smart_home/              # IoT & home automation
+│   └── automation/              # Workflow & task automation
 │
-├── 📋 requirements.txt             # Python dependencies
-└── 📖 README.md                    # You are here
+├── requirements.txt             # Python dependencies
+└── README.md
 ```
 
 <br/>
@@ -230,9 +229,9 @@ No black boxes. No forced cloud. Pure extensible architecture.
 
 <br/>
 
-<!-- ═══════════════════ QUICK START ═══════════════════ -->
+<!-- ══════════════ QUICK START ══════════════ -->
 
-## ⚡ Quick Start
+## Quick Start
 
 <div align="center">
 
@@ -244,44 +243,42 @@ No black boxes. No forced cloud. Pure extensible architecture.
 | **4** | Activate env | `source venv/bin/activate` |
 | **5** | Install packages | `pip install -r requirements.txt` |
 | **6** | Set API key | `export ELEVENLABS_API_KEY="your_key"` |
-| **7** | **Launch! 🚀** | `python friday.py` |
+| **7** | **Launch** | `python friday.py` |
 
 </div>
 
 <br/>
 
-### 📦 Detailed Setup
-
-**① Clone & Enter**
+**Clone**
 ```bash
 git clone https://github.com/YOUR_USERNAME/luna-ai.git
 cd luna-ai
 ```
 
-**② Virtual Environment**
+**Virtual Environment**
 ```bash
 python -m venv venv
 source venv/bin/activate
 ```
 
-**③ Install Dependencies**
+**Install Dependencies**
 ```bash
 pip install -r requirements.txt
 ```
 
-**④ ElevenLabs API Key**
+**ElevenLabs API Key**
 ```bash
 # Session only
 export ELEVENLABS_API_KEY="your_api_key_here"
 
-# Permanent — ZSH
+# Permanent ZSH
 echo 'export ELEVENLABS_API_KEY="your_api_key_here"' >> ~/.zshrc && source ~/.zshrc
 
-# Permanent — BASH
+# Permanent BASH
 echo 'export ELEVENLABS_API_KEY="your_api_key_here"' >> ~/.bashrc && source ~/.bashrc
 ```
 
-**⑤ Launch Luna AI**
+**Launch**
 ```bash
 python friday.py
 ```
@@ -292,11 +289,9 @@ python friday.py
 
 <br/>
 
-<!-- ═══════════════════ VOICE CONFIG ═══════════════════ -->
+<!-- ══════════════ VOICE CONFIG ══════════════ -->
 
-## 🎙️ Voice Configuration
-
-Luna uses **ElevenLabs** for premium voice synthesis with real-time streaming.
+## Voice Configuration
 
 ```python
 # core/voice_engine.py
@@ -317,7 +312,7 @@ STREAMING  = True                       # Real-time playback
 
 </div>
 
-> 💡 **Tip:** Browse thousands of voice IDs at [ElevenLabs Voice Library](https://elevenlabs.io/voice-library) to give Luna any personality you want.
+> Tip: Browse thousands of voice IDs at [ElevenLabs Voice Library](https://elevenlabs.io/voice-library) to give Luna any personality you want.
 
 <br/>
 
@@ -325,42 +320,40 @@ STREAMING  = True                       # Real-time playback
 
 <br/>
 
-<!-- ═══════════════════ PLUGIN SYSTEM ═══════════════════ -->
+<!-- ══════════════ PLUGIN SYSTEM ══════════════ -->
 
-## 🧩 Plugin System
+## Plugin System
+
+> **Planned Feature** — Plugin marketplace arriving soon
 
 <div align="center">
-
-> 🚧 **Planned Feature** — Plugin marketplace arriving soon
-
-<br/>
 
 <table>
 <tr>
 <td align="center" width="25%">
 
-**🖥️ System Control**
+**System Control**
 
 Linux system automation, process management, shell scripting
 
 </td>
 <td align="center" width="25%">
 
-**🌐 Browser Control**
+**Browser Control**
 
 Web automation, scraping, form filling, navigation
 
 </td>
 <td align="center" width="25%">
 
-**🏠 Smart Home**
+**Smart Home**
 
 IoT device control, home automation, sensor monitoring
 
 </td>
 <td align="center" width="25%">
 
-**🔁 Automation**
+**Automation**
 
 Workflow builder, task scheduling, event triggers
 
@@ -370,10 +363,8 @@ Workflow builder, task scheduling, event triggers
 
 </div>
 
-Drop any plugin folder into `/plugins/` — Luna auto-detects and loads it.
-
 ```python
-# All plugins implement this clean interface
+# All plugins implement this interface
 class LunaPlugin:
     name: str
     version: str
@@ -388,44 +379,20 @@ class LunaPlugin:
 
 <br/>
 
-<!-- ═══════════════════ ROADMAP ═══════════════════ -->
+<!-- ══════════════ ROADMAP ══════════════ -->
 
-## 📈 Roadmap
+## Roadmap
 
 <div align="center">
 
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  LUNA AI — DEVELOPMENT TIMELINE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-  ●  🎤  Real-time voice assistant         [ IN PROGRESS ]
-  │
-  ●  🧠  Persistent AI memory              [ IN PROGRESS ]
-  │
-  ○  🌐  Web automation                    [ PLANNED     ]
-  │
-  ○  🖥️   Desktop control integration      [ PLANNED     ]
-  │
-  ○  🤖  Offline AI (Ollama / LlamaCPP)   [ RESEARCH    ]
-  │
-  ○  🧩  Plugin marketplace               [ FUTURE      ]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ● Active    ○ Upcoming
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-<br/>
-
 | Status | Feature | Priority |
 |:------:|:--------|:--------:|
-| 🔄 Active | 🎤 Real-time voice assistant | `HIGH` |
-| 🔄 Active | 🧠 Persistent AI memory | `HIGH` |
-| 📋 Planned | 🌐 Web automation | `MEDIUM` |
-| 📋 Planned | 🖥️ Desktop control integration | `MEDIUM` |
-| 🔬 Research | 🤖 Offline AI models (Ollama/LlamaCPP) | `LOW` |
-| 💡 Future | 🧩 Plugin marketplace | `FUTURE` |
+| 🔄 Active | Real-time voice assistant | `HIGH` |
+| 🔄 Active | Persistent AI memory | `HIGH` |
+| 📋 Planned | Web automation | `MEDIUM` |
+| 📋 Planned | Desktop control integration | `MEDIUM` |
+| 🔬 Research | Offline AI models (Ollama / LlamaCPP) | `LOW` |
+| 💡 Future | Plugin marketplace | `FUTURE` |
 
 </div>
 
@@ -435,45 +402,38 @@ class LunaPlugin:
 
 <br/>
 
-<!-- ═══════════════════ DEVELOPMENT ═══════════════════ -->
+<!-- ══════════════ DEVELOPMENT ══════════════ -->
 
-## 🛠️ Development Guide
+## Development Guide
 
 <table>
 <tr>
 <td width="50%" valign="top">
 
-### 📐 Code Standards
+### Code Standards
 
 ```
-✔  PEP8 Python style guide
-✔  Modular — one responsibility per module
-✔  Clean function separation
-✔  Docstrings on all public functions
-✔  Type hints strongly encouraged
-✔  Unit tests for all core modules
+PEP8 Python style guide
+Modular — one responsibility per module
+Clean function separation
+Docstrings on all public functions
+Type hints strongly encouraged
+Unit tests for all core modules
 ```
 
-### 🧪 Running Tests
+### Running Tests
 
 ```bash
-# Run all tests
 pytest
-
-# Verbose output
 pytest --verbose
-
-# Specific module
 pytest tests/test_core.py
-
-# With coverage report
 pytest --cov=core tests/
 ```
 
 </td>
 <td width="50%" valign="top" align="center">
 
-### 🔧 Recommended Stack
+### Recommended Stack
 
 <br/>
 
@@ -497,25 +457,15 @@ pytest --cov=core tests/
 
 <br/>
 
-<!-- ═══════════════════ CONTRIBUTING ═══════════════════ -->
+<!-- ══════════════ CONTRIBUTING ══════════════ -->
 
-## 🤝 Contributing
-
-Contributions make open-source powerful. All contributions are **greatly appreciated**.
+## Contributing
 
 ```bash
-# 1. Fork the repo on GitHub
-
-# 2. Create your feature branch
 git checkout -b feature/AmazingFeature
-
-# 3. Commit your changes
 git commit -m 'feat: Add AmazingFeature'
-
-# 4. Push to your branch
 git push origin feature/AmazingFeature
-
-# 5. Open a Pull Request 🎉
+# Then open a Pull Request
 ```
 
 <br/>
@@ -524,13 +474,11 @@ git push origin feature/AmazingFeature
 
 <br/>
 
-<!-- ═══════════════════ AUTHOR ═══════════════════ -->
+<!-- ══════════════ AUTHOR ══════════════ -->
 
-## 👨‍💻 Author
+## Author
 
 <div align="center">
-
-<br/>
 
 ### Arunachalam
 
@@ -548,46 +496,44 @@ git push origin feature/AmazingFeature
 
 <br/>
 
-<!-- ═══════════════════ SUPPORT ═══════════════════ -->
+<!-- ══════════════ SUPPORT ══════════════ -->
 
-## ⭐ Support the Project
+## Support the Project
 
 <div align="center">
 
 <br/>
 
-**If Luna AI empowers your workflow — show some love! 🙏**
+**If Luna AI empowers your workflow — show some love!**
 
 <br/>
 
-[![Star](https://img.shields.io/badge/⭐%20Star%20this%20repo-ffd93d?style=for-the-badge&labelColor=0d0d1a)](https://github.com/YOUR_USERNAME/luna-ai/stargazers)
+[![Star](https://img.shields.io/badge/Star%20this%20Repo-ffd93d?style=for-the-badge&logo=github&labelColor=0d0d1a)](https://github.com/YOUR_USERNAME/luna-ai/stargazers)
 &nbsp;
-[![Fork](https://img.shields.io/badge/🍴%20Fork%20the%20project-00d4ff?style=for-the-badge&labelColor=0d0d1a)](https://github.com/YOUR_USERNAME/luna-ai/network/members)
+[![Fork](https://img.shields.io/badge/Fork%20the%20Project-00d4ff?style=for-the-badge&logo=github&labelColor=0d0d1a)](https://github.com/YOUR_USERNAME/luna-ai/network/members)
 &nbsp;
-[![Contribute](https://img.shields.io/badge/🛠%20Contribute-7c83fd?style=for-the-badge&labelColor=0d0d1a)](https://github.com/YOUR_USERNAME/luna-ai/issues)
+[![Contribute](https://img.shields.io/badge/Contribute-7c83fd?style=for-the-badge&logo=github&labelColor=0d0d1a)](https://github.com/YOUR_USERNAME/luna-ai/issues)
 
 </div>
 
 <br/>
 
-<!-- ═══════════════════ LICENSE ═══════════════════ -->
+<!-- ══════════════ LICENSE ══════════════ -->
 
-## 📜 License
+## License
 
 ```
-MIT License — © 2025 Arunachalam
+MIT License — 2025 Arunachalam
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so.
+of this software and associated documentation files, to deal in the Software
+without restriction, including the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software.
 ```
 
 <br/>
 
-<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<!-- ══════════════ FOOTER ══════════════ -->
 
 <div align="center">
 
@@ -595,16 +541,18 @@ furnished to do so.
 
 <br/>
 
-<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:000d26,50:0a0f2e,100:000000&height=120&section=footer&animation=fadeIn"/>
-
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=15&duration=3500&pause=1200&color=7c83fd&center=true&vCenter=true&width=520&lines=Built+with+❤️+on+Arch+Linux;Hack+it.+Own+it.+Extend+it.;Luna+AI+—+Your+desktop+deserves+a+brain." alt="Footer typing"/>
-
-<br/><br/>
-
-![Visitors](https://visitor-badge.laobi.icu/badge?page_id=YOUR_USERNAME.luna-ai&style=flat-square&color=00d4ff&labelColor=0d0d1a&label=👁️%20Visitors)
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:000d26,50:0a0f2e,100:000000&height=130&section=footer&animation=fadeIn" />
 
 <br/>
 
-*Made with 🤖 + ☕ + 🐧 by Arunachalam*
+<img src="https://readme-typing-svg.herokuapp.com?font=JetBrains+Mono&size=16&duration=3500&pause=1200&color=7C83FD&center=true&vCenter=true&width=540&lines=Built+with+love+on+Arch+Linux;Hack+it.+Own+it.+Extend+it.;Luna+AI+-+Your+desktop+deserves+a+brain." alt="Footer Animation" />
+
+<br/><br/>
+
+![Visitors](https://visitor-badge.laobi.icu/badge?page_id=YOUR_USERNAME.luna-ai&style=flat-square&color=00d4ff&labelColor=0d0d1a&label=Visitors)
+
+<br/>
+
+*Made with love + coffee + Linux by Arunachalam*
 
 </div>
