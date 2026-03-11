@@ -523,7 +523,7 @@ git push origin feature/AmazingFeature
 ## License
 
 ```
-MIT License — 2025 Arunachalam
+MIT License — 2026 Arunachalam
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files, to deal in the Software
