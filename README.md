@@ -1,335 +1,576 @@
+<!-- ============================================================ -->
+<!--                    LUNA AI — README.md                      -->
+<!--           Replace YOUR_USERNAME with your GitHub handle     -->
+<!-- ============================================================ -->
+
 <div align="center">
 
-<!-- Animated Header Banner -->
-<img width="100%" src="https://capsule-render.vercel.app/api?type=venom&color=0:0a0a0f,50:1a1a2e,100:16213e&height=200&section=header&text=Luna%20AI&fontSize=80&fontColor=00d4ff&animation=fadeIn&fontAlignY=38&desc=Linux%20AI%20Desktop%20Assistant&descAlignY=60&descColor=7c83fd&stroke=00d4ff&strokeWidth=1"/>
-
-<!-- Animated typing SVG -->
-<a href="https://git.io/typing-svg">
-  <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=22&duration=3000&pause=800&color=00D4FF&center=true&vCenter=true&multiline=false&repeat=true&width=600&lines=🤖+AI-Powered+Desktop+Assistant;🎙️+ElevenLabs+Voice+Synthesis;🧠+Persistent+Memory+System;⚡+Built+for+Linux+Power+Users;🔌+Extensible+Plugin+Architecture" alt="Typing SVG" />
-</a>
-
-<br/><br/>
-
-<!-- Badges Row 1 -->
-<img src="https://img.shields.io/badge/Python-3.10+-00d4ff?style=for-the-badge&logo=python&logoColor=white&labelColor=0a0a0f"/>
-<img src="https://img.shields.io/badge/Platform-Linux-7c83fd?style=for-the-badge&logo=linux&logoColor=white&labelColor=0a0a0f"/>
-<img src="https://img.shields.io/badge/Tested%20on-Arch%20Linux-1793d1?style=for-the-badge&logo=arch-linux&logoColor=white&labelColor=0a0a0f"/>
-<img src="https://img.shields.io/badge/License-MIT-00ff88?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=0a0a0f"/>
+<!-- ═══════════════════ HERO HEADER ═══════════════════ -->
+<img width="100%" src="https://capsule-render.vercel.app/api?type=venom&color=0:000000,30:0d0d1a,70:0a0f2e,100:000d26&height=220&section=header&text=🌙%20Luna%20AI&fontSize=72&fontColor=00d4ff&animation=fadeIn&fontAlignY=40&desc=Modular%20AI%20Desktop%20Assistant%20for%20Linux%20Power%20Users&descAlignY=62&descColor=7c83fd&descSize=18&stroke=00d4ff&strokeWidth=0.5" />
 
 <br/>
 
-<!-- Badges Row 2 -->
-<img src="https://img.shields.io/badge/Voice-ElevenLabs-ff6b6b?style=for-the-badge&logo=soundcloud&logoColor=white&labelColor=0a0a0f"/>
-<img src="https://img.shields.io/badge/AI-Modular%20Engine-a855f7?style=for-the-badge&logo=openai&logoColor=white&labelColor=0a0a0f"/>
-<img src="https://img.shields.io/badge/UI-Desktop%20GUI-ffd93d?style=for-the-badge&logo=qt&logoColor=white&labelColor=0a0a0f"/>
-<img src="https://img.shields.io/badge/Status-Active%20Dev-00ff88?style=for-the-badge&logo=statuspage&logoColor=white&labelColor=0a0a0f"/>
+<!-- ═══════════════════ ANIMATED TAGLINE ═══════════════════ -->
+<a href="https://git.io/typing-svg">
+  <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=20&duration=2800&pause=900&color=00D4FF&center=true&vCenter=true&width=650&height=45&lines=🤖+AI-Powered+Conversation+Engine;🎙️+ElevenLabs+Premium+Voice+Synthesis;🧠+Persistent+Contextual+Memory;⚡+Built+for+Linux+%7C+Arch+%7C+Automation;🔌+Extensible+Plugin+Architecture" alt="Typing SVG" />
+</a>
 
 <br/><br/>
 
-<!-- Social Buttons -->
-<a href="https://github.com/YOUR_USERNAME/luna-ai/stargazers">
-  <img src="https://img.shields.io/github/stars/YOUR_USERNAME/luna-ai?style=social"/>
-</a>
-<a href="https://github.com/YOUR_USERNAME/luna-ai/network/members">
-  <img src="https://img.shields.io/github/forks/YOUR_USERNAME/luna-ai?style=social"/>
-</a>
-<a href="https://github.com/YOUR_USERNAME/luna-ai/issues">
-  <img src="https://img.shields.io/github/issues/YOUR_USERNAME/luna-ai?style=social"/>
-</a>
+<!-- ═══════════════════ BADGE ROW 1 ═══════════════════ -->
+![Python](https://img.shields.io/badge/Python-3.10+-00d4ff?style=for-the-badge&logo=python&logoColor=white&labelColor=0d0d1a)
+![Linux](https://img.shields.io/badge/Platform-Linux-7c83fd?style=for-the-badge&logo=linux&logoColor=white&labelColor=0d0d1a)
+![Arch](https://img.shields.io/badge/Arch_Linux-Tested-1793d1?style=for-the-badge&logo=arch-linux&logoColor=white&labelColor=0d0d1a)
+![License](https://img.shields.io/badge/License-MIT-00ff88?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=0d0d1a)
+
+<!-- ═══════════════════ BADGE ROW 2 ═══════════════════ -->
+![ElevenLabs](https://img.shields.io/badge/Voice-ElevenLabs-ff6b6b?style=for-the-badge&logo=soundcloud&logoColor=white&labelColor=0d0d1a)
+![AI](https://img.shields.io/badge/AI-Modular_Engine-a855f7?style=for-the-badge&logo=openai&logoColor=white&labelColor=0d0d1a)
+![GUI](https://img.shields.io/badge/UI-Desktop_GUI-ffd93d?style=for-the-badge&logo=qt&logoColor=white&labelColor=0d0d1a)
+![Status](https://img.shields.io/badge/Status-Active_Dev-00ff88?style=for-the-badge&logo=statuspage&logoColor=white&labelColor=0d0d1a)
+
+<br/>
+
+<!-- ═══════════════════ SOCIAL STATS ═══════════════════ -->
+[![Stars](https://img.shields.io/github/stars/YOUR_USERNAME/luna-ai?style=social&label=⭐%20Stars)](https://github.com/YOUR_USERNAME/luna-ai/stargazers)
+&nbsp;&nbsp;
+[![Forks](https://img.shields.io/github/forks/YOUR_USERNAME/luna-ai?style=social&label=🍴%20Forks)](https://github.com/YOUR_USERNAME/luna-ai/network/members)
+&nbsp;&nbsp;
+[![Issues](https://img.shields.io/github/issues/YOUR_USERNAME/luna-ai?style=social&label=🛠%20Issues)](https://github.com/YOUR_USERNAME/luna-ai/issues)
+&nbsp;&nbsp;
+[![Watchers](https://img.shields.io/github/watchers/YOUR_USERNAME/luna-ai?style=social&label=👀%20Watch)](https://github.com/YOUR_USERNAME/luna-ai/watchers)
 
 </div>
 
----
+<br/>
 
-<!-- Animated divider -->
-<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif"/>
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%"/>
+
+<br/>
+
+<!-- ═══════════════════ INTRO SECTION ═══════════════════ -->
+
+<table>
+<tr>
+<td width="60%" valign="top">
 
 ## 🌌 What is Luna AI?
 
-<img align="right" width="380" src="https://github-readme-stats.vercel.app/api/pin/?username=YOUR_USERNAME&repo=luna-ai&theme=tokyonight&border_color=00d4ff&bg_color=0a0a0f&title_color=00d4ff&text_color=c9d1d9&icon_color=7c83fd"/>
+**Luna AI** is a modular, hackable AI desktop assistant engineered for Linux power users who demand full control over their AI stack.
 
-**Luna AI** is a modular, hackable AI desktop assistant engineered for Linux power users who want full control over their AI stack.
+No black boxes. No forced cloud. Pure extensible architecture.
 
-No black boxes. No cloud lock-in. Pure extensible architecture.
+<br/>
 
-> *"Build tools that empower creators and automate complexity."*
+> 💬 *"Build tools that empower creators and automate complexity."*
 
-**Luna connects:**
-- 🤖 Pluggable AI conversation engines
-- 🎙️ ElevenLabs streaming voice synthesis
-- 🖥️ Native Linux system control
-- 🪟 Clean Python desktop GUI
-- 🔌 Modular plugin architecture
+<br/>
 
-<br clear="right"/>
+**Core integrations:**
 
----
+🤖 &nbsp;Pluggable AI conversation engines  
+🎙️ &nbsp;ElevenLabs streaming voice synthesis  
+🖥️ &nbsp;Native Linux system control  
+🪟 &nbsp;Clean Python desktop GUI  
+🧠 &nbsp;Persistent contextual memory  
+🔌 &nbsp;Modular plugin architecture  
 
-<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif"/>
+</td>
+<td width="40%" valign="top" align="center">
+
+<br/>
+
+```
+  ╔══════════════════════╗
+  ║    🌙 L U N A  AI    ║
+  ║  ──────────────────  ║
+  ║  > Listening...  🎙️  ║
+  ║  > Processing... 🤖  ║
+  ║  > Responding... 💬  ║
+  ║  ──────────────────  ║
+  ║  [AI]  [Voice] [Mem] ║
+  ╚══════════════════════╝
+```
+
+[![forthebadge](https://forthebadge.com/images/badges/built-with-love.svg)](https://forthebadge.com)
+
+</td>
+</tr>
+</table>
+
+<br/>
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%"/>
+
+<br/>
+
+<!-- ═══════════════════ FEATURES ═══════════════════ -->
 
 ## ✨ Feature Showcase
 
 <div align="center">
 
-| 🤖 AI Engine | 🎙️ Voice Engine | 🖥️ Desktop UI | ⚙️ System Layer |
-|:---:|:---:|:---:|:---:|
-| Natural language chat | ElevenLabs synthesis | Clean Python GUI | Linux CMD execution |
-| Modular AI providers | Streaming playback | Real-time display | Filesystem access |
-| Extendable memory | Multilingual support | Interactive controls | Automation workflows |
-| Context awareness | Voice personality | Theme support | Plugin system |
+<table>
+<thead>
+<tr>
+<th align="center">🤖 AI Engine</th>
+<th align="center">🎙️ Voice Engine</th>
+<th align="center">🖥️ Desktop UI</th>
+<th align="center">⚙️ System Layer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">Natural language chat</td>
+<td align="center">ElevenLabs synthesis</td>
+<td align="center">Clean Python GUI</td>
+<td align="center">Linux CMD execution</td>
+</tr>
+<tr>
+<td align="center">Modular AI providers</td>
+<td align="center">Streaming playback</td>
+<td align="center">Real-time display</td>
+<td align="center">Filesystem access</td>
+</tr>
+<tr>
+<td align="center">Extendable memory</td>
+<td align="center">Multilingual support</td>
+<td align="center">Interactive controls</td>
+<td align="center">Automation workflows</td>
+</tr>
+<tr>
+<td align="center">Context awareness</td>
+<td align="center">Voice personality</td>
+<td align="center">Theme support</td>
+<td align="center">Plugin system</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 
----
+<br/>
 
-<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif"/>
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%"/>
 
-## 🏗️ Architecture Overview
+<br/>
+
+<!-- ═══════════════════ ARCHITECTURE ═══════════════════ -->
+
+## 🏗️ System Architecture
+
+<div align="center">
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     LUNA AI SYSTEM                      │
-│                                                         │
-│   ┌──────────┐    ┌──────────┐    ┌──────────────────┐  │
-│   │  friday  │───▶│   Core   │───▶│   AI Engine      │  │
-│   │  .py     │    │  Layer   │    │  ai_engine.py    │  │
-│   │ (Entry)  │    │          │    └──────────────────┘  │
-│   └──────────┘    │          │    ┌──────────────────┐  │
-│                   │          │───▶│  Voice Engine    │  │
-│   ┌──────────┐    │          │    │  voice_engine.py │  │
-│   │    UI    │◀───│          │    └──────────────────┘  │
-│   │  Layer   │    │          │    ┌──────────────────┐  │
-│   │main_win  │    │          │───▶│  Memory System   │  │
-│   └──────────┘    └──────────┘    │  memory.py       │  │
-│                                   └──────────────────┘  │
-│   ┌──────────────────────────────────────────────────┐  │
-│   │               Plugin Architecture                │  │
-│   │  [system_control] [browser] [smart_home] [auto]  │  │
-│   └──────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────┘
+╔═══════════════════════════════════════════════════════════════════╗
+║                        🌙 LUNA AI SYSTEM                         ║
+╠═══════════════════════════════════════════════════════════════════╣
+║                                                                   ║
+║   ┌─────────────┐         ┌─────────────────────────────────┐    ║
+║   │  friday.py  │────────▶│           CORE LAYER            │    ║
+║   │  🚀 Entry   │         │  ┌───────────┐ ┌─────────────┐  │    ║
+║   └─────────────┘         │  │ ai_engine │ │voice_engine │  │    ║
+║                           │  │    🤖     │ │    🎙️       │  │    ║
+║   ┌─────────────┐         │  └───────────┘ └─────────────┘  │    ║
+║   │  UI LAYER   │◀────────│  ┌───────────┐ ┌─────────────┐  │    ║
+║   │ main_window │         │  │  memory   │ │   config    │  │    ║
+║   │    🖥️        │         │  │    🧠     │ │    ⚙️        │  │    ║
+║   └─────────────┘         │  └───────────┘ └─────────────┘  │    ║
+║                           └─────────────────────────────────┘    ║
+║                                                                   ║
+║   ┌───────────────────────────────────────────────────────────┐   ║
+║   │                   🔌 PLUGIN LAYER                         │   ║
+║   │   [system_control]  [browser]  [smart_home]  [automation] │   ║
+║   └───────────────────────────────────────────────────────────┘   ║
+╚═══════════════════════════════════════════════════════════════════╝
 ```
 
----
+</div>
 
-<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif"/>
+<br/>
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%"/>
+
+<br/>
+
+<!-- ═══════════════════ PROJECT STRUCTURE ═══════════════════ -->
 
 ## 📂 Project Structure
 
 ```bash
-luna-ai/
+🌙 luna-ai/
 │
-├── 🚀 friday.py                  # Main entry point
+├── 🚀 friday.py                    # Main entry point — start here
 │
-├── 🧠 core/                      # Core AI functionality
-│   ├── ai_engine.py              # AI processing & response
-│   ├── voice_engine.py           # Voice synthesis (ElevenLabs)
-│   └── memory.py                 # Persistent AI memory
+├── 🧠 core/                        # Core AI functionality
+│   ├── 🤖 ai_engine.py             # AI processing & response generation
+│   ├── 🎙️  voice_engine.py          # Voice synthesis via ElevenLabs
+│   └── 💾 memory.py                # Persistent AI memory system
 │
-├── 🖥️  ui/                       # User interface layer
-│   ├── main_window.py            # Primary GUI window
-│   └── styles/                   # Theme definitions
+├── 🖥️  ui/                          # User interface layer
+│   ├── 🪟 main_window.py            # Primary GUI window
+│   └── 🎨 styles/                  # Theme & style definitions
 │
 ├── ⚙️  config/
-│   └── settings.json             # Global configuration
+│   └── 📋 settings.json            # Global configuration file
 │
-├── 🔌 plugins/                   # Plugin directory (Planned)
-│   ├── system_control/
-│   ├── browser_control/
-│   ├── smart_home/
-│   └── automation/
+├── 🔌 plugins/                     # Plugin directory (Planned)
+│   ├── 🖥️  system_control/          # Linux system automation
+│   ├── 🌐 browser_control/         # Web browsing automation
+│   ├── 🏠 smart_home/              # IoT & home automation
+│   └── 🔁 automation/              # Workflow & task automation
 │
-├── 📋 requirements.txt
-└── 📖 README.md
+├── 📋 requirements.txt             # Python dependencies
+└── 📖 README.md                    # You are here
 ```
 
----
+<br/>
 
-<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif"/>
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%"/>
+
+<br/>
+
+<!-- ═══════════════════ QUICK START ═══════════════════ -->
 
 ## ⚡ Quick Start
 
-### 1️⃣ Clone the Repository
+<div align="center">
 
+| Step | Action | Command |
+|:----:|:-------|:--------|
+| **1** | Clone repository | `git clone https://github.com/YOUR_USERNAME/luna-ai.git` |
+| **2** | Enter directory | `cd luna-ai` |
+| **3** | Create virtualenv | `python -m venv venv` |
+| **4** | Activate env | `source venv/bin/activate` |
+| **5** | Install packages | `pip install -r requirements.txt` |
+| **6** | Set API key | `export ELEVENLABS_API_KEY="your_key"` |
+| **7** | **Launch! 🚀** | `python friday.py` |
+
+</div>
+
+<br/>
+
+### 📦 Detailed Setup
+
+**① Clone & Enter**
 ```bash
 git clone https://github.com/YOUR_USERNAME/luna-ai.git
 cd luna-ai
 ```
 
-### 2️⃣ Create Virtual Environment
-
+**② Virtual Environment**
 ```bash
 python -m venv venv
 source venv/bin/activate
 ```
 
-### 3️⃣ Install Dependencies
-
+**③ Install Dependencies**
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4️⃣ Configure ElevenLabs API
-
+**④ ElevenLabs API Key**
 ```bash
-# Temporary (current session)
+# Session only
 export ELEVENLABS_API_KEY="your_api_key_here"
 
-# Permanent — add to shell config
-echo 'export ELEVENLABS_API_KEY="your_api_key_here"' >> ~/.zshrc
-source ~/.zshrc
+# Permanent — ZSH
+echo 'export ELEVENLABS_API_KEY="your_api_key_here"' >> ~/.zshrc && source ~/.zshrc
+
+# Permanent — BASH
+echo 'export ELEVENLABS_API_KEY="your_api_key_here"' >> ~/.bashrc && source ~/.bashrc
 ```
 
-### 5️⃣ Launch Luna AI 🚀
-
+**⑤ Launch Luna AI**
 ```bash
 python friday.py
 ```
 
----
+<br/>
 
-<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif"/>
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%"/>
+
+<br/>
+
+<!-- ═══════════════════ VOICE CONFIG ═══════════════════ -->
 
 ## 🎙️ Voice Configuration
 
-Luna uses ElevenLabs for premium voice synthesis. Default config:
+Luna uses **ElevenLabs** for premium voice synthesis with real-time streaming.
 
 ```python
 # core/voice_engine.py
-VOICE_ID  = "tnSpp4vdxKPjI9w0GnoV"
-MODEL     = "eleven_multilingual_v2"
+
+VOICE_ID   = "tnSpp4vdxKPjI9w0GnoV"   # Voice character ID
+MODEL      = "eleven_multilingual_v2"   # Synthesis model
+STREAMING  = True                       # Real-time playback
 ```
 
-| Setting | Value | Description |
-|---|---|---|
+<div align="center">
+
+| Parameter | Value | Description |
+|:----------|:------|:------------|
 | `VOICE_ID` | `tnSpp4vdxKPjI9w0GnoV` | Default voice character |
-| `MODEL` | `eleven_multilingual_v2` | Multilingual synthesis model |
-| `STREAMING` | `True` | Real-time audio playback |
+| `MODEL` | `eleven_multilingual_v2` | Multilingual neural model |
+| `STREAMING` | `True` | Low-latency real-time audio |
+| `LANGUAGE` | Auto-detect | 29+ languages supported |
 
-> 💡 Swap voice IDs from the [ElevenLabs Voice Library](https://elevenlabs.io/voice-library) to customize Luna's personality.
+</div>
 
----
+> 💡 **Tip:** Browse thousands of voice IDs at [ElevenLabs Voice Library](https://elevenlabs.io/voice-library) to give Luna any personality you want.
 
-<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif"/>
+<br/>
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%"/>
+
+<br/>
+
+<!-- ═══════════════════ PLUGIN SYSTEM ═══════════════════ -->
 
 ## 🧩 Plugin System
 
-> 🚧 **Planned Feature** — Plugin marketplace coming soon
+<div align="center">
 
+> 🚧 **Planned Feature** — Plugin marketplace arriving soon
+
+<br/>
+
+<table>
+<tr>
+<td align="center" width="25%">
+
+**🖥️ System Control**
+
+Linux system automation, process management, shell scripting
+
+</td>
+<td align="center" width="25%">
+
+**🌐 Browser Control**
+
+Web automation, scraping, form filling, navigation
+
+</td>
+<td align="center" width="25%">
+
+**🏠 Smart Home**
+
+IoT device control, home automation, sensor monitoring
+
+</td>
+<td align="center" width="25%">
+
+**🔁 Automation**
+
+Workflow builder, task scheduling, event triggers
+
+</td>
+</tr>
+</table>
+
+</div>
+
+Drop any plugin folder into `/plugins/` — Luna auto-detects and loads it.
+
+```python
+# All plugins implement this clean interface
+class LunaPlugin:
+    name: str
+    version: str
+    def on_load(self) -> None: ...
+    def on_command(self, cmd: str) -> str: ...
+    def on_unload(self) -> None: ...
 ```
-plugins/
-├── 🖥️  system_control     # Linux system automation
-├── 🌐  browser_control    # Web browsing automation
-├── 🏠  smart_home         # IoT & home automation
-└── ⚙️  automation         # Workflow & task automation
-```
 
-Plugins follow a clean interface — drop a folder in `/plugins`, and Luna detects it automatically.
+<br/>
 
----
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%"/>
 
-<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif"/>
+<br/>
+
+<!-- ═══════════════════ ROADMAP ═══════════════════ -->
 
 ## 📈 Roadmap
 
 <div align="center">
 
 ```
-2025 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2026
-  │                                                    │
-  ●── 🎤 Real-time voice assistant                     │
-  │                                                    │
-  │        ●── 🧠 Persistent AI memory                 │
-  │                                                    │
-  │                  ●── 🌐 Web automation             │
-  │                                                    │
-  │                            ●── 🖥️ Desktop control  │
-  │                                                    │
-  │                                    ●── 🤖 Offline AI models
-  │                                                    │
-  │                                          ●── 🧩 Plugin marketplace
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  LUNA AI — DEVELOPMENT TIMELINE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ●  🎤  Real-time voice assistant         [ IN PROGRESS ]
+  │
+  ●  🧠  Persistent AI memory              [ IN PROGRESS ]
+  │
+  ○  🌐  Web automation                    [ PLANNED     ]
+  │
+  ○  🖥️   Desktop control integration      [ PLANNED     ]
+  │
+  ○  🤖  Offline AI (Ollama / LlamaCPP)   [ RESEARCH    ]
+  │
+  ○  🧩  Plugin marketplace               [ FUTURE      ]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ● Active    ○ Upcoming
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
+
+<br/>
+
+| Status | Feature | Priority |
+|:------:|:--------|:--------:|
+| 🔄 Active | 🎤 Real-time voice assistant | `HIGH` |
+| 🔄 Active | 🧠 Persistent AI memory | `HIGH` |
+| 📋 Planned | 🌐 Web automation | `MEDIUM` |
+| 📋 Planned | 🖥️ Desktop control integration | `MEDIUM` |
+| 🔬 Research | 🤖 Offline AI models (Ollama/LlamaCPP) | `LOW` |
+| 💡 Future | 🧩 Plugin marketplace | `FUTURE` |
 
 </div>
 
-| Status | Feature |
-|:---:|---|
-| 🔄 In Progress | 🎤 Real-time voice assistant |
-| 🔄 In Progress | 🧠 Persistent AI memory |
-| 📋 Planned | 🌐 Web automation |
-| 📋 Planned | 🖥️ Desktop control integration |
-| 🔬 Research | 🤖 Offline AI models (Ollama/LlamaCPP) |
-| 💡 Future | 🧩 Plugin marketplace |
+<br/>
 
----
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%"/>
 
-<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif"/>
+<br/>
 
-## 🛠️ Development
+<!-- ═══════════════════ DEVELOPMENT ═══════════════════ -->
 
-### Code Standards
+## 🛠️ Development Guide
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### 📐 Code Standards
 
 ```
-✔ PEP8 Python style guide
-✔ Modular architecture — one responsibility per module
-✔ Clean function separation
-✔ Docstrings on all public functions
-✔ Type hints encouraged
+✔  PEP8 Python style guide
+✔  Modular — one responsibility per module
+✔  Clean function separation
+✔  Docstrings on all public functions
+✔  Type hints strongly encouraged
+✔  Unit tests for all core modules
 ```
 
-### Recommended Stack
-
-<div align="center">
-<img src="https://img.shields.io/badge/Python-3.10+-00d4ff?style=for-the-badge&logo=python&logoColor=white&labelColor=0a0a0f"/>
-<img src="https://img.shields.io/badge/Arch_Linux-1793D1?style=for-the-badge&logo=arch-linux&logoColor=white&labelColor=0a0a0f"/>
-<img src="https://img.shields.io/badge/Neovim-57A143?style=for-the-badge&logo=neovim&logoColor=white&labelColor=0a0a0f"/>
-<img src="https://img.shields.io/badge/VS_Code-007ACC?style=for-the-badge&logo=visual-studio-code&logoColor=white&labelColor=0a0a0f"/>
-</div>
-
-### Running Tests
+### 🧪 Running Tests
 
 ```bash
+# Run all tests
 pytest
-pytest --verbose          # Detailed output
-pytest tests/test_core.py # Specific module
+
+# Verbose output
+pytest --verbose
+
+# Specific module
+pytest tests/test_core.py
+
+# With coverage report
+pytest --cov=core tests/
 ```
 
----
+</td>
+<td width="50%" valign="top" align="center">
 
-<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif"/>
+### 🔧 Recommended Stack
+
+<br/>
+
+![Python](https://img.shields.io/badge/Python-3.10+-00d4ff?style=for-the-badge&logo=python&logoColor=white&labelColor=0d0d1a)
+
+![Arch](https://img.shields.io/badge/Arch_Linux-1793D1?style=for-the-badge&logo=arch-linux&logoColor=white&labelColor=0d0d1a)
+
+![Neovim](https://img.shields.io/badge/Neovim-57A143?style=for-the-badge&logo=neovim&logoColor=white&labelColor=0d0d1a)
+
+![VSCode](https://img.shields.io/badge/VS_Code-007ACC?style=for-the-badge&logo=visual-studio-code&logoColor=white&labelColor=0d0d1a)
+
+![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white&labelColor=0d0d1a)
+
+</td>
+</tr>
+</table>
+
+<br/>
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%"/>
+
+<br/>
+
+<!-- ═══════════════════ CONTRIBUTING ═══════════════════ -->
+
+## 🤝 Contributing
+
+Contributions make open-source powerful. All contributions are **greatly appreciated**.
+
+```bash
+# 1. Fork the repo on GitHub
+
+# 2. Create your feature branch
+git checkout -b feature/AmazingFeature
+
+# 3. Commit your changes
+git commit -m 'feat: Add AmazingFeature'
+
+# 4. Push to your branch
+git push origin feature/AmazingFeature
+
+# 5. Open a Pull Request 🎉
+```
+
+<br/>
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%"/>
+
+<br/>
+
+<!-- ═══════════════════ AUTHOR ═══════════════════ -->
 
 ## 👨‍💻 Author
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:0a0a0f,100:1a1a2e&height=2&section=header"/>
+<br/>
 
 ### Arunachalam
 
-*Linux Developer · AI Experimenter · System Automator*
+*Linux Developer &nbsp;·&nbsp; AI Experimenter &nbsp;·&nbsp; System Automator*
 
-<a href="https://github.com/YOUR_USERNAME">
-  <img src="https://img.shields.io/badge/GitHub-YOUR__USERNAME-00d4ff?style=for-the-badge&logo=github&logoColor=white&labelColor=0a0a0f"/>
-</a>
+<br/>
+
+[![GitHub](https://img.shields.io/badge/GitHub-YOUR__USERNAME-00d4ff?style=for-the-badge&logo=github&logoColor=white&labelColor=0d0d1a)](https://github.com/YOUR_USERNAME)
 
 </div>
 
----
+<br/>
 
-<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif"/>
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%"/>
+
+<br/>
+
+<!-- ═══════════════════ SUPPORT ═══════════════════ -->
 
 ## ⭐ Support the Project
 
 <div align="center">
 
-If Luna AI helps you — show some love:
+<br/>
 
-[![Star](https://img.shields.io/badge/⭐_Star-this_repo-ffd93d?style=for-the-badge&labelColor=0a0a0f)](https://github.com/YOUR_USERNAME/luna-ai/stargazers)
-[![Fork](https://img.shields.io/badge/🍴_Fork-the_project-00d4ff?style=for-the-badge&labelColor=0a0a0f)](https://github.com/YOUR_USERNAME/luna-ai/network/members)
-[![Issues](https://img.shields.io/badge/🛠_Contribute-improvements-7c83fd?style=for-the-badge&labelColor=0a0a0f)](https://github.com/YOUR_USERNAME/luna-ai/issues)
+**If Luna AI empowers your workflow — show some love! 🙏**
+
+<br/>
+
+[![Star](https://img.shields.io/badge/⭐%20Star%20this%20repo-ffd93d?style=for-the-badge&labelColor=0d0d1a)](https://github.com/YOUR_USERNAME/luna-ai/stargazers)
+&nbsp;
+[![Fork](https://img.shields.io/badge/🍴%20Fork%20the%20project-00d4ff?style=for-the-badge&labelColor=0d0d1a)](https://github.com/YOUR_USERNAME/luna-ai/network/members)
+&nbsp;
+[![Contribute](https://img.shields.io/badge/🛠%20Contribute-7c83fd?style=for-the-badge&labelColor=0d0d1a)](https://github.com/YOUR_USERNAME/luna-ai/issues)
 
 </div>
 
----
+<br/>
+
+<!-- ═══════════════════ LICENSE ═══════════════════ -->
 
 ## 📜 License
 
@@ -337,20 +578,33 @@ If Luna AI helps you — show some love:
 MIT License — © 2025 Arunachalam
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software, to deal in the Software without restriction.
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so.
 ```
-
----
-
-<div align="center">
-
-<!-- Footer wave -->
-<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:0a0a0f,50:1a1a2e,100:16213e&height=100&section=footer&text=&animation=fadeIn"/>
-
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=14&duration=4000&pause=1000&color=7c83fd&center=true&vCenter=true&width=500&lines=Built+with+%E2%9D%A4%EF%B8%8F+on+Arch+Linux;Hack+it.+Own+it.+Extend+it." alt="Footer typing"/>
 
 <br/>
 
-*Luna AI — Because your desktop deserves a brain.*
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+
+<div align="center">
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%"/>
+
+<br/>
+
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:000d26,50:0a0f2e,100:000000&height=120&section=footer&animation=fadeIn"/>
+
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=15&duration=3500&pause=1200&color=7c83fd&center=true&vCenter=true&width=520&lines=Built+with+❤️+on+Arch+Linux;Hack+it.+Own+it.+Extend+it.;Luna+AI+—+Your+desktop+deserves+a+brain." alt="Footer typing"/>
+
+<br/><br/>
+
+![Visitors](https://visitor-badge.laobi.icu/badge?page_id=YOUR_USERNAME.luna-ai&style=flat-square&color=00d4ff&labelColor=0d0d1a&label=👁️%20Visitors)
+
+<br/>
+
+*Made with 🤖 + ☕ + 🐧 by Arunachalam*
 
 </div>
