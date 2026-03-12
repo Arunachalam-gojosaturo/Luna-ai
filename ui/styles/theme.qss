@@ -360,3 +360,14 @@ QToolTip {
     border: 1px solid rgba(0,178,255,0.28);
     color: #bcd8f0; padding: 4px 8px; border-radius: 4px;
 }
+
+/* Wake word label */
+#wakeLbl {
+    color: rgba(0,220,140,0.55);
+    font-size: 9px;
+    letter-spacing: 2px;
+    font-family: "Consolas", monospace;
+    padding: 3px 10px;
+    border: 1px solid rgba(0,200,120,0.18);
+    border-radius: 10px;
+}

@@ -1,243 +1,265 @@
 """
-Luna Task Engine — system-level operations:
-  • Create files / directories
-  • Write code to files
-  • Open editor (nano / micro / kate)
-  • Run shell commands
-  • Download music via yt-dlp
-  • Package installation
+Luna Task Engine — runs BEFORE AI, every single time.
+Returns TaskResult → AI is SKIPPED.
+Returns None       → AI runs.
 """
-import os
-import re
-import subprocess
-import shutil
-import sys
+import os, re, subprocess, sys
 from pathlib import Path
-from datetime import datetime
+from core.system_ctrl  import BrightnessCtrl, VolumeCtrl
+from core.youtube_ctrl import YouTubeController
 
 
 class TaskResult:
-    def __init__(self, success: bool, message: str, output: str = ""):
+    def __init__(self, success:bool, message:str, output:str=""):
         self.success = success
         self.message = message
         self.output  = output
 
-    def __str__(self):
-        return self.message
-
 
 class TaskEngine:
     def __init__(self, mem):
-        self.mem = mem
+        self.mem  = mem
+        self._br  = BrightnessCtrl()
+        self._vol = VolumeCtrl()
+        self._yt  = YouTubeController()
 
     @property
     def workspace(self) -> Path:
-        d = Path(self.mem.get("workspace_dir", str(Path.home() / "LunaWorkspace")))
-        d.mkdir(parents=True, exist_ok=True)
-        return d
+        d = Path(self.mem.get("workspace_dir", str(Path.home()/"LunaWorkspace")))
+        d.mkdir(parents=True, exist_ok=True); return d
 
     @property
-    def download_dir(self) -> Path:
-        d = Path(self.mem.get("download_dir", str(Path.home() / "Music")))
-        d.mkdir(parents=True, exist_ok=True)
-        return d
+    def music_dir(self) -> Path:
+        d = Path(self.mem.get("download_dir", str(Path.home()/"Music")))
+        d.mkdir(parents=True, exist_ok=True); return d
 
-    # ── Dispatch ──────────────────────────────────────────────────────────
-    def handle(self, text: str) -> TaskResult | None:
-        """Return TaskResult if text is a system task, else None."""
-        t = text.strip()
+    def handle(self, raw:str):
+        # Strip wake word prefix
+        t  = raw.strip()
         tl = t.lower()
+        for ww in ("luna, ","luna ","hey luna, ","hey luna "):
+            if tl.startswith(ww):
+                tl = tl[len(ww):].strip()
+                t  = t[len(ww):].strip()
+                break
 
-        # Create directory
-        m = re.search(r"create\s+(?:a\s+)?(?:dir(?:ectory)?|folder)\s+(?:named?\s+|called?\s+)?['\"]?(\S+)['\"]?", tl)
+        # ── BRIGHTNESS ────────────────────────────────────
+        bc = self._br_parse(tl)
+        if bc: return self._br_run(bc)
+
+        # ── VOLUME ────────────────────────────────────────
+        vc = self._vol_parse(tl)
+        if vc: return self._vol_run(vc)
+
+        # ── YOUTUBE controls ─────────────────────────────
+        if re.search(r"\b(pause|resume)\b",tl) and re.search(r"\b(video|youtube|song|music)\b",tl):
+            self._yt.pause_resume()
+            return TaskResult(True,"YouTube paused/resumed.")
+
+        if re.search(r"\bmute\b",tl) and re.search(r"\b(video|youtube)\b",tl):
+            self._yt.mute_video()
+            return TaskResult(True,"YouTube muted.")
+
+        # ── PLAY → YouTube ────────────────────────────────
+        m = re.search(
+            r"^(?:play|put on|start|open|watch|search|find)\s+"
+            r"(?:the\s+)?(?:song|video|music|track|audio\s+)?"
+            r"(.+?)(?:\s+on\s+(?:youtube|yt|firefox))?\s*$",
+            t, re.IGNORECASE)
         if m:
-            return self.create_dir(m.group(1))
+            q = m.group(1).strip()
+            # Don't intercept pure control words
+            if not re.match(r"^(volume|brightness|bright|screen|mute|unmute)\b", q.lower()):
+                ok, msg = self._yt.search_and_play(q)
+                return TaskResult(ok, msg, output=f"YouTube: {q}")
 
-        # Create file
-        m = re.search(r"create\s+(?:a\s+)?file\s+(?:named?\s+|called?\s+)?['\"]?([\w\.\-]+)['\"]?", tl)
-        if m:
-            return self.create_file(m.group(1))
+        # ── DOWNLOAD mp3 ──────────────────────────────────
+        m = re.search(r"^download\s+(?:song|music|audio|track\s+)?(.+)$", t, re.IGNORECASE)
+        if m: return self._dl_mp3(m.group(1).strip())
 
-        # Write/save code to file
-        m = re.search(r"(?:write|save|put)\s+(?:code|script|this)\s+(?:to|in(?:to)?)\s+['\"]?([\w\.\-/]+)['\"]?", tl)
-        if m:
-            return self.open_editor(m.group(1))
+        # ── SHELL ─────────────────────────────────────────
+        m = re.search(r"^(?:run|execute|shell|cmd|bash|sudo)\s+(.+)$", t, re.IGNORECASE)
+        if m: return self._shell(m.group(1))
 
-        # Open file in editor
-        m = re.search(r"(?:open|edit)\s+['\"]?([\w\.\-/]+)['\"]?\s+(?:in\s+)?(?:editor|nano|micro)?", tl)
-        if m and ("open" in tl or "edit" in tl):
-            return self.open_editor(m.group(1))
+        # ── INSTALL ───────────────────────────────────────
+        m = re.search(r"^install\s+(?:package\s+)?(\S+)", tl)
+        if m: return self._install(m.group(1))
 
-        # Run command
-        m = re.search(r"^(?:run|execute|shell|cmd)\s+(.+)$", t, re.IGNORECASE)
-        if m:
-            return self.run_command(m.group(1))
+        # ── CREATE DIR ────────────────────────────────────
+        m = re.search(r"create\s+(?:a\s+)?(?:dir(?:ectory)?|folder)\s+(?:called?|named?)?\s*['\"]?(\S+)['\"]?", tl)
+        if m: return self._mkdir(m.group(1))
 
-        # Download music/song
-        m = re.search(r"download\s+(?:song|music|audio|track|video)?\s*['\"]?(.+?)['\"]?\s*$", t, re.IGNORECASE)
-        if m:
-            return self.download_music(m.group(1).strip())
+        # ── CREATE FILE ───────────────────────────────────
+        m = re.search(r"create\s+(?:a\s+)?file\s+(?:called?|named?)?\s*['\"]?([\w.\-]+)['\"]?", tl)
+        if m: return self._touch(m.group(1))
 
-        # Install package
-        m = re.search(r"install\s+(?:package\s+|app\s+)?(\S+)", tl)
-        if m:
-            return self.install_package(m.group(1))
+        # ── LIST ──────────────────────────────────────────
+        if re.search(r"^(?:list|ls|show)\s+(?:files?|workspace)", tl):
+            return self._ls()
 
-        # List workspace
-        if re.search(r"(?:list|show|ls)\s+(?:files?|workspace|dir)", tl):
-            return self.list_workspace()
+        # ── STATUS ────────────────────────────────────────
+        if re.search(r"(?:brightness|volume|sound)\s+(?:status|level|current|how much)", tl):
+            b = self._br.get(); v = self._vol.get()
+            parts = []
+            if b >= 0: parts.append(f"Brightness: {b}%")
+            if v >= 0: parts.append(f"Volume: {v}%")
+            return TaskResult(True, " | ".join(parts) or "Could not read levels.")
 
+        return None  # → AI runs
+
+    # ── Brightness parser ─────────────────────────────────────────────────
+    def _br_parse(self, tl):
+        if not re.search(r"\b(bright(?:ness)?|screen|display|backlight|dim|monitor)\b", tl):
+            return None
+        if re.search(r"\b(max(?:imum)?|full|100)\b",         tl): return {"a":"max"}
+        if re.search(r"\b(min(?:imum)?|lowest|very\s*low|dark|minimum)\b", tl): return {"a":"min"}
+        if re.search(r"\b(up|increase|brighter|higher|raise|more|boost)\b", tl):
+            m = re.search(r"(\d+)",tl)
+            return {"a":"up","s": min(int(m.group(1)),100) if m else 10}
+        if re.search(r"\b(down|decrease|dim(?:mer)?|lower|reduce|less|darker)\b", tl):
+            m = re.search(r"(\d+)",tl)
+            return {"a":"down","s": min(int(m.group(1)),100) if m else 10}
+        m = re.search(r"(\d{1,3})\s*%?", tl)
+        if m: return {"a":"set","v": min(int(m.group(1)),100)}
         return None
 
-    # ── Operations ────────────────────────────────────────────────────────
-    def create_dir(self, name: str) -> TaskResult:
-        try:
-            target = self.workspace / name
-            target.mkdir(parents=True, exist_ok=True)
-            return TaskResult(True, f"Directory created: `{target}`")
-        except Exception as e:
-            return TaskResult(False, f"Failed to create directory: {e}")
+    def _br_run(self, c) -> TaskResult:
+        if not self._br.available():
+            return TaskResult(False,
+                "brightnessctl not installed.\n"
+                "Fix: sudo pacman -S brightnessctl\n"
+                "     sudo usermod -aG video $USER\n"
+                "     (then re-login)")
+        a = c["a"]
+        if   a=="max":  ok,msg = self._br.max_b()
+        elif a=="min":  ok,msg = self._br.min_b()
+        elif a=="up":   ok,msg = self._br.up(c.get("s",10))
+        elif a=="down": ok,msg = self._br.down(c.get("s",10))
+        elif a=="set":  ok,msg = self._br.set_pct(c.get("v",50))
+        else: return TaskResult(False,"Unknown brightness command.")
+        return TaskResult(ok, msg)
 
-    def create_file(self, name: str, content: str = "") -> TaskResult:
-        try:
-            target = self.workspace / name
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(content)
-            return TaskResult(True, f"File created: `{target}`", output=str(target))
-        except Exception as e:
-            return TaskResult(False, f"Failed to create file: {e}")
+    # ── Volume parser ──────────────────────────────────────────────────────
+    def _vol_parse(self, tl):
+        # Mic
+        if re.search(r"\b(mic|microphone)\b", tl):
+            if "unmute" in tl: return {"a":"mic_unmute"}
+            if "mute"   in tl: return {"a":"mic_mute"}
+        # Unmute / mute
+        if re.search(r"\bunmute\b", tl): return {"a":"unmute"}
+        if re.search(r"\bmute\b",   tl) and not re.search(r"\b(youtube|video)\b",tl):
+            return {"a":"mute"}
+        # Max / min via natural language
+        if re.search(r"\b(vol(?:ume)?|sound|audio)\b", tl):
+            if re.search(r"\b(max(?:imum)?|full|100|loudest)\b",   tl): return {"a":"set","v":100}
+            if re.search(r"\b(min(?:imum)?|zero|silent|quietest)\b",tl): return {"a":"set","v":0}
+        # Up
+        if re.search(r"\b(vol(?:ume)?\s*up|louder|increase\s*(?:the\s*)?vol|"
+                     r"raise\s*(?:the\s*)?vol|turn\s*(?:it\s*|the\s*vol\s*)?up|"
+                     r"sound\s*up|audio\s*up)\b", tl):
+            m = re.search(r"(\d+)", tl)
+            return {"a":"up","s": min(int(m.group(1)),100) if m and int(m.group(1))<=100 else 10}
+        # Down
+        if re.search(r"\b(vol(?:ume)?\s*down|quieter|decrease\s*(?:the\s*)?vol|"
+                     r"lower\s*(?:the\s*)?vol|turn\s*(?:it\s*|the\s*vol\s*)?down|"
+                     r"sound\s*down|audio\s*down)\b", tl):
+            m = re.search(r"(\d+)", tl)
+            return {"a":"down","s": min(int(m.group(1)),100) if m and int(m.group(1))<=100 else 10}
+        # Set exact: "set volume to 60" / "volume 60%" / "volume at 60"
+        m = re.search(r"(?:set\s+)?(?:vol(?:ume)?|sound|audio)\s+(?:to\s+|at\s+)?(\d{1,3})\s*%?", tl)
+        if m: return {"a":"set","v": min(int(m.group(1)),150)}
+        return None
 
-    def write_code_to_file(self, filename: str, code: str, lang: str = "") -> TaskResult:
-        """Write code block to file in workspace."""
-        # Add extension if missing
-        if "." not in filename:
-            ext_map = {"python": ".py", "py": ".py", "javascript": ".js",
-                       "js": ".js", "bash": ".sh", "sh": ".sh",
-                       "html": ".html", "css": ".css", "rust": ".rs",
-                       "go": ".go", "java": ".java", "cpp": ".cpp"}
-            filename += ext_map.get(lang.lower(), ".txt")
+    def _vol_run(self, c) -> TaskResult:
+        if not self._vol.available():
+            return TaskResult(False,
+                "wpctl/pactl not found.\n"
+                "Fix: sudo pacman -S pipewire pipewire-pulse wireplumber")
+        a = c["a"]
+        if   a=="mute":       ok,msg = self._vol.mute()
+        elif a=="unmute":     ok,msg = self._vol.unmute()
+        elif a=="up":         ok,msg = self._vol.up(c.get("s",10))
+        elif a=="down":       ok,msg = self._vol.down(c.get("s",10))
+        elif a=="set":        ok,msg = self._vol.set_pct(c.get("v",50))
+        elif a=="mic_mute":   ok,msg = self._vol.mic_mute()
+        elif a=="mic_unmute": ok,msg = self._vol.mic_unmute()
+        else: return TaskResult(False,"Unknown volume command.")
+        return TaskResult(ok, msg)
 
-        try:
-            target = self.workspace / filename
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(code)
-            if filename.endswith(".sh"):
-                os.chmod(target, 0o755)
-            return TaskResult(True, f"Code saved to `{target}`", output=str(target))
-        except Exception as e:
-            return TaskResult(False, f"Failed to write code: {e}")
-
-    def open_editor(self, filename: str) -> TaskResult:
-        """Open file in terminal editor."""
-        target = self.workspace / filename
-        target.parent.mkdir(parents=True, exist_ok=True)
-        if not target.exists():
-            target.touch()
-
-        for editor in ["micro", "nano", "vim", "vi"]:
-            if shutil.which(editor):
-                try:
-                    subprocess.Popen(
-                        ["x-terminal-emulator", "-e", f"{editor} {target}"],
-                        start_new_session=True
-                    )
-                    return TaskResult(True, f"Opened `{target.name}` in {editor}.")
-                except FileNotFoundError:
-                    # try direct terminal
-                    for term in ["konsole", "gnome-terminal", "xterm", "alacritty", "kitty"]:
-                        if shutil.which(term):
-                            arg = f"--hold -e" if "xterm" in term else "-e"
-                            subprocess.Popen(
-                                [term, "-e", f"{editor}", str(target)],
-                                start_new_session=True
-                            )
-                            return TaskResult(True, f"Opened `{target.name}` in {editor}.")
-        return TaskResult(False, "No terminal editor found (nano, micro, vim).")
-
-    def run_command(self, cmd: str) -> TaskResult:
-        """Run a shell command."""
-        try:
-            result = subprocess.run(
-                cmd, shell=True, capture_output=True, text=True,
-                timeout=30, cwd=str(self.workspace)
-            )
-            out = (result.stdout + result.stderr).strip()
-            success = result.returncode == 0
-            return TaskResult(success, f"Command {'succeeded' if success else 'failed'}.", output=out)
-        except subprocess.TimeoutExpired:
-            return TaskResult(False, "Command timed out after 30s.")
-        except Exception as e:
-            return TaskResult(False, f"Command error: {e}")
-
-    def download_music(self, query: str) -> TaskResult:
-        """Download audio via yt-dlp."""
-        self._ensure_ytdlp()
-        out_dir = self.download_dir
-        try:
-            cmd = [
-                sys.executable, "-m", "yt_dlp",
-                f"ytsearch1:{query}",
-                "--extract-audio",
-                "--audio-format", "mp3",
-                "--audio-quality", "0",
-                "--embed-thumbnail",
-                "--add-metadata",
-                "-o", str(out_dir / "%(title)s.%(ext)s"),
-                "--no-playlist",
-                "--quiet",
-                "--progress",
-            ]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-            if result.returncode == 0:
-                # Find latest file
-                files = sorted(out_dir.glob("*.mp3"), key=os.path.getmtime, reverse=True)
-                fname = files[0].name if files else "unknown"
-                return TaskResult(True, f"Downloaded: **{fname}** → `{out_dir}`")
-            else:
-                err = (result.stderr or result.stdout)[:300]
-                return TaskResult(False, f"Download failed: {err}")
-        except subprocess.TimeoutExpired:
-            return TaskResult(False, "Download timed out (120s).")
-        except Exception as e:
-            return TaskResult(False, f"Download error: {e}")
-
-    def install_package(self, name: str) -> TaskResult:
-        """Install Python package or system package."""
-        try:
-            result = subprocess.run(
-                [sys.executable, "-m", "pip", "install", name, "-q"],
-                capture_output=True, text=True, timeout=60
-            )
-            if result.returncode == 0:
-                return TaskResult(True, f"Installed Python package: `{name}`")
-            # Try pacman
-            result2 = subprocess.run(
-                ["sudo", "pacman", "-S", name, "--noconfirm"],
-                capture_output=True, text=True, timeout=60
-            )
-            if result2.returncode == 0:
-                return TaskResult(True, f"Installed system package: `{name}`")
-            return TaskResult(False, f"Could not install `{name}`. Try manually.")
-        except Exception as e:
-            return TaskResult(False, f"Install error: {e}")
-
-    def list_workspace(self) -> TaskResult:
-        """List files in workspace."""
-        files = list(self.workspace.rglob("*"))
-        if not files:
-            return TaskResult(True, f"Workspace `{self.workspace}` is empty.")
-        lines = []
-        for f in sorted(files)[:40]:
-            rel = f.relative_to(self.workspace)
-            icon = "📁" if f.is_dir() else "📄"
-            lines.append(f"{icon} {rel}")
-        output = "\n".join(lines)
-        return TaskResult(True, f"Workspace contents ({len(files)} items):", output=output)
-
-    # ── Helpers ───────────────────────────────────────────────────────────
-    def _ensure_ytdlp(self):
-        try:
-            import yt_dlp  # noqa
+    # ── Download mp3 ───────────────────────────────────────────────────────
+    def _dl_mp3(self, query) -> TaskResult:
+        try: import yt_dlp
         except ImportError:
-            subprocess.run([sys.executable, "-m", "pip", "install", "yt-dlp", "-q"],
+            subprocess.run([sys.executable,"-m","pip","install","yt-dlp","-q"],
                            capture_output=True, timeout=60)
+        out = str(self.music_dir/"%(title)s.%(ext)s")
+        try:
+            r = subprocess.run(
+                [sys.executable,"-m","yt_dlp",
+                 f"ytsearch1:{query}",
+                 "--extract-audio","--audio-format","mp3","--audio-quality","0",
+                 "-o",out,"--no-playlist",
+                 "--print","after_move:filepath","--no-warnings"],
+                capture_output=True, text=True, timeout=120)
+            path = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""
+            if not path or not Path(path).exists():
+                files = sorted(self.music_dir.glob("*.mp3"),key=os.path.getmtime,reverse=True)
+                path = str(files[0]) if files else ""
+            if not path:
+                return TaskResult(False,f"Download failed: {(r.stderr or r.stdout)[:300]}")
+            return TaskResult(True,f"Downloaded: {Path(path).name}",output=f"Saved: {path}")
+        except subprocess.TimeoutExpired:
+            return TaskResult(False,"Download timed out.")
+        except Exception as e:
+            return TaskResult(False,f"Download error: {e}")
+
+    # ── Misc ───────────────────────────────────────────────────────────────
+    def _mkdir(self, name):
+        try:
+            t = self.workspace/name; t.mkdir(parents=True,exist_ok=True)
+            return TaskResult(True,f"Created directory: {t}")
+        except Exception as e: return TaskResult(False,str(e))
+
+    def _touch(self, name, content=""):
+        try:
+            t = self.workspace/name
+            t.parent.mkdir(parents=True,exist_ok=True); t.write_text(content)
+            return TaskResult(True,f"Created file: {t}",output=str(t))
+        except Exception as e: return TaskResult(False,str(e))
+
+    def write_code(self, filename, code, lang=""):
+        ext={"python":"py","py":"py","javascript":"js","js":"js",
+             "bash":"sh","sh":"sh","html":"html","css":"css","rust":"rs"}
+        if "." not in filename: filename += "."+ext.get(lang.lower(),"txt")
+        try:
+            t = self.workspace/filename
+            t.parent.mkdir(parents=True,exist_ok=True); t.write_text(code)
+            if filename.endswith(".sh"): os.chmod(t,0o755)
+            return TaskResult(True,f"Saved: {t}",output=str(t))
+        except Exception as e: return TaskResult(False,str(e))
+
+    def _shell(self, cmd):
+        try:
+            r = subprocess.run(cmd,shell=True,capture_output=True,text=True,
+                               timeout=60,cwd=str(self.workspace),env={**os.environ})
+            out=(r.stdout+r.stderr).strip(); ok=r.returncode==0
+            return TaskResult(ok,f"Exit {r.returncode}.",output=out or "(no output)")
+        except subprocess.TimeoutExpired: return TaskResult(False,"Timed out.")
+        except Exception as e: return TaskResult(False,str(e))
+
+    def _install(self, pkg):
+        for cmd in [[sys.executable,"-m","pip","install",pkg,"-q"],
+                    ["sudo","pacman","-S",pkg,"--noconfirm"],
+                    ["yay","-S",pkg,"--noconfirm"]]:
+            try:
+                r = subprocess.run(cmd,capture_output=True,text=True,timeout=120)
+                if r.returncode==0: return TaskResult(True,f"Installed `{pkg}`.")
+            except (FileNotFoundError,subprocess.TimeoutExpired): continue
+        return TaskResult(False,f"Could not install `{pkg}`.")
+
+    def _ls(self):
+        files=list(self.workspace.rglob("*"))
+        if not files: return TaskResult(True,"Workspace is empty.")
+        lines=[f"{'📁' if f.is_dir() else '📄'} {f.relative_to(self.workspace)}"
+               for f in sorted(files)[:50]]
+        return TaskResult(True,f"{len(files)} items:",output="\n".join(lines))
