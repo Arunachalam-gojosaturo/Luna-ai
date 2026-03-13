@@ -11,13 +11,13 @@ try:
     from PyQt6.QtGui   import QFont
     _SF  = Qt.FocusPolicy.StrongFocus
     _WW  = Qt.TextInteractionFlag.TextSelectableByMouse
-    _AOF = Qt.ScrollBarPolicy.AlwaysOff
+    _AOF = Qt.ScrollBarPolicy.ScrollBarAlwaysOff
 except ImportError:
     from PyQt5.QtWidgets import (QMainWindow,QWidget,QVBoxLayout,QHBoxLayout,
                                   QLabel,QPushButton,QScrollArea,QLineEdit,QFrame)
     from PyQt5.QtCore  import Qt,QTimer,QThread,pyqtSignal
     from PyQt5.QtGui   import QFont
-    _SF=Qt.StrongFocus; _WW=Qt.TextSelectableByMouse; _AOF=Qt.AlwaysOff
+    _SF=Qt.StrongFocus; _WW=Qt.TextSelectableByMouse; _AOF = Qt.ScrollBarAlwaysOff
 
 from ui.widgets        import StatusDot,HUDWidget,VoiceVisualizer,SystemMeter
 from ui.code_block     import CodeBlockWidget
@@ -302,17 +302,38 @@ class MainWindow(QMainWindow):
             item=self._ml.takeAt(0)
             if item.widget(): item.widget().deleteLater()
         self.mem.clear_history(); self._add("Cleared.","system")
-
     def greet(self):
-        user=self.mem.get_user_name()
-        msg=(f"Welcome back {user}. Luna online. Say 'Luna' to wake me." if user
-             else "Luna online. Open Settings to add your API key. Say 'Luna' to wake me.")
-        self._add(msg,"ai"); self.set_status("SPEAKING")
-        if self._wake: self._wake.pause()
-        self.voice.speak_async(msg, on_done=lambda:(
-            self.set_status("READY"),
-            self._wake.resume() if self._wake else None))
-
+        user = self.mem.get_user_name()
+        SEP = "\n"
+        if user:
+            msg = (
+                "[LUNA v5]  SYSTEM ONLINE" + SEP +
+                "Operator: " + user + "  |  Arch Linux + Hyprland  |  Status: NOMINAL" + SEP +
+                "Neural core initialized. Voice engine active. Task engine armed." + SEP +
+                "Live data feeds connected. Firefox controller ready." + SEP +
+                "Say my name to wake me, Boss. What is the move?"
+            )
+            speak_msg = "Luna online. Welcome back " + user + ". What is the move?"
+        else:
+            msg = (
+                "[LUNA v5]  SYSTEM ONLINE" + SEP +
+                "Arch Linux + Hyprland  |  All modules initialized." + SEP +
+                "No operator profile found. Open Settings to add your API key." + SEP +
+                "Say your name: type  my name is YourName  to register." + SEP +
+                "Say Luna anytime to activate voice mode. Awaiting orders, Boss."
+            )
+            speak_msg = "Luna online. Awaiting orders, Boss."
+        self._add(msg, "ai")
+        self.set_status("SPEAKING")
+        if self._wake:
+            self._wake.pause()
+        self.voice.speak_async(
+            speak_msg,
+            on_done=lambda: (
+                self.set_status("READY"),
+                self._wake.resume() if self._wake else None
+            )
+        )
     def closeEvent(self, e):
         if self._wake: self._wake.stop_engine(); self._wake.wait(1000)
         super().closeEvent(e)

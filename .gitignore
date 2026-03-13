@@ -1,8 +1,12 @@
-venv/
 __pycache__/
 *.pyc
 *.pyo
-*.log
-.env
+.venv/
+venv/
+*.tar.gz
+*.zip
+.DS_Store
+*.egg-info/
 dist/
 build/
+.luna_ai/
