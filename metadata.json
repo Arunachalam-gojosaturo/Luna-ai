@@ -1,0 +1,6 @@
+{
+  "name": "LUNA OS",
+  "description": "LUNA OS 3.0: Premium intelligent command center and personal AI operating system featuring an interactive reactor core, voice-first ecosystem, connected devices telemetry, and a developer workspace.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
