@@ -16,6 +16,9 @@ from luna.commands import chat, api
 from luna.commands.git import git_app
 from luna.commands.system import system_app
 from luna.commands.trust import trust_app
+from luna.commands.files import files_app
+from luna.commands.code import code_app
+from luna.commands.models import models_app
 
 app = typer.Typer(
     help="🌙 LUNA - AI Coding Assistant CLI for LUNA OS X",
@@ -32,6 +35,9 @@ app.add_typer(api.api_app, name="api", help="Configure AI providers")
 app.add_typer(git_app, name="git", help="Git operations")
 app.add_typer(system_app, name="system", help="System and terminal operations")
 app.add_typer(trust_app, name="trust", help="Manage trusted workspaces")
+app.add_typer(files_app, name="files", help="File operations")
+app.add_typer(code_app, name="code", help="Coding assistance")
+app.add_typer(models_app, name="models", help="Manage AI models")
 
 
 @app.callback()
@@ -138,7 +144,26 @@ def show_help():
   [cyan]luna git status[/]                       Check git status
   [cyan]luna system run 'npm test'[/]            Run command
 
-[dim]More features coming: /read, /write, /debug, /test, /docker[/]
+[bold]Coding Assistance:[/]
+  [cyan]luna code explain FILE[/]                 Explain code
+  [cyan]luna code generate DESC[/]                Generate code
+  [cyan]luna code refactor FILE[/]                Refactor code
+  [cyan]luna code debug FILE[/]                   Find bugs
+  [cyan]luna code test FILE[/]                    Generate tests
+  [cyan]luna code doc FILE[/]                     Generate docs
+  [cyan]luna code review FILE[/]                  Review code
+
+[bold]File Operations:[/]
+  [cyan]luna files read FILE[/]                   Read file
+  [cyan]luna files write FILE[/]                  Write file
+  [cyan]luna files create FILE[/]                 Create file
+  [cyan]luna files delete FILE[/]                 Delete file
+  [cyan]luna files search PATTERN[/]              Search files
+  [cyan]luna files info FILE[/]                   Get file info
+
+[bold]Model Management:[/]
+  [cyan]luna models list[/]                       Show available models
+  [cyan]luna models info MODEL[/]                 Model details
 """
     console.print(Panel(help_text, title="LUNA Commands", border_style="cyan", expand=False))
 

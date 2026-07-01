@@ -61,6 +61,7 @@ dev = [
 
 [project.scripts]
 luna = "luna.cli:main"
+luna-cli = "luna.cli:main"
 
 [tool.setuptools]
 packages = ["luna", "luna.config", "luna.providers", "luna.chat", "luna.assistant", 
