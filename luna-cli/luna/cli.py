@@ -13,6 +13,9 @@ from luna.ui.theme import print_header, print_welcome, print_status
 
 # Import command modules
 from luna.commands import chat, api
+from luna.commands.git import git_app
+from luna.commands.system import system_app
+from luna.commands.trust import trust_app
 
 app = typer.Typer(
     help="🌙 LUNA - AI Coding Assistant CLI for LUNA OS X",
@@ -26,6 +29,9 @@ console = Console()
 # Add command groups
 app.add_typer(chat.chat_app, name="chat", help="AI chat and conversations")
 app.add_typer(api.api_app, name="api", help="Configure AI providers")
+app.add_typer(git_app, name="git", help="Git operations")
+app.add_typer(system_app, name="system", help="System and terminal operations")
+app.add_typer(trust_app, name="trust", help="Manage trusted workspaces")
 
 
 @app.callback()
@@ -34,6 +40,13 @@ def main_callback(ctx: typer.Context):
     if ctx.invoked_subcommand is None:
         # Show welcome screen
         print_welcome()
+
+
+@app.command(name="setup")
+def run_setup():
+    """Run interactive setup wizard."""
+    from luna.commands.setup import setup_wizard
+    setup_wizard()
 
 
 @app.command()
@@ -97,17 +110,35 @@ def show_help():
   [cyan]luna api default[/]         Set default provider
   [cyan]luna config[/]              Show current settings
 
+[bold]Git Integration:[/]
+  [cyan]luna git status[/]          Show git status
+  [cyan]luna git log[/]             Show commit history
+  [cyan]luna git diff[/]            Show changes
+  [cyan]luna git commit[/]          Create commit
+
+[bold]System Operations:[/]
+  [cyan]luna system run[/]          Run terminal command
+  [cyan]luna system info[/]         Show system info
+  [cyan]luna system tree[/]         Show directory tree
+
+[bold]Security:[/]
+  [cyan]luna trust add[/]           Trust workspace
+  [cyan]luna trust list[/]          List trusted workspaces
+  [cyan]luna trust check[/]         Check if trusted
+
 [bold]General:[/]
   [cyan]luna version[/]             Show version
   [cyan]luna help[/]                Show this help
+  [cyan]luna init[/]                Initialize workspace
 
 [bold]Examples:[/]
   [cyan]luna chat[/]                              Start chatting
   [cyan]luna chat -p groq[/]                      Chat with Groq
   [cyan]luna api add[/]                          Setup new provider
-  [cyan]luna chat continue abc123[/]             Continue session
+  [cyan]luna git status[/]                       Check git status
+  [cyan]luna system run 'npm test'[/]            Run command
 
-[dim]More commands coming soon: /read, /write, /git, /trust, /system[/]
+[dim]More features coming: /read, /write, /debug, /test, /docker[/]
 """
     console.print(Panel(help_text, title="LUNA Commands", border_style="cyan", expand=False))
 
