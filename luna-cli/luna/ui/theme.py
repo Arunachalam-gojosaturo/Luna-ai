@@ -72,14 +72,23 @@ def print_welcome():
 [bold cyan]🌙 LUNA CLI[/] — AI Coding Assistant
 [dim]Modern AI development tool inspired by Claude Code, Codex, & Copilot[/]
 
-[bold]Quick Start:[/]
-  [cyan]luna chat[/]              Start AI chat
-  [cyan]luna /api[/]              Configure providers
-  [cyan]luna /config[/]           Manage settings
-  [cyan]luna /help[/]             Show commands
+[bold]💬 Start Interactive Chat:[/]
+  [bold green]luna-cli chat start[/]    ← Interactive chat box (like Copilot CLI)
+  [cyan]luna chat new[/]           New chat session
+  [cyan]luna chat history[/]       View previous chats
 
-[bold]Learn More:[/]
-  [cyan]https://github.com/Arunachalam-gojosaturo/luna-cli[/]
+[bold]📝 Code Assistance:[/]
+  [cyan]luna code generate[/]      Generate code
+  [cyan]luna code explain[/]       Explain code
+  [cyan]luna code refactor[/]      Refactor code
+
+[bold]⚙️ Configuration:[/]
+  [cyan]luna api add[/]             Configure AI providers
+  [cyan]luna config[/]             View settings
+  [cyan]luna help[/]               Show all commands
+
+[bold]📚 Learn More:[/]
+  [cyan]https://github.com/Arunachalam-gojosaturo/Luna-eco-system[/]
 """
     console.print(Panel(welcome, border_style="cyan", padding=(1, 2)))
 
