@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "luna-cli"
+version = "0.1.0"
+description = "🌙 LUNA - AI Coding Assistant CLI for LUNA OS X"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Arunachalam", email = "arunachalam.gojosaturo@gmail.com"}
+]
+keywords = ["ai", "cli", "coding", "assistant", "luna", "groq", "openai"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+
+dependencies = [
+    "typer[all]>=0.9.0",
+    "rich>=13.0.0",
+    "textual>=0.30.0",
+    "prompt_toolkit>=3.0.0",
+    "httpx>=0.24.0",
+    "websockets>=11.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "aiofiles>=23.0.0",
+    "gitpython>=3.1.0",
+    "click-spinner>=0.1.10",
+    "colorama>=0.4.6",
+    "shellingham>=1.5.0",
+    "platformdirs>=3.10.0",
+]
+
+[project.optional-dependencies]
+providers = [
+    "groq>=0.4.0",
+    "openai>=1.0.0",
+    "google-generativeai>=0.3.0",
+    "openrouter>=0.1.0",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+]
+
+[project.scripts]
+luna = "luna.cli:main"
+
+[tool.setuptools]
+packages = ["luna", "luna.config", "luna.providers", "luna.chat", "luna.assistant", 
+            "luna.files", "luna.terminal", "luna.ui", "luna.commands", "luna.core", "luna.api"]
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312']
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

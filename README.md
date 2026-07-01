@@ -75,7 +75,14 @@ Luna-eco-system/
 ├── package.json              # Node.js dependencies & scripts
 ├── requirements.txt          # Python dependencies
 ├── server.py                 # Backend Entry Point
-└── cli.py                    # Command Line Interface
+├── cli.py                    # Legacy Command Line Interface
+├── luna_cli_enhanced.py      # Enhanced CLI with animations
+├── cli_utils.py              # CLI utilities & UI components
+├── cli_config.py             # CLI configuration management
+├── cli_examples.py           # CLI feature demonstrations
+├── CLI_GUIDE.md              # Complete CLI documentation
+├── CLI_QUICKSTART.md         # Quick start guide
+└── LUNA_CLI_ENHANCEMENTS.md  # Enhancement summary
 ```
 
 ---
@@ -124,6 +131,23 @@ You can start both the backend FastAPI server and the Vite frontend simultaneous
 npm run dev
 ```
 
+### Run Enhanced CLI
+Start the beautiful enhanced Luna CLI with awesome boot animations:
+```bash
+npm run cli
+```
+
+Or directly:
+```bash
+python luna_cli_enhanced.py
+```
+
+### Run CLI Demo
+Test all CLI features with comprehensive demo:
+```bash
+npm run cli:test
+```
+
 ### Run Desktop App
 To run the project as a native desktop application using Tauri:
 ```bash
@@ -135,6 +159,29 @@ To compile a production-ready binary for your system:
 ```bash
 npm run desktop:build
 ```
+
+---
+
+## 🎯 CLI Features
+
+The enhanced Luna CLI includes:
+
+- **🎨 Awesome Boot Animation** - Colorized ASCII art with animated startup
+- **🎯 Attribute-Based Commands** - Commands as objects with metadata
+- **💬 8 Core Commands** - help, status, history, clear, model, voice, memory, exit
+- **📊 Rich UI Components** - Progress bars, spinners, tables, status indicators
+- **⚙️ Configuration System** - Profiles, aliases, history management
+- **🔧 Complete Documentation** - Guides and examples included
+
+**Quick Start:**
+```bash
+npm run cli
+luna> help      # Show all commands
+luna> status    # Display statistics
+luna> exit      # Exit gracefully
+```
+
+See [CLI_QUICKSTART.md](CLI_QUICKSTART.md) for detailed guide.
 
 ---
 

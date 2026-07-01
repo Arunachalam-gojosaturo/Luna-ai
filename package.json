@@ -10,6 +10,10 @@
     "desktop:build": "tauri build",
     "build": "vite build",
     "start": "venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 3000",
+    "cli": "venv/bin/python luna_cli_enhanced.py",
+    "cli:old": "venv/bin/python cli.py",
+    "cli:config": "venv/bin/python -c \"from cli_config import ConfigManager; c = ConfigManager(); print('\\nConfiguration Status:'); print(f'Profile: {c.current_profile.name}'); print(f'Model: {c.current_profile.model}'); print(f'Provider: {c.current_profile.provider}')\"",
+    "cli:test": "venv/bin/python cli_utils.py",
     "clean": "rm -rf dist src-tauri/target",
     "lint": "tsc --noEmit"
   },
