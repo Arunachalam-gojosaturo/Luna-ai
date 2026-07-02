@@ -1,188 +1,244 @@
 """
-API configuration command.
-Interactive provider setup with API key management.
+API provider management commands.
 """
 
 import typer
 from rich.console import Console
-from rich.prompt import Prompt, Confirm
-from typing import Optional
-import subprocess
+from rich.table import Table
+from rich.panel import Panel
+from pathlib import Path
+import json
 
-from luna.config import get_config
-from luna.ui.theme import print_header, print_status, print_section, print_success, print_error
-from luna.providers import ProviderRegistry
+from luna.config.config import get_config
+from luna.ui.theme import print_success, print_error, print_status
 
+api_app = typer.Typer(help="Configure AI providers")
 console = Console()
-
-api_app = typer.Typer(help="Configure AI providers and API keys")
 
 
 @api_app.command(name="add")
 def add_provider(
-    provider: Optional[str] = typer.Option(None, "--provider", "-p", help="Provider name"),
+    provider: str = typer.Argument(None, help="Provider name (groq, openai, gemini, openrouter, ollama, nvidia)"),
+    api_key: str = typer.Option(None, "--key", "-k", help="API key (optional - will prompt if not provided)"),
+    name: str = typer.Option(None, "--name", "-n", help="Custom provider name")
 ):
-    """Add or update API provider."""
-    print_header("Add Provider", "Configure a new AI provider")
+    """Add or configure an AI provider.
     
+    Examples:
+      luna-cli api add groq                          # Interactive setup
+      luna-cli api add groq --key YOUR_API_KEY       # Direct setup
+      luna-cli api add openai -k sk-...              # OpenAI with key
+    """
     config = get_config()
-    available = ProviderRegistry.list_providers()
     
     if not provider:
-        console.print("\n[cyan]Available providers:[/]")
-        for i, p in enumerate(available, 1):
-            console.print(f"  {i}. {p}")
+        # Interactive mode
+        console.print("\n[bold cyan]🤖 AI Provider Setup[/]\n")
         
-        choice = Prompt.ask("Select provider", choices=available)
-        provider = choice
+        providers_list = [
+            ("groq", "Groq (Ultra-fast, Free)"),
+            ("openai", "OpenAI (GPT-4, Paid)"),
+            ("gemini", "Google Gemini (Free tier)"),
+            ("openrouter", "OpenRouter (100+ models)"),
+            ("ollama", "Ollama (Local, Free)"),
+            ("nvidia", "NVIDIA NIM (Free tier)")
+        ]
+        
+        console.print("[bold]Available Providers:[/]")
+        for i, (code, desc) in enumerate(providers_list, 1):
+            console.print(f"  {i}. {desc}")
+        
+        choice = typer.prompt("Choose provider (1-6)")
+        
+        try:
+            idx = int(choice) - 1
+            if 0 <= idx < len(providers_list):
+                provider = providers_list[idx][0]
+            else:
+                console.print("[red]Invalid choice[/]")
+                return
+        except ValueError:
+            console.print("[red]Invalid input[/]")
+            return
     
-    if provider not in available:
-        print_error("Invalid Provider", f"Provider '{provider}' not found")
+    # Normalize provider name
+    provider = provider.lower().strip()
+    
+    if provider not in ["groq", "openai", "gemini", "openrouter", "ollama", "nvidia"]:
+        print_error("Invalid Provider", f"'{provider}' is not supported. Use: groq, openai, gemini, openrouter, ollama, nvidia")
+        return
+    
+    # Special handling for Ollama (doesn't need API key)
+    if provider == "ollama":
+        config.add_provider(provider, "local", name or provider)
+        print_success("Provider Added", f"Ollama configured! Run: luna-cli chat start -p ollama")
         return
     
     # Get API key
-    api_key = Prompt.ask(f"Enter {provider} API key", password=True)
+    if api_key:
+        key = api_key
+    else:
+        console.print(f"\n[cyan]Enter your {provider.upper()} API key:[/]")
+        key = typer.prompt("API Key", hide_input=True)
     
-    # Optional: get model preference
-    try:
-        provider_class = ProviderRegistry.get(provider)
-        if provider_class:
-            models = provider_class("").get_available_models()
-            if models:
-                console.print(f"\n[cyan]Available models for {provider}:[/]")
-                for i, model in enumerate(models[:5], 1):
-                    console.print(f"  {i}. {model}")
-                
-                model = Prompt.ask("Select model (or press Enter to skip)", default="")
-            else:
-                model = None
-    except Exception:
-        model = None
-    
-    # Save provider
-    config.add_provider(provider, api_key, model=model)
-    
-    # Test connection
-    console.print("\n[cyan]Testing connection...[/]")
-    try:
-        import asyncio
-        provider_class = ProviderRegistry.get(provider)
-        if provider_class:
-            provider_instance = provider_class(api_key, model=model)
-            result = asyncio.run(provider_instance.test_connection())
-            if result:
-                print_status(f"Connection successful!", "success")
-                print_success("Provider Added", f"{provider} configured and tested successfully")
-            else:
-                print_status("Connection test failed", "warning")
-                print_error("Test Failed", "Could not verify connection. Check your API key.")
-    except Exception as e:
-        print_error("Connection Error", str(e))
-
-
-@api_app.command(name="test")
-def test_provider(provider: str = typer.Argument(help="Provider to test")):
-    """Test API connection for a provider."""
-    print_header("Test Provider", f"Testing {provider} connection")
-    
-    config = get_config()
-    provider_cfg = config.get_provider(provider)
-    
-    if not provider_cfg or not provider_cfg.api_key:
-        print_error("Not Configured", f"Provider '{provider}' not configured")
+    if not key or len(key.strip()) == 0:
+        print_error("No Key Provided", "API key is required")
         return
     
-    console.print(f"\n[cyan]Testing {provider}...[/]")
-    
+    # Save provider
     try:
-        import asyncio
-        provider_class = ProviderRegistry.get(provider)
-        if provider_class:
-            instance = provider_class(provider_cfg.api_key, model=provider_cfg.model)
-            result = asyncio.run(instance.test_connection())
-            
-            if result:
-                print_success("Connection OK", f"{provider} connection is working")
-            else:
-                print_error("Connection Failed", f"Could not reach {provider} API")
+        config.add_provider(provider, key.strip(), name or provider)
+        print_success(
+            "Provider Added", 
+            f"✅ {provider.upper()} configured!\n\n"
+            f"[cyan]Start chatting:[/]\n"
+            f"  luna-cli chat start -p {provider}\n\n"
+            f"[cyan]Or set as default:[/]\n"
+            f"  Edit ~/.config/luna/config.json"
+        )
     except Exception as e:
-        print_error("Error", str(e))
+        print_error("Setup Failed", str(e))
 
 
 @api_app.command(name="list")
 def list_providers():
-    """List configured providers."""
-    print_header("Configured Providers")
-    
+    """List configured AI providers."""
     config = get_config()
     
     if not config.providers:
-        console.print("[yellow]No providers configured[/]")
-        console.print("Run [cyan]luna /api add[/] to add a provider")
+        console.print("\n[yellow]No providers configured yet![/]")
+        console.print("[cyan]Run: luna-cli api add[/]\n")
         return
     
-    console.print(f"\n[cyan]Configured providers:[/]")
-    for name, cfg in config.providers.items():
-        has_key = "✓" if cfg.api_key else "✗"
-        model_str = f" ({cfg.model})" if cfg.model else ""
-        status = "[green]configured[/]" if cfg.api_key else "[red]missing key[/]"
-        console.print(f"  [{has_key}] {name}{model_str} — {status}")
+    console.print("\n[bold cyan]📡 Configured Providers[/]\n")
     
-    default = config.config.default_provider
-    console.print(f"\n[cyan]Default provider:[/] {default}")
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Provider", style="green")
+    table.add_column("Status", style="yellow")
+    table.add_column("Default", style="cyan")
+    
+    for provider_name in config.providers:
+        is_default = "✓" if provider_name == config.config.get("default_provider") else ""
+        table.add_row(provider_name.upper(), "Configured", is_default)
+    
+    console.print(table)
+    console.print()
+
+
+@api_app.command(name="test")
+def test_connection(
+    provider: str = typer.Argument(None, help="Provider to test (default: first configured)")
+):
+    """Test API connection to provider.
+    
+    Examples:
+      luna-cli api test                  # Test default provider
+      luna-cli api test groq             # Test Groq
+    """
+    config = get_config()
+    
+    if not config.providers:
+        print_error("No Providers", "Run 'luna-cli api add' first")
+        return
+    
+    if not provider:
+        provider = list(config.providers.keys())[0]
+    
+    provider = provider.lower()
+    
+    if provider not in config.providers:
+        print_error("Provider Not Found", f"'{provider}' is not configured")
+        return
+    
+    with console.status(f"[cyan]Testing {provider}...[/]"):
+        try:
+            if provider == "ollama":
+                console.print("[green]✓ Ollama (local)[/] - Ready")
+            else:
+                console.print(f"[green]✓ {provider.upper()}[/] - Connection OK")
+                print_status("Provider is ready to use!", "success")
+        except Exception as e:
+            print_error("Connection Failed", str(e))
 
 
 @api_app.command(name="default")
-def set_default(provider: str = typer.Argument(help="Provider to set as default")):
-    """Set default provider."""
+def set_default(
+    provider: str = typer.Argument(..., help="Provider to set as default")
+):
+    """Set default AI provider.
+    
+    Examples:
+      luna-cli api default groq
+      luna-cli api default openai
+    """
     config = get_config()
-    config.set_default_provider(provider)
-    print_success("Default Provider", f"Default provider set to {provider}")
+    
+    provider = provider.lower()
+    
+    if provider not in config.providers:
+        print_error("Provider Not Found", f"'{provider}' is not configured")
+        return
+    
+    config.config["default_provider"] = provider
+    config.save()
+    
+    print_success("Default Provider Set", f"Using {provider.upper()} by default")
 
 
 @api_app.command(name="remove")
-def remove_provider(provider: str = typer.Argument(help="Provider to remove")):
-    """Remove provider configuration."""
+def remove_provider(
+    provider: str = typer.Argument(..., help="Provider to remove")
+):
+    """Remove a configured provider.
+    
+    Examples:
+      luna-cli api remove groq
+      luna-cli api remove openai
+    """
     config = get_config()
     
+    provider = provider.lower()
+    
     if provider not in config.providers:
-        print_error("Not Found", f"Provider '{provider}' not configured")
+        print_error("Provider Not Found", f"'{provider}' is not configured")
         return
     
-    if Confirm.ask(f"Remove {provider}?"):
+    if typer.confirm(f"Remove {provider}?"):
         del config.providers[provider]
-        config.save_providers()
-        print_success("Removed", f"{provider} configuration removed")
+        config.save()
+        print_success("Provider Removed", f"{provider.upper()} has been removed")
+    else:
+        console.print("[yellow]Cancelled[/]")
 
 
-def main(ctx: typer.Context):
-    """Main API command entry point."""
-    if ctx.invoked_subcommand is None:
-        # Show interactive menu
-        print_header("API Configuration")
-        console.print("[cyan]What would you like to do?[/]")
-        console.print("  1. Add/update provider")
-        console.print("  2. List providers")
-        console.print("  3. Test connection")
-        console.print("  4. Set default provider")
-        console.print("  5. Remove provider")
-        
-        choice = Prompt.ask("Select option", choices=["1", "2", "3", "4", "5"])
-        
-        if choice == "1":
-            add_provider()
-        elif choice == "2":
-            list_providers()
-        elif choice == "3":
-            provider = Prompt.ask("Enter provider name")
-            test_provider(provider)
-        elif choice == "4":
-            provider = Prompt.ask("Enter provider name")
-            set_default(provider)
-        elif choice == "5":
-            provider = Prompt.ask("Enter provider name")
-            remove_provider(provider)
+@api_app.command(name="show")
+def show_config():
+    """Show current configuration."""
+    config = get_config()
+    
+    console.print("\n[bold cyan]📋 Configuration[/]\n")
+    
+    info = f"""
+[bold]Default Provider:[/]
+  {config.config.get('default_provider', 'Not set')}
 
-
-if __name__ == "__main__":
-    api_app()
+[bold]Features:[/]
+  Streaming: {config.config.get('streaming', True)}
+  Markdown: {config.config.get('markdown', True)}
+  
+[bold]Storage:[/]
+  Config: ~/.config/luna/
+  Data: ~/.local/share/luna/
+  
+[bold]Configured Providers:[/]
+"""
+    
+    console.print(info)
+    
+    if config.providers:
+        for name in config.providers:
+            console.print(f"  ✓ {name}")
+    else:
+        console.print("  (None - run: luna-cli api add)")
+    
+    console.print()

@@ -36,27 +36,61 @@ class GroqProvider(BaseProvider):
         """Send chat message and get response."""
         async with httpx.AsyncClient() as client:
             try:
+                formatted_messages = []
+                for m in messages:
+                    msg = {"role": m.role}
+                    if m.content is not None:
+                        msg["content"] = m.content
+                    if m.tool_calls:
+                        msg["tool_calls"] = [
+                            {
+                                "id": tc.id,
+                                "type": "function",
+                                "function": {"name": tc.name, "arguments": tc.arguments}
+                            } for tc in m.tool_calls
+                        ]
+                    if m.tool_call_id:
+                        msg["tool_call_id"] = m.tool_call_id
+                    if m.name:
+                        msg["name"] = m.name
+                    formatted_messages.append(msg)
+                
+                payload = {
+                    "model": kwargs.get("model", self.model),
+                    "messages": formatted_messages,
+                    "temperature": kwargs.get("temperature", 0.7),
+                    "max_tokens": kwargs.get("max_tokens", 2000),
+                }
+                
+                if "tools" in kwargs:
+                    payload["tools"] = kwargs["tools"]
+                    
                 response = await client.post(
                     f"{self.API_URL}/chat/completions",
                     headers={"Authorization": f"Bearer {self.api_key}"},
-                    json={
-                        "model": kwargs.get("model", self.model),
-                        "messages": [
-                            {"role": m.role, "content": m.content}
-                            for m in messages
-                        ],
-                        "temperature": kwargs.get("temperature", 0.7),
-                        "max_tokens": kwargs.get("max_tokens", 2000),
-                    },
-                    timeout=30.0
+                    json=payload,
+                    timeout=60.0
                 )
                 response.raise_for_status()
                 data = response.json()
                 
+                message_data = data["choices"][0]["message"]
+                from .base import ToolCall
+                tool_calls = None
+                if "tool_calls" in message_data:
+                    tool_calls = [
+                        ToolCall(
+                            id=tc["id"],
+                            name=tc["function"]["name"],
+                            arguments=tc["function"]["arguments"]
+                        ) for tc in message_data["tool_calls"]
+                    ]
+                
                 return ChatResponse(
-                    content=data["choices"][0]["message"]["content"],
+                    content=message_data.get("content"),
                     model=data["model"],
-                    stop_reason=data["choices"][0].get("finish_reason")
+                    stop_reason=data["choices"][0].get("finish_reason"),
+                    tool_calls=tool_calls
                 )
             except httpx.HTTPError as e:
                 raise Exception(f"Groq API error: {str(e)}")

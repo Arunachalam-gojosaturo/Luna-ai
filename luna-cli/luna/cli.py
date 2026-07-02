@@ -44,8 +44,9 @@ app.add_typer(models_app, name="models", help="Manage AI models")
 def main_callback(ctx: typer.Context):
     """Main entry point."""
     if ctx.invoked_subcommand is None:
-        # Show welcome screen
-        print_welcome()
+        # Start chat by default
+        from luna.commands.chat import start
+        start()
 
 
 @app.command(name="setup")

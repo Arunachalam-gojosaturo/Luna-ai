@@ -126,18 +126,15 @@ def start(
             print_status(f"Error: {str(e)}", "error")
 
 
+from luna.chat.agent import LunaAgent
+
 async def _send_message(chat_sys: ChatSystem, message: str):
-    """Send message and stream response."""
+    """Send message and handle response."""
     console.print()
     try:
-        # Stream response
-        response_text = ""
+        agent = LunaAgent(chat_sys)
         with console.status("[cyan]LUNA is thinking...[/]", spinner="dots"):
-            async for chunk in chat_sys.stream_chat(message):
-                response_text += chunk
-        
-        console.print(f"[magenta]LUNA:[/] {response_text}\n")
-    
+            await agent.chat(message)
     except Exception as e:
         print_status(f"Error: {str(e)}", "error")
 

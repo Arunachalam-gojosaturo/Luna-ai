@@ -8,18 +8,28 @@ from dataclasses import dataclass
 
 
 @dataclass
+class ToolCall:
+    """Tool call definition."""
+    id: str
+    name: str
+    arguments: str
+
+@dataclass
 class Message:
     """Message data class."""
-    role: str  # "user" or "assistant"
-    content: str
-
+    role: str  # "user", "assistant", "system", "tool"
+    content: Optional[str] = None
+    tool_calls: Optional[list[ToolCall]] = None
+    tool_call_id: Optional[str] = None
+    name: Optional[str] = None
 
 @dataclass
 class ChatResponse:
     """Chat response data class."""
-    content: str
-    model: str
+    content: Optional[str] = None
+    model: str = ""
     stop_reason: Optional[str] = None
+    tool_calls: Optional[list[ToolCall]] = None
 
 
 class BaseProvider(ABC):
