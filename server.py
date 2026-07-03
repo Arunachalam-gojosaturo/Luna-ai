@@ -131,16 +131,20 @@ class CommandRequest(BaseModel):
 @app.post("/api/luna/command")
 async def luna_command(req: CommandRequest):
     command = req.command
+    import platform
+    os_name = platform.system()
+    open_cmd = "start" if os_name == "Windows" else ("open" if os_name == "Darwin" else "xdg-open")
+
     system_prompt = f"""You are Luna, a highly intelligent, sophisticated personal AI Operating System (Version 3.0).
-You control an Arch Linux workstation.
+You control a {os_name} workstation.
 When the user enters an input, analyze their request and respond in the following structured JSON format:
 {{
   "state": "Idle" | "Listening" | "Thinking" | "Speaking" | "Executing" | "Warning",
   "speech": "Your response text to display and read out loud. Speak like a friendly personal assistant.",
-  "action": "APP_CONTROL" | "SYSTEM_MANAGEMENT" | "FILE_OPERATION" | "MONITORING" | "SYNC_DEVICE" | "RUN_TESTS" | "TRIGGER_BUILD" | "ADD_GOAL" | "TOGGLE_DEVICE" | "EXECUTE_SYSTEM_COMMAND" | "NONE",
-  "sysCommand": "The exact bash/shell command to execute. For URLs use 'xdg-open <url>'. If no command is needed, leave empty.",
+  "action": "APP_CONTROL" | "SYSTEM_MANAGEMENT" | "FILE_OPERATION" | "MONITORING" | "SYNC_DEVICE" | "RUN_TESTS" | "TRIGGER_BUILD" | "ADD_GOAL" | "TOGGLE_DEVICE" | "EXECUTE_SYSTEM_COMMAND" | "GIT_AUTOMATION" | "NONE",
+  "sysCommand": "The exact bash/shell command to execute. For URLs use '{open_cmd} <url>'. To play a song on YouTube, use '{open_cmd} \"https://music.youtube.com/search?q=SONG_NAME\"'. For GIT_AUTOMATION, use 'auto_commit' (to automatically diff and generate an AI commit) or 'auto_push', or normal git commands.",
   "requiresPrivilege": false,
-  "targetDevice": "Android" | "Arch Linux" | "Windows" | "NONE",
+  "targetDevice": "Android" | "Linux" | "Windows" | "NONE",
   "logs": ["Array of 4 to 6 lines of simulated highly technical logs"],
   "notifications": ["Array of short notifications"]
 }}
@@ -238,8 +242,15 @@ class ExecuteRequest(BaseModel):
     sysCommand: str
     category: str = "RAW_COMMAND"
 
+from backend.agents.git_agent import GitAgent
+
 @app.post("/api/luna/execute")
 async def luna_execute(req: ExecuteRequest):
+    if req.category == "GIT_AUTOMATION":
+        agent = GitAgent()
+        result = await agent.execute("", git_cmd=req.sysCommand)
+        return result
+
     result = await execute_system_command(req.sysCommand, req.category)
     return result
 

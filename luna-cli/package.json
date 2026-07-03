@@ -1,14 +1,20 @@
 {
-  "name": "luna-cli",
-  "version": "0.1.0",
+  "name": "@arunachalamarc017/luna-cli",
+  "version": "0.1.4",
   "description": "Luna CLI - Modern TUI in Ink",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
-    "luna-cli": "./dist/index.js"
+    "luna-cli": "dist/index.js"
   },
+  "files": [
+    "dist/index.js",
+    "README.md",
+    "ASCII.txt"
+  ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "start": "tsx src/index.tsx",
     "dev": "tsx watch src/index.tsx"
   },

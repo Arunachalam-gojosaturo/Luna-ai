@@ -18,3 +18,4 @@ webrtcvad
 beautifulsoup4
 markdownify
 chromadb
+pyaudio

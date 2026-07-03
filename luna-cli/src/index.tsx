@@ -61,6 +61,32 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const firebaseAuth = getAuth(firebaseApp);
 
+// --- System OS Detection ---
+const osPlatform = os.platform(); // 'win32', 'linux', 'darwin'
+const osType = os.type();
+const isWindows = osPlatform === 'win32';
+
+// --- System Prompt for Groq ---
+const SYSTEM_PROMPT = `You are Luna, an advanced, sassy, and highly intelligent AI coding assistant and system administrator.
+You are currently running on a ${osType} (${osPlatform}) system.
+
+If the user asks you to perform an action (like creating a file, reading a file, or running a command), you MUST output ONLY a valid JSON object.
+DO NOT use XML tags. DO NOT wrap the JSON in markdown code blocks. DO NOT output any conversational text if you are calling a tool.
+
+AVAILABLE TOOLS:
+1. execute_command
+   - Use this to run terminal commands (e.g. ${isWindows ? 'dir, PowerShell commands' : 'ls, mkdir, npm install'}).
+   - Format: {"action": "execute_command", "command": "your command here"}
+2. create_file
+   - Use this to create or overwrite files.
+   - Format: {"action": "create_file", "path": "filename.ext", "content": "file contents"}
+3. read_file
+   - Use this to read the contents of a file.
+   - Format: {"action": "read_file", "path": "filename.ext"}
+
+If the user is just chatting or asking a question, respond with normal conversational text.
+If the user wants you to do something, output ONLY the JSON object.`;
+
 // --- Google OAuth Constants ---
 const GOOGLE_CLIENT_ID = '632336775168-ic24se8v6' + 'sn88los803c0b95vcj5b9hi.apps.googleusercontent.com';
 const GOOGLE_CLIENT_SECRET = 'GOCSPX-6TM0' + 'bNqwRwmIn17QgSAyoE1UHE4K';
@@ -342,7 +368,7 @@ const App = () => {
       
       const sysPrompt = { 
         role: 'system', 
-        content: `You are Luna, a friendly, conversational AI Coding Assistant and personal friend running on Arch Linux.
+        content: `You are Luna, a friendly, conversational AI Coding Assistant and personal friend running on ${osType} (${osPlatform}).
         
 IMPORTANT RULES:
 1. Act like a helpful personal assistant and friend. Be conversational.
@@ -350,7 +376,11 @@ IMPORTANT RULES:
 3. If the user just says "hi", greets you, or asks a general question, just reply conversationally without using any tools.
 4. CRITICAL: When executing commands, ALWAYS use non-interactive flags (e.g., --noconfirm).
 5. You can use 'create_file' to write code to a file, and 'read_file' to read code. Use these to build apps.
-6. TOOL CALLING FORMAT: When calling a function/tool, rely strictly on the native API JSON format. NEVER output <function=...> XML tags in your text response.`
+6. TOOL CALLING FORMAT: When calling a function/tool, rely strictly on the native API JSON format. NEVER output <function=...> XML tags in your text response.
+7. PLAYING SONGS / YOUTUBE: If the user asks you to play a song, use the execute_command tool to open the default web browser to a YouTube search!
+   - On Windows: start "https://music.youtube.com/search?q=SONG+NAME"
+   - On Linux: xdg-open "https://music.youtube.com/search?q=SONG+NAME"
+   - On macOS: open "https://music.youtube.com/search?q=SONG+NAME"`
       };
 
       const chatCompletion = await groq.chat.completions.create({

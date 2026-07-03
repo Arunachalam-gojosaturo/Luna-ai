@@ -1,6 +1,6 @@
-import os
 import chromadb
 from typing import List, Dict, Any
+from backend.config.paths import get_chroma_db_path
 
 class LongTermMemory:
     """
@@ -8,7 +8,7 @@ class LongTermMemory:
     """
     def __init__(self):
         # Local persistent ChromaDB instance
-        self.db_path = os.path.join(os.getcwd(), "luna_chroma_db")
+        self.db_path = str(get_chroma_db_path())
         try:
             self.client = chromadb.PersistentClient(path=self.db_path)
             self.collection = self.client.get_or_create_collection(name="conversations")
@@ -21,6 +21,7 @@ class LongTermMemory:
         if not self.collection: return
         
         # In a real app, generate proper IDs
+        import os
         doc_id = f"{session_id}_{os.urandom(4).hex()}"
         
         try:

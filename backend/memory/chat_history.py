@@ -1,10 +1,10 @@
 import sqlite3
-import os
 import datetime
+from backend.config.paths import get_database_path
 
 class ChatHistory:
     def __init__(self):
-        self.db_path = os.path.join(os.getcwd(), "luna_chat.db")
+        self.db_path = str(get_database_path())
         self._init_db()
 
     def _init_db(self):

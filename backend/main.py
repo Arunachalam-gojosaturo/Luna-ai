@@ -12,9 +12,16 @@ load_dotenv()
 
 app = FastAPI(title="LUNA OS X - AI Core")
 
+from backend.core.voice_agent import voice_agent
+
 @app.on_event("startup")
 async def startup_event():
     context_engine.start()
+    # Try to start voice agent natively for mic fallback
+    try:
+        voice_agent.start_background_listening()
+    except Exception as e:
+        print(f"Failed to start native mic: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():

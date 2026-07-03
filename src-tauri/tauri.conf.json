@@ -1,11 +1,11 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "luna-os",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "identifier": "com.luna.os",
   "build": {
     "frontendDist": "../dist",
-    "devUrl": "http://localhost:3000",
+    "devUrl": "http://localhost:5173",
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build"
   },
@@ -24,8 +24,8 @@
     }
   },
   "bundle": {
-    "active": true,
-    "targets": "all",
+    "active": false,
+    "targets": [],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

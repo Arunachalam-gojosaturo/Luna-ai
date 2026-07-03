@@ -9,6 +9,7 @@ interface DeveloperWorkspaceProps {
   onTriggerBuild: (repoName: string) => void;
   onRunTerminalCommand: (command: string) => void;
   onGenerateCode: (prompt: string, repoName: string) => void;
+  onAddRepo?: (repo: GitHubRepo) => void;
   isGeneratingCode: boolean;
   isLight?: boolean;
 }
@@ -19,6 +20,7 @@ export default function DeveloperWorkspace({
   onTriggerBuild,
   onRunTerminalCommand,
   onGenerateCode,
+  onAddRepo,
   isGeneratingCode,
   isLight = false
 }: DeveloperWorkspaceProps) {
@@ -85,9 +87,37 @@ export default function DeveloperWorkspace({
             <FolderGit className="w-4 h-4 text-cyan-500" />
             Active Repositories
           </h2>
-          <span className={`text-[10px] font-mono px-2 py-0.5 border rounded-full ${isLight ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-slate-900 border-slate-800 text-slate-400'}`}>
-            GITHUB SOURCE
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] font-mono px-2 py-0.5 border rounded-full ${isLight ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-slate-900 border-slate-800 text-slate-400'}`}>
+              GITHUB SOURCE
+            </span>
+            <label className={`cursor-pointer text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all ${isLight ? 'bg-cyan-50 border-cyan-200 text-cyan-600 hover:bg-cyan-100' : 'bg-cyan-900/40 border-cyan-800 text-cyan-400 hover:bg-cyan-900/60'}`}>
+              + ADD PROJECT
+              <input 
+                type="file" 
+                // @ts-ignore
+                webkitdirectory="true" 
+                directory="true"
+                className="hidden" 
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (files && files.length > 0 && onAddRepo) {
+                    const path = files[0].webkitRelativePath;
+                    const folderName = path.split('/')[0] || "New Project";
+                    onAddRepo({
+                      name: folderName,
+                      description: `Local project loaded from ${folderName}`,
+                      branch: "main",
+                      stars: 0,
+                      languages: ["Unknown"],
+                      buildStatus: "none",
+                      lastCommit: "init"
+                    });
+                  }
+                }} 
+              />
+            </label>
+          </div>
         </div>
 
         <div className="space-y-2 flex-1 overflow-y-auto pr-1">

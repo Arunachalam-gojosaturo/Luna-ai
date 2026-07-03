@@ -6,16 +6,18 @@ interface SettingsPanelProps {
   ttsSettings: TTSSettings;
   setTtsSettings: (settings: TTSSettings) => void;
   isLight: boolean;
+  customBg?: string;
+  setCustomBg?: (bg: string) => void;
 }
 
-export const SettingsPanel: React.FC<SettingsPanelProps> = ({ ttsSettings, setTtsSettings, isLight }) => {
+export const SettingsPanel: React.FC<SettingsPanelProps> = ({ ttsSettings, setTtsSettings, isLight, customBg, setCustomBg }) => {
   const [testPlaying, setTestPlaying] = React.useState(false);
 
   const handleTestVoice = async () => {
     if (testPlaying) return;
     setTestPlaying(true);
     try {
-      const res = await fetch('/api/tts', {
+      const res = await fetch('http://localhost:3000/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -117,10 +119,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ ttsSettings, setTt
                   onChange={(e) => setTtsSettings({ ...ttsSettings, voiceId: e.target.value })}
                   className={`text-sm p-2.5 rounded-lg border focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all ${inputClass}`}
                 >
-                  <option value="en-US-AriaNeural">Aria (Female - US)</option>
-                  <option value="en-US-GuyNeural">Guy (Male - US)</option>
-                  <option value="en-GB-SoniaNeural">Sonia (Female - UK)</option>
-                  <option value="en-GB-RyanNeural">Ryan (Male - UK)</option>
+                  <option value="en-US-AriaNeural" className={isLight ? "bg-white text-slate-900" : "bg-slate-900 text-slate-100"}>Aria (Female - US)</option>
+                  <option value="en-US-GuyNeural" className={isLight ? "bg-white text-slate-900" : "bg-slate-900 text-slate-100"}>Guy (Male - US)</option>
+                  <option value="en-GB-SoniaNeural" className={isLight ? "bg-white text-slate-900" : "bg-slate-900 text-slate-100"}>Sonia (Female - UK)</option>
+                  <option value="en-GB-RyanNeural" className={isLight ? "bg-white text-slate-900" : "bg-slate-900 text-slate-100"}>Ryan (Male - UK)</option>
                 </select>
               </div>
             </>
@@ -162,6 +164,63 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ ttsSettings, setTt
               <p className={`text-[10px] mt-1 ${isLight ? "text-emerald-600/80" : "text-emerald-400/70"}`}>Voice commands can directly control your Arch Linux host OS securely.</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* UI CUSTOMIZATION */}
+      <div className={`p-5 rounded-2xl border flex flex-col gap-5 ${bgClass} ${borderClass}`}>
+        <div className="flex items-center gap-2 mb-1">
+          <Settings2 className="w-4 h-4 text-purple-400" />
+          <h3 className={`text-sm font-bold tracking-widest uppercase ${textClass}`}>UI Customization</h3>
+        </div>
+        <div className="flex flex-col gap-2">
+          <label className={`text-xs font-semibold ${subTextClass}`}>Background Image</label>
+          <div className="flex items-center gap-4">
+            <input 
+              type="file" 
+              accept="image/*"
+              id="bg-upload"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && setCustomBg) {
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    const dataUrl = event.target?.result as string;
+                    setCustomBg(dataUrl);
+                    localStorage.setItem('customBg', dataUrl);
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+            />
+            <label 
+              htmlFor="bg-upload"
+              className={`px-4 py-2 rounded-lg border cursor-pointer text-xs font-semibold transition-all ${
+                isLight 
+                  ? "bg-white border-slate-300 hover:bg-slate-50 text-slate-700" 
+                  : "bg-slate-900 border-slate-700 hover:bg-slate-800 text-slate-200"
+              }`}
+            >
+              Choose Image...
+            </label>
+            <span className={`text-[10px] ${subTextClass}`}>
+              (Max 5MB recommended)
+            </span>
+          </div>
+          {customBg && customBg !== '/background.png' && (
+            <button 
+              onClick={() => {
+                if (setCustomBg) {
+                  setCustomBg('/background.png');
+                  localStorage.removeItem('customBg');
+                }
+              }}
+              className="text-[10px] text-rose-500 hover:text-rose-400 w-max mt-1"
+            >
+              Reset to Default Background
+            </button>
+          )}
         </div>
       </div>
     </div>

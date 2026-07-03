@@ -31,12 +31,21 @@ async def generate_tts(req) -> bytes:
             rate_str = f"+{int((req.speed - 1)*100)}%" if req.speed > 1 else f"{int((req.speed - 1)*100)}%" if req.speed != 1.0 else "+0%"
             pitch_str = f"+{int((req.pitch - 1)*50)}Hz" if req.pitch > 1 else f"{int((req.pitch - 1)*50)}Hz" if req.pitch != 1.0 else "+0Hz"
             
-            try:
-                communicate = edge_tts.Communicate(req.text, voice, rate=rate_str, pitch=pitch_str)
-            except ValueError:
-                voice = "en-US-AriaNeural"
-                communicate = edge_tts.Communicate(req.text, voice, rate=rate_str, pitch=pitch_str)
-            await communicate.save(tmp_file)
+            import asyncio
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    try:
+                        communicate = edge_tts.Communicate(req.text, voice, rate=rate_str, pitch=pitch_str)
+                    except ValueError:
+                        voice = "en-US-AriaNeural"
+                        communicate = edge_tts.Communicate(req.text, voice, rate=rate_str, pitch=pitch_str)
+                    await communicate.save(tmp_file)
+                    break
+                except Exception as e:
+                    if attempt == max_retries - 1:
+                        raise e
+                    await asyncio.sleep(1)
             
             with open(tmp_file, "rb") as f:
                 audio_data = f.read()

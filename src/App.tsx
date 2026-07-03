@@ -47,7 +47,7 @@ export default function App() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   // System Agent Security
-  const [pendingCommand, setPendingCommand] = useState<{ command: string, requiresPrivilege: boolean } | null>(null);
+  const [pendingCommand, setPendingCommand] = useState<{ command: string, requiresPrivilege: boolean, category?: string } | null>(null);
 
   // System Settings Config
   const [settingsConfig, setSettingsConfig] = useState(() => {
@@ -80,6 +80,10 @@ export default function App() {
       pitch: 1,
       elevenLabsApiKey: localStorage.getItem("elevenLabsKey") || ""
     };
+  });
+
+  const [customBg, setCustomBg] = useState<string>(() => {
+    return localStorage.getItem("customBg") || "/background.png";
   });
 
   // System Metrics
@@ -280,6 +284,13 @@ export default function App() {
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: "provide_confirmation", payload: { task_id, confirmed } }));
           }
+        } else if (data.type === "WAKE_WORD_DETECTED") {
+          setCoreState("Listening");
+          setTranscript("Listening (Native Background Mode)...");
+        } else if (data.type === "VOICE_COMMAND") {
+          const text = data.payload.text;
+          setTranscript(text);
+          handleCommand(text);
         } else if (data.type === "task_update") {
           const task = data.payload;
           
@@ -342,7 +353,7 @@ export default function App() {
 
   // Check backend server status
   useEffect(() => {
-    fetch("/api/health")
+    fetch("http://localhost:3000/api/health")
       .then(res => res.json())
       .then(data => {
         setApiHealth({ enabled: data.geminiEnabled, checked: true });
@@ -413,7 +424,14 @@ export default function App() {
     setCoreState("Speaking");
 
     try {
-      const res = await fetch('/api/tts', {
+      // Suspend native microphone while speaking
+      fetch('http://localhost:3000/api/tts/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ speaking: true })
+      }).catch(() => {});
+
+      const res = await fetch('http://localhost:3000/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -433,6 +451,12 @@ export default function App() {
         audio.onended = () => {
           setCoreState("Idle");
           URL.revokeObjectURL(url);
+          // Resume native microphone
+          fetch('http://localhost:3000/api/tts/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ speaking: false })
+          }).catch(() => {});
         };
         await audio.play();
       } else {
@@ -442,6 +466,12 @@ export default function App() {
       console.error("Falling back to local browser TTS due to error:", e);
       if (!('speechSynthesis' in window)) {
         setCoreState("Idle");
+        // Resume native microphone
+        fetch('http://localhost:3000/api/tts/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ speaking: false })
+        }).catch(() => {});
         return;
       }
       window.speechSynthesis.cancel();
@@ -454,9 +484,27 @@ export default function App() {
       if (preferredVoice) {
         utterance.voice = preferredVoice;
       }
+      
+      utterance.onend = () => {
+        setCoreState("Idle");
+        // Resume native microphone
+        fetch('http://localhost:3000/api/tts/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ speaking: false })
+        }).catch(() => {});
+      };
+      
+      utterance.onerror = () => {
+        setCoreState("Idle");
+        // Resume native microphone
+        fetch('http://localhost:3000/api/tts/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ speaking: false })
+        }).catch(() => {});
+      };
 
-      utterance.onstart = () => setCoreState("Speaking");
-      utterance.onend = () => setCoreState("Idle");
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -503,7 +551,7 @@ export default function App() {
     ]);
 
     try {
-      const response = await fetch("/api/luna/command", {
+      const response = await fetch("http://localhost:3000/api/luna/command", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -591,14 +639,15 @@ export default function App() {
       case "SYSTEM_MANAGEMENT":
       case "FILE_OPERATION":
       case "EXECUTE_SYSTEM_COMMAND":
+      case "GIT_AUTOMATION":
         if (sysCommand) {
           if (requiresPrivilege) {
-            setPendingCommand({ command: sysCommand, requiresPrivilege });
+            setPendingCommand({ command: sysCommand, requiresPrivilege, category: action });
             setCoreState("Warning");
             setSpeechText("I need your permission to run this system command. Could you please authorize it?");
             speakText("I need your permission to run this system command. Could you please authorize it?");
           } else {
-            executeSystemCommand(sysCommand, false);
+            executeSystemCommand(sysCommand, false, action);
           }
         }
         break;
@@ -665,15 +714,15 @@ export default function App() {
     }
   };
 
-  const executeSystemCommand = async (cmd: string, requiresPrivilege: boolean) => {
+  const executeSystemCommand = async (cmd: string, requiresPrivilege: boolean, category: string = "RAW_COMMAND") => {
     try {
       const finalCommand = requiresPrivilege ? `pkexec ${cmd}` : cmd;
       pushTerminalLog(`[OS EXECUTE] ${finalCommand}`, 'system');
       
-      const res = await fetch("/api/luna/execute", {
+      const res = await fetch("http://localhost:3000/api/luna/execute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sysCommand: finalCommand })
+        body: JSON.stringify({ sysCommand: finalCommand, category })
       });
       const data = await res.json();
       
@@ -704,7 +753,10 @@ export default function App() {
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(err => {
+        console.error("Microphone access error details:", err);
+        throw err;
+      });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       const audioChunks: Blob[] = [];
@@ -722,7 +774,7 @@ export default function App() {
 
         try {
           setTranscript("Transcribing audio...");
-          const response = await fetch("/api/stt", {
+          const response = await fetch("http://localhost:3000/api/stt", {
             method: "POST",
             body: formData,
           });
@@ -754,7 +806,12 @@ export default function App() {
 
     } catch (error) {
       console.error("Error accessing mic:", error);
-      pushTerminalLog("Cannot access microphone.", "error");
+      if (window.__TAURI__) {
+        pushTerminalLog("Native Voice Agent is active in background. Just say 'Luna wake up'!", "success");
+        setTranscript("Say 'Luna wake up' to start!");
+      } else {
+        pushTerminalLog("Cannot access microphone.", "error");
+      }
     }
   };
 
@@ -940,11 +997,14 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans relative overflow-x-hidden select-none transition-all duration-500 bg-cover bg-center bg-fixed bg-[url('/background.png')] ${
-      isLight 
-        ? "text-slate-900" 
-        : "text-slate-100"
-    }`}>
+    <div 
+      className={`min-h-screen flex flex-col font-sans relative overflow-x-hidden select-none transition-all duration-500 bg-cover bg-center bg-fixed ${
+        isLight 
+          ? "text-slate-900" 
+          : "text-slate-100"
+      }`}
+      style={{ backgroundImage: `url('${customBg}')` }}
+    >
       
       {/* Background overlays for readability */}
       <div className={`absolute inset-0 z-0 pointer-events-none transition-all duration-500 ${
@@ -1564,8 +1624,9 @@ export default function App() {
                 repos={repos}
                 terminalLogs={terminalLogs}
                 onTriggerBuild={handleTriggerBuild}
-                onRunTerminalCommand={handleRunTerminalCommand}
+                onRunTerminalCommand={(cmd) => executeSystemCommand(cmd, false)}
                 onGenerateCode={handleGenerateCode}
+                onAddRepo={(repo) => setRepos(prev => [...prev, repo])}
                 isGeneratingCode={isGeneratingCode}
                 isLight={isLight}
               />
@@ -1923,9 +1984,9 @@ export default function App() {
                         : "bg-slate-900 border-slate-800 text-slate-300"
                     }`}
                   >
-                    <option value="groq">Groq (Ultra-Fast)</option>
-                    <option value="gemini">Gemini (Default)</option>
-                    <option value="openai">OpenAI (GPT-4)</option>
+                    <option value="groq" className={isLight ? "bg-white text-slate-900" : "bg-slate-900 text-slate-100"}>Groq (Ultra-Fast)</option>
+                    <option value="gemini" className={isLight ? "bg-white text-slate-900" : "bg-slate-900 text-slate-100"}>Gemini (Default)</option>
+                    <option value="openai" className={isLight ? "bg-white text-slate-900" : "bg-slate-900 text-slate-100"}>OpenAI (GPT-4)</option>
                   </select>
                 </div>
 
@@ -1934,6 +1995,8 @@ export default function App() {
                     ttsSettings={ttsSettings} 
                     setTtsSettings={setTtsSettings} 
                     isLight={isLight} 
+                    customBg={customBg}
+                    setCustomBg={setCustomBg}
                   />
                 </div>
 
@@ -2153,9 +2216,10 @@ export default function App() {
                     onClick={() => {
                       const cmd = pendingCommand.command;
                       const priv = pendingCommand.requiresPrivilege;
+                      const cat = pendingCommand.category || "RAW_COMMAND";
                       setPendingCommand(null);
                       setCoreState("Executing");
-                      executeSystemCommand(cmd, priv);
+                      executeSystemCommand(cmd, priv, cat);
                     }}
                     className="flex-1 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all bg-red-500 hover:bg-red-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.3)]"
                   >

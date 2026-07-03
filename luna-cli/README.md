@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="luna-banner.png" alt="Luna Banner" width="100%" />
+  <img src="https://raw.githubusercontent.com/Arunachalam-gojosaturo/Luna-cli/main/luna-cli.jpg" alt="Luna Banner" width="100%" />
   <h1>🌙 Luna CLI</h1>
   <p><strong>Your Personal AI Coding Assistant & Friend right in your Terminal.</strong></p>
   <p>
@@ -64,7 +64,7 @@ Luna-cli/
 ├── package.json           # Defines dependencies (Ink, Firebase, Groq, Express) and scripts.
 ├── tsconfig.json          # TypeScript compiler configuration.
 ├── ASCII.txt              # The beautiful ASCII art logo displayed on startup.
-├── luna-banner.png        # The cyberpunk banner image used in this README.
+├── luna-cli.jpg           # The beautiful banner image used in this README.
 └── README.md              # You are reading this right now!
 ```
 

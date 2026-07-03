@@ -15,7 +15,8 @@ class LinuxAgent(BaseAgent):
             "find", "grep", "git", "pip", "npm", "python", "node", "curl", "wget",
             "systemctl", "sudo", "pacman", "apt", "yum", "docker", "docker-compose",
             "tmux", "screen", "less", "more", "head", "tail", "wc", "chmod", "chown",
-            "ps", "kill", "df", "du", "free", "top", "htop", "uname", "whoami"
+            "ps", "kill", "df", "du", "free", "top", "htop", "uname", "whoami", "xdg-open", "open", "playerctl",
+            "hyprctl", "wpctl", "ydotool", "wtype", "yay", "paru"
         ]
         
     def append_audit_log(self, command: str, intent: str, sys_command: str, privilege: bool):

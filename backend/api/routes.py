@@ -73,3 +73,12 @@ async def tts(req: TTSRequest):
 async def stt(audio: UploadFile = File(...)):
     text = await transcribe_audio(audio)
     return {"transcript": text}
+
+class TTSStatusRequest(BaseModel):
+    speaking: bool
+
+@router.post("/tts/status")
+async def set_tts_status(req: TTSStatusRequest):
+    from backend.core.voice_agent import voice_agent
+    voice_agent.set_speaking(req.speaking)
+    return {"status": "ok"}
