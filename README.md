@@ -1,6 +1,8 @@
 <div align="center">
-  <img src="src-tauri/icons/128x128.png" alt="Luna OS Logo" width="128" />
-  <h1>Luna AI (Luna OS)</h1>
+  <img src="assets/luna-ai.png" alt="Luna OS Header" width="100%" />
+  <br/>
+  <br/>
+  <img src="assets/luna-logo.png" alt="Luna OS Logo" width="128" />
   <p><strong>A Next-Generation Voice-Activated Desktop AI Assistant for Linux</strong></p>
   
   [![Tauri](https://img.shields.io/badge/Built_with-Tauri-blue?logo=tauri)](https://tauri.app/)
