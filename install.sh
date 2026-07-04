@@ -43,9 +43,9 @@ if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
     fi
 fi
 
-# Install audio libraries for voice features
-echo "📦 Checking audio libraries..."
-AUDIO_LIBS=("portaudio" "libffi" "base-devel")
+# Install audio & portal libraries for voice features
+echo "📦 Checking audio & portal libraries..."
+AUDIO_LIBS=("portaudio" "libffi" "base-devel" "pipewire" "pipewire-pulse" "wireplumber" "xdg-desktop-portal" "xdg-desktop-portal-wlr")
 
 MISSING_AUDIO=()
 for lib in "${AUDIO_LIBS[@]}"; do
@@ -53,13 +53,32 @@ for lib in "${AUDIO_LIBS[@]}"; do
 done
 
 if [ ${#MISSING_AUDIO[@]} -gt 0 ]; then
-    echo "⚠️  Missing audio libraries: ${MISSING_AUDIO[*]}"
+    echo "⚠️  Missing audio/portal packages: ${MISSING_AUDIO[*]}"
     if [[ $EUID -eq 0 ]]; then
         echo "Installing with pacman..."
         pacman -Sy --needed "${MISSING_AUDIO[@]}"
     else
         echo "Install with: sudo pacman -S ${MISSING_AUDIO[*]}"
     fi
+fi
+
+# Ensure user is in audio group (necessary for microphone access)
+if [[ $EUID -ne 0 ]]; then
+    if ! id -nG "$USER" | grep -qw audio; then
+        echo "⚠️  Current user is not in 'audio' group. Adding via sudo..."
+        echo "Run: sudo usermod -aG audio $USER"
+    fi
+else
+    echo "Note: running as root — ensure non-root user is in 'audio' group for desktop sessions."
+fi
+
+# Restart user services to apply portal/pipewire
+echo "🔁 Restarting user services (pipewire & xdg-desktop-portal)..."
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl --user restart pipewire || true
+    systemctl --user restart wireplumber || true
+    systemctl --user restart xdg-desktop-portal || true
+    systemctl --user restart xdg-desktop-portal-wlr || true
 fi
 
 # Create installation directory
