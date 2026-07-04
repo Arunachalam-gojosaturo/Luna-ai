@@ -5,7 +5,7 @@ A production-grade AI coding assistant CLI with support for multiple AI provider
 streaming responses, code analysis, project management, and terminal integration.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.1"
 __author__ = "Arunachalam"
 __email__ = "arunachalam.gojosaturo@gmail.com"
 

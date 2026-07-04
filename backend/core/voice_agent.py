@@ -6,7 +6,12 @@ from backend.core.task_manager import ws_manager
 class VoiceAgent:
     def __init__(self):
         self.recognizer = sr.Recognizer()
-        self.microphone = sr.Microphone()
+        try:
+            self.microphone = sr.Microphone()
+        except Exception as e:
+            print(f"[Voice] Warning: Could not initialize microphone globally: {e}")
+            self.microphone = None
+            
         self.is_listening = False
         self.stop_listening_func = None
         self.main_loop = None
@@ -24,7 +29,8 @@ class VoiceAgent:
             print("[Voice] Resumed mic")
 
     def start_background_listening(self):
-        if self.is_listening: return
+        if self.is_listening or not self.microphone: 
+            return
         self.is_listening = True
         
         self.main_loop = asyncio.get_running_loop()
@@ -71,12 +77,6 @@ class VoiceAgent:
                             self.main_loop
                         )
                         self.is_awake = False
-                    else:
-                        # Send wake word itself so Luna can verbally respond "I'm listening"
-                        asyncio.run_coroutine_threadsafe(
-                            ws_manager.broadcast("VOICE_COMMAND", {"text": "luna wake up"}),
-                            self.main_loop
-                        )
                 elif self.is_awake:
                     # Send as command and go back to sleep
                     asyncio.run_coroutine_threadsafe(

@@ -45,8 +45,8 @@ def main_callback(ctx: typer.Context):
     """Main entry point."""
     if ctx.invoked_subcommand is None:
         # Start chat by default
-        from luna.commands.chat import start
-        start()
+        from luna.commands.chat import _start_chat
+        _start_chat()
 
 
 @app.command(name="setup")
@@ -68,8 +68,8 @@ def version():
 @app.command()
 def new():
     """Start new chat session."""
-    from luna.commands.chat import start
-    start()
+    from luna.commands.chat import _start_chat
+    _start_chat()
 
 
 @app.command(name="config")

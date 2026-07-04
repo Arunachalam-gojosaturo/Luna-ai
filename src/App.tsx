@@ -45,6 +45,7 @@ export default function App() {
   const [showUserModal, setShowUserModal] = useState<boolean>(false);
   const [userDetails, setUserDetails] = useState({ name: 'Boss', role: 'Luna Prime' });
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const isListeningRef = useRef<boolean>(false);
 
   // System Agent Security
   const [pendingCommand, setPendingCommand] = useState<{ command: string, requiresPrivilege: boolean, category?: string } | null>(null);
@@ -287,6 +288,7 @@ export default function App() {
         } else if (data.type === "WAKE_WORD_DETECTED") {
           setCoreState("Listening");
           setTranscript("Listening (Native Background Mode)...");
+          window.dispatchEvent(new CustomEvent('trigger-luna-listen'));
         } else if (data.type === "VOICE_COMMAND") {
           const text = data.payload.text;
           setTranscript(text);
@@ -431,6 +433,32 @@ export default function App() {
         body: JSON.stringify({ speaking: true })
       }).catch(() => {});
 
+      const isTauri = typeof window !== 'undefined' && ((window as any).__TAURI_INTERNALS__ !== undefined || (window as any).__TAURI__ !== undefined);
+
+      if (isTauri) {
+        const res = await fetch('http://localhost:3000/api/tts/play_local', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text,
+            provider: ttsSettings.provider,
+            voiceId: ttsSettings.voiceId,
+            elevenLabsApiKey: ttsSettings.elevenLabsApiKey,
+            speed: ttsSettings.speed,
+            pitch: ttsSettings.pitch
+          })
+        });
+        if (res.ok) {
+          setCoreState("Idle");
+          fetch('http://localhost:3000/api/tts/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ speaking: false })
+          }).catch(() => {});
+          return;
+        }
+      }
+
       const res = await fetch('http://localhost:3000/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -534,6 +562,11 @@ export default function App() {
   const handleCommand = async (commandText: string) => {
     if (!commandText.trim()) return;
 
+    if (commandText.toLowerCase().trim() === "luna wake up") {
+      window.dispatchEvent(new CustomEvent('trigger-luna-listen'));
+      return;
+    }
+
     setTranscript(commandText);
     setCoreState("Thinking");
     setIsThinking(true);
@@ -599,7 +632,7 @@ export default function App() {
       }
 
       // Voice response speaking
-      speakText(data.speech);
+      await speakText(data.speech);
 
       // Trigger structural side effects based on system response actions
       if (data.action) {
@@ -747,16 +780,18 @@ export default function App() {
       if (mediaRecorderRef.current) {
         mediaRecorderRef.current.stop();
       }
+      isListeningRef.current = false;
       setIsListening(false);
       setCoreState("Idle");
       return;
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(err => {
-        console.error("Microphone access error details:", err);
-        throw err;
-      });
+      const isTauri = typeof window !== 'undefined' && ((window as any).__TAURI_INTERNALS__ !== undefined || (window as any).__TAURI__ !== undefined);
+      if (isTauri || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("getUserMedia not supported (Tauri Linux issue)");
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       const audioChunks: Blob[] = [];
@@ -788,15 +823,18 @@ export default function App() {
         } catch (error) {
           console.error("Transcription error:", error);
           setTranscript("Error reaching server.");
+        } finally {
+          // Release the microphone
+          stream.getTracks().forEach(track => track.stop());
         }
       };
 
       mediaRecorder.start();
-      setCoreState("Listening");
       setIsListening(true);
-      setTranscript("");
+      setCoreState("Listening");
+      setTranscript("Listening...");
       pushTerminalLog("Recording audio...", "info");
-      
+
       setTimeout(() => {
         if (mediaRecorder.state === "recording") {
           mediaRecorder.stop();
@@ -804,14 +842,80 @@ export default function App() {
         }
       }, 7000);
 
-    } catch (error) {
-      console.error("Error accessing mic:", error);
-      if (window.__TAURI__) {
-        pushTerminalLog("Native Voice Agent is active in background. Just say 'Luna wake up'!", "success");
-        setTranscript("Say 'Luna wake up' to start!");
-      } else {
-        pushTerminalLog("Cannot access microphone.", "error");
+    } catch (err) {
+      const errorMsg = String(err).toLowerCase();
+      console.warn("Microphone access failed. Falling back to native backend STT.", err);
+      
+      if (errorMsg.includes("permission") || errorMsg.includes("denied")) {
+        pushTerminalLog("⚠️ Browser microphone permission denied (Tauri Linux issue). Attempting native OS fallback.", "warning");
       }
+      
+      pushTerminalLog("Using Native OS Background STT.", "warning");
+      // Fallback for Tauri Linux (WebKitGTK blocks WebRTC)
+      setIsListening(true);
+      isListeningRef.current = true;
+      setCoreState("Listening");
+      setTranscript("Native STT Listening...");
+      
+      const runContinuousSTT = async () => {
+        while (isListeningRef.current) {
+          try {
+            const response = await fetch("http://localhost:3000/api/stt/record_local", {
+              method: "POST"
+            });
+            
+            if (!isListeningRef.current) break; // User stopped manually
+
+            if (response.ok) {
+              const data = await response.json();
+              setTranscript(data.transcript);
+              
+              const text = (data.transcript || "").toLowerCase().trim();
+              if (text === "stop listening luna" || text === "stop listening" || text === "luna stop listening") {
+                isListeningRef.current = false;
+                setIsListening(false);
+                setCoreState("Idle");
+                speakText("I've stopped listening, Boss.");
+                break;
+              }
+              
+              if (data.transcript && data.transcript.includes("permission")) {
+                setSpeechText("Microphone permission denied. Please run: sudo usermod -aG audio $(whoami)");
+                setCoreState("Error");
+                pushTerminalLog("❌ Backend: Microphone permission denied", "error");
+                isListeningRef.current = false;
+                break;
+              } else if (data.transcript && !data.transcript.includes("Error") && !data.transcript.includes("Could not understand")) {
+                 await handleCommand(data.transcript);
+                 // We will let it loop around and try listening again while the command processes.
+                 // The backend uses voice_agent.set_speaking(True) so it will safely suspend listening when it speaks.
+              }
+            } else {
+              setTranscript("Native STT returned error.");
+              isListeningRef.current = false;
+              break;
+            }
+          } catch (fallbackErr) {
+            const fallbackMsg = String(fallbackErr).toLowerCase();
+            if (fallbackMsg.includes("permission")) {
+              pushTerminalLog("❌ Backend cannot access microphone - Permission denied", "error");
+              setTranscript("Permission Denied: Run: sudo usermod -aG audio $(whoami) && newgrp audio");
+              setSpeechText("I cannot access your microphone. Please grant audio permissions and try again.");
+            } else {
+              pushTerminalLog("❌ Native STT fallback error: " + String(fallbackErr), "error");
+              setTranscript("Could not reach backend for Native STT.");
+            }
+            setCoreState("Error");
+            isListeningRef.current = false;
+            break;
+          }
+          await new Promise(r => setTimeout(r, 100)); // small debounce to prevent infinite spin if backend crashes instantly
+        }
+        setIsListening(false);
+        if (coreState === "Listening") setCoreState("Idle");
+      };
+
+      runContinuousSTT();
     }
   };
 
@@ -984,6 +1088,16 @@ export default function App() {
     pushActivity(`Terminated remote process: ${task}`, 'device');
     pushTerminalLog(`[TERMINATED] Cleanly exited process "${task}" on device node ${deviceId}`, 'warning');
   };
+
+  useEffect(() => {
+    const handleTriggerListen = () => {
+      if (!isListening) {
+        startListening();
+      }
+    };
+    window.addEventListener('trigger-luna-listen', handleTriggerListen);
+    return () => window.removeEventListener('trigger-luna-listen', handleTriggerListen);
+  }, [isListening]);
 
   const isLight = themeMode === 'light-glass';
 

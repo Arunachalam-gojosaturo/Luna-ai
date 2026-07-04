@@ -45,14 +45,14 @@ def get_provider_instance():
         raise typer.Exit(1)
 
 
-@chat_app.command()
-def start(
-    message: Optional[str] = typer.Argument(None, help="Initial message"),
-    provider: Optional[str] = typer.Option(None, "-p", "--provider", help="AI provider"),
-    model: Optional[str] = typer.Option(None, "-m", "--model", help="AI model"),
-    session_id: Optional[str] = typer.Option(None, "-s", "--session", help="Load session ID"),
-):
-    """Start interactive chat session."""
+def _start_chat(message: Optional[str] = None, provider: Optional[str] = None, model: Optional[str] = None, session_id: Optional[str] = None):
+    """Internal helper to start chat session."""
+    # Resolve OptionInfo/ArgumentInfo if passed mistakenly
+    if isinstance(message, (typer.models.OptionInfo, typer.models.ArgumentInfo)): message = message.default
+    if isinstance(provider, (typer.models.OptionInfo, typer.models.ArgumentInfo)): provider = provider.default
+    if isinstance(model, (typer.models.OptionInfo, typer.models.ArgumentInfo)): model = model.default
+    if isinstance(session_id, (typer.models.OptionInfo, typer.models.ArgumentInfo)): session_id = session_id.default
+
     print_header("LUNA Chat", "AI Coding Assistant")
     
     # Set provider if specified
@@ -125,6 +125,16 @@ def start(
         except Exception as e:
             print_status(f"Error: {str(e)}", "error")
 
+@chat_app.command()
+def start(
+    message: Optional[str] = typer.Argument(None, help="Initial message"),
+    provider: Optional[str] = typer.Option(None, "-p", "--provider", help="AI provider"),
+    model: Optional[str] = typer.Option(None, "-m", "--model", help="AI model"),
+    session_id: Optional[str] = typer.Option(None, "-s", "--session", help="Load session ID"),
+):
+    """Start interactive chat session."""
+    _start_chat(message, provider, model, session_id)
+
 
 from luna.chat.agent import LunaAgent
 
@@ -142,7 +152,7 @@ async def _send_message(chat_sys: ChatSystem, message: str):
 @chat_app.command(name="new")
 def new_chat():
     """Start new chat session."""
-    start()
+    _start_chat()
 
 
 @chat_app.command(name="history")
@@ -171,7 +181,7 @@ def continue_session(
     session_id: str = typer.Argument(help="Session ID to continue"),
 ):
     """Continue previous chat session."""
-    start(session_id=session_id)
+    _start_chat(session_id=session_id)
 
 
 @chat_app.command(name="export")

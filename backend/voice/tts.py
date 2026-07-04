@@ -4,7 +4,7 @@ import edge_tts
 import httpx
 
 async def generate_tts(req) -> bytes:
-    tmp_file = f".tts-tmp-{uuid.uuid4().hex}.mp3"
+    tmp_file = f"/tmp/.tts-tmp-{uuid.uuid4().hex}.mp3"
     try:
         if req.provider == "elevenlabs" and req.elevenLabsApiKey:
             headers = {

@@ -1,193 +1,85 @@
-# 🌙 Luna Ecosystem (Luna OS X)
-
 <div align="center">
-  <img src="public/background.png" alt="Luna OS X" width="100%" />
+  <img src="src-tauri/icons/128x128.png" alt="Luna OS Logo" width="128" />
+  <h1>Luna AI (Luna OS)</h1>
+  <p><strong>A Next-Generation Voice-Activated Desktop AI Assistant for Linux</strong></p>
+  
+  [![Tauri](https://img.shields.io/badge/Built_with-Tauri-blue?logo=tauri)](https://tauri.app/)
+  [![React](https://img.shields.io/badge/Frontend-React_18-61dafb?logo=react)](https://reactjs.org/)
+  [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
+  [![Linux](https://img.shields.io/badge/Platform-Arch_Linux-1793d1?logo=arch-linux)](https://archlinux.org/)
 </div>
 
-<div align="center">
-  <strong>An AI-powered Operating System Ecosystem for Arch Linux</strong>
-</div>
+<hr/>
 
-<br />
+## 🌌 What is Luna?
+**Luna AI** is a powerful, autonomous desktop assistant designed to deeply integrate with your Linux environment. Unlike standard chatbots, Luna is built as a native **Tauri desktop application** with a **FastAPI Python backend**, giving her the ability to directly control your operating system.
 
-<div align="center">
-  <a href="#features">Features</a> •
-  <a href="#architecture">Architecture</a> •
-  <a href="#project-structure">Structure</a> •
-  <a href="#installation">Installation</a> •
-  <a href="#usage">Usage</a>
-</div>
+Whether you want to launch applications, switch workspaces, control your media, manage files, or just have a voice conversation, Luna can handle it seamlessly.
 
-## 🌌 Overview
+## ✨ Features
+* 🎙️ **Always-On Voice Recognition:** Talk to Luna without clicking. Features continuous listening with automatic silence detection (powered by Groq Whisper & Google STT).
+* 🗣️ **Native Voice Responses:** Luna replies back with fast Text-to-Speech (TTS), dynamically playing audio through your system.
+* 🖥️ **Deep System Integration:**
+  * **App Control:** "Open Firefox", "Close Discord".
+  * **Workspace Management:** "Switch to workspace 2" (Hyprland / Wayland support).
+  * **Media & Audio:** Control volume and media playback natively.
+  * **File Operations:** Move, copy, and read files via natural language.
+* 🛡️ **Secure Execution:** Elevated commands are intercepted and prompt a visual `pkexec` authorization window before executing. No silent `sudo` risks.
+* ⚡ **Lightning Fast UI:** Built on Tauri + React + Vite. Uses less RAM than Electron and feels incredibly responsive.
 
-**Luna OS X** is an AI-powered operating system layer designed specifically for Arch Linux. It features a Python-based AI brain, real-time voice interaction, long-term memory, intelligent Linux automation, and developer tools. It combines a modern desktop UI with a powerful assistant that can manage projects, control the system, and automate everyday tasks.
+## 🛠️ Tech Stack
+* **Frontend:** React, TypeScript, Vite, TailwindCSS
+* **Desktop Framework:** Tauri (Rust)
+* **Backend Core:** Python 3, FastAPI, Uvicorn
+* **AI & Voice Engine:** Groq API (Whisper v3), Google Speech Recognition, gTTS, OpenAI LLM routing.
+* **System Utilities:** `mpv`, `hyprctl`, `xdg-open`, `pkexec`
 
----
-
-## ✨ Key Features
-
-- 🧠 **AI Brain**: Powered by state-of-the-art LLMs, orchestrating multiple specialized agents.
-- 🗣️ **Real-Time Voice Interaction**: Seamless Speech-to-Text (STT) and Text-to-Speech (TTS) capabilities.
-- 🗄️ **Long-Term Memory**: Utilizes ChromaDB for semantic memory and SQLite for chat history, ensuring Luna remembers past interactions and context.
-- 🐧 **Linux Automation**: Deep integration with Linux. Agents can run commands, manage packages, and handle files.
-- 💻 **Developer Workspace**: Built-in developer tools and Git agents to assist with coding and repository management.
-- 🎨 **Modern UI**: A beautiful, fluid interface built with React, Tailwind CSS, and Framer Motion, packaged as a lightweight desktop app via **Tauri**.
-
----
-
-## 🏗️ Architecture & Tech Stack
-
-### Frontend (Desktop App)
-- **Framework**: React 19 + TypeScript
-- **Styling**: Tailwind CSS + Motion (Framer)
-- **Desktop Runtime**: Tauri (Rust)
-- **Build Tool**: Vite
-
-### Backend (AI Brain)
-- **Framework**: FastAPI (Python)
-- **Memory**: ChromaDB (Vector Database) + SQLite
-- **Voice**: Edge TTS
-- **AI Core**: Modular architecture with Decision Engine, Planner, Executor, and Context Engine.
-
----
-
-## 📂 Full Project Structure
-
-```text
-Luna-eco-system/
-├── backend/                  # Python FastAPI Backend & AI Logic
-│   ├── agents/               # Specialized AI Agents (Git, Linux, File, Package)
-│   ├── api/                  # REST and WebSocket API Routes
-│   ├── core/                 # Core AI logic (Brain, Planner, Orchestrator, Context)
-│   ├── memory/               # Memory Management (ChromaDB, SQLite, Summarizer)
-│   ├── providers/            # LLM Provider Integrations
-│   ├── tools/                # Tool Registries for Agents
-│   └── voice/                # STT and TTS engines
-├── src/                      # React Frontend Source
-│   ├── components/           # UI Components (DeveloperWorkspace, Settings, etc.)
-│   ├── App.tsx               # Main React Application
-│   └── index.css             # Tailwind CSS entry
-├── src-tauri/                # Tauri Rust Backend (Desktop Shell)
-│   ├── src/                  # Rust source code
-│   └── tauri.conf.json       # Tauri configuration
-├── dist/                     # Compiled Frontend build
-├── public/                   # Static Assets
-├── package.json              # Node.js dependencies & scripts
-├── requirements.txt          # Python dependencies
-├── server.py                 # Backend Entry Point
-├── cli.py                    # Legacy Command Line Interface
-├── luna_cli_enhanced.py      # Enhanced CLI with animations
-├── cli_utils.py              # CLI utilities & UI components
-├── cli_config.py             # CLI configuration management
-├── cli_examples.py           # CLI feature demonstrations
-├── CLI_GUIDE.md              # Complete CLI documentation
-├── CLI_QUICKSTART.md         # Quick start guide
-└── LUNA_CLI_ENHANCEMENTS.md  # Enhancement summary
-```
-
----
-
-## 🚀 Installation
+## 🚀 Installation & Setup (Arch Linux)
 
 ### Prerequisites
-- Node.js (v18+)
-- Python 3.10+
-- Rust & Cargo (for Tauri)
-- Arch Linux (recommended for full system integration)
-
-### Setup
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Arunachalam-gojosaturo/Luna-eco-system.git
-   cd Luna-eco-system
-   ```
-
-2. **Install Frontend Dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Set up Python Virtual Environment:**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   ```
-
-4. **Environment Variables:**
-   Rename `.env.example` to `.env` and add your API keys:
-   ```env
-   GEMINI_API_KEY=your_api_key_here
-   ```
-
----
-
-## 💻 Usage
-
-### Run Locally (Development)
-You can start both the backend FastAPI server and the Vite frontend simultaneously with:
+Make sure you have the following system dependencies installed:
 ```bash
-npm run dev
+sudo pacman -S nodejs npm python python-pip mpv xdg-utils polkit
+```
+*(Ensure your user is part of the `audio` group for microphone access: `sudo usermod -aG audio $(whoami)`)*
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/Arunachalam-gojosaturo/Luna-ai.git
+cd Luna-ai
 ```
 
-### Run Enhanced CLI
-Start the beautiful enhanced Luna CLI with awesome boot animations:
-```bash
-npm run cli
+### 2. Set Up Environment Variables
+Create a `.env` file in the root directory and add your API keys:
+```env
+OPENAI_API_KEY=your_openai_key
+GROQ_API_KEY=your_groq_key
 ```
 
-Or directly:
+### 3. Build & Install
+Run the provided installer script, which will automatically configure the Python virtual environment, compile the Tauri React app, and install the desktop shortcut.
 ```bash
-python luna_cli_enhanced.py
-```
-
-### Run CLI Demo
-Test all CLI features with comprehensive demo:
-```bash
-npm run cli:test
-```
-
-### Run Desktop App
-To run the project as a native desktop application using Tauri:
-```bash
-npm run desktop
-```
-
-### Build Desktop App
-To compile a production-ready binary for your system:
-```bash
+npm install
 npm run desktop:build
+./install.sh
 ```
 
----
-
-## 🎯 CLI Features
-
-The enhanced Luna CLI includes:
-
-- **🎨 Awesome Boot Animation** - Colorized ASCII art with animated startup
-- **🎯 Attribute-Based Commands** - Commands as objects with metadata
-- **💬 8 Core Commands** - help, status, history, clear, model, voice, memory, exit
-- **📊 Rich UI Components** - Progress bars, spinners, tables, status indicators
-- **⚙️ Configuration System** - Profiles, aliases, history management
-- **🔧 Complete Documentation** - Guides and examples included
-
-**Quick Start:**
+### 4. Launch Luna
+You can now find **Luna OS** in your application launcher (Rofi/Wofi/Gnome) or start it from the terminal:
 ```bash
-npm run cli
-luna> help      # Show all commands
-luna> status    # Display statistics
-luna> exit      # Exit gracefully
+luna-os
 ```
 
-See [CLI_QUICKSTART.md](CLI_QUICKSTART.md) for detailed guide.
+## 🧠 Architecture Overview
+* **Frontend App (`src/`):** Manages the graphical interface, manages the continuous microphone loop, and renders the chat view.
+* **Tauri Core (`src-tauri/`):** Spawns the background Python server on port `3000` and creates the native system tray/window.
+* **Python Backend (`backend/`):**
+  * `api/routes.py`: Handles HTTP POST requests for `/luna/execute`, STT, and TTS.
+  * `core/brain.py`: The "LLM Router" that processes transcripts and decides whether to chat, execute a system command, or throw an error.
+  * `agents/linux_agent.py`: Safely executes bash commands and creates audit logs inside `~/.cache/luna-os/`.
 
----
+## 🤝 Contributing
+Feel free to fork the repository and submit pull requests. Ensure you test voice functionalities and system execution on a Linux machine (preferably Arch Linux) before submitting changes.
 
-## 🛡️ License
-
-This project is licensed under the MIT License.
-
----
-*Created by [Arunachalam](https://github.com/Arunachalam-gojosaturo)*
+## 📜 License
+MIT License. See `LICENSE` for more details.

@@ -8,7 +8,9 @@ from backend.agents.base_agent import BaseAgent
 
 class LinuxAgent(BaseAgent):
     def __init__(self):
-        self.audit_log_path = "luna_audit.log"
+        self.os_type = "arch" # Explicitly designed for Arch Linux compatibility
+        from backend.config.paths import get_log_dir
+        self.audit_log_path = str(get_log_dir() / "luna_audit.log")
         # Whitelist of allowed command prefixes for safety
         self.allowed_commands = [
             "ls", "cat", "pwd", "cd", "echo", "mkdir", "touch", "cp", "mv", "rm",
@@ -61,12 +63,20 @@ class LinuxAgent(BaseAgent):
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
-            stdout, stderr = await proc.communicate()
-            return {
-                "success": proc.returncode == 0,
-                "stdout": stdout.decode() if stdout else "",
-                "stderr": stderr.decode() if stderr else ""
-            }
+            try:
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=5.0)
+                return {
+                    "success": proc.returncode == 0,
+                    "stdout": stdout.decode() if stdout else "",
+                    "stderr": stderr.decode() if stderr else ""
+                }
+            except asyncio.TimeoutError:
+                # Command is still running (e.g. xdg-open), which is a success for GUI apps
+                return {
+                    "success": True,
+                    "stdout": "Command started in background",
+                    "stderr": ""
+                }
         except Exception as e:
             return {"success": False, "stdout": "", "stderr": str(e)}
 

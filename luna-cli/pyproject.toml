@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "luna-cli"
-version = "0.1.0"
-description = "🌙 LUNA - AI Coding Assistant CLI for LUNA OS X"
+version = "0.2.1"
+description = "AI Coding Assistant for LUNA OS X"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -38,7 +38,6 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "aiofiles>=23.0.0",
     "gitpython>=3.1.0",
-    "click-spinner>=0.1.10",
     "colorama>=0.4.6",
     "shellingham>=1.5.0",
     "platformdirs>=3.10.0",

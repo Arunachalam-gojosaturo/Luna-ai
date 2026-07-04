@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from backend.core.brain import LunaBrain
 from backend.voice.tts import generate_tts
-from backend.voice.stt import transcribe_audio
+from backend.voice.stt import transcribe_audio, transcribe_local_audio
 from backend.agents.linux_agent import LinuxAgent
 from backend.api.agents import router as agents_router
 from backend.memory.chat_history import chat_history_db
@@ -69,10 +69,63 @@ async def tts(req: TTSRequest):
     audio_data = await generate_tts(req)
     return Response(content=audio_data, media_type="audio/mpeg")
 
+@router.post("/tts/play_local")
+async def tts_play_local(req: TTSRequest):
+    import asyncio, tempfile, os
+    from backend.core.voice_agent import voice_agent
+    
+    audio_data = await generate_tts(req)
+    voice_agent.set_speaking(True)
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
+            f.write(audio_data)
+            tmp_name = f.name
+        
+        def play_audio():
+            import subprocess
+            import shutil
+            try:
+                if shutil.which("mpv"):
+                    subprocess.run(["mpv", "--no-terminal", tmp_name], check=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+                elif shutil.which("ffplay"):
+                    subprocess.run(["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", tmp_name], check=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+                elif shutil.which("paplay"):
+                    # paplay needs WAV, but we have MP3. Convert if pydub available, else fail
+                    from pydub import AudioSegment
+                    audio = AudioSegment.from_file(tmp_name, format="mp3")
+                    wav_path = tmp_name.replace(".mp3", ".wav")
+                    audio.export(wav_path, format="wav")
+                    subprocess.run(["paplay", wav_path], check=True)
+                    if os.path.exists(wav_path): os.remove(wav_path)
+                else:
+                    print("No suitable audio player found (mpv, ffplay, paplay).")
+            except Exception as e:
+                print(f"Playback failed: {e}")
+            finally:
+                if os.path.exists(tmp_name):
+                    os.remove(tmp_name)
+                    
+        await asyncio.to_thread(play_audio)
+        return {"status": "ok"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+    finally:
+        voice_agent.set_speaking(False)
+
 @router.post("/stt")
 async def stt(audio: UploadFile = File(...)):
     text = await transcribe_audio(audio)
     return {"transcript": text}
+
+@router.post("/stt/record_local")
+async def stt_record_local():
+    from backend.core.voice_agent import voice_agent
+    voice_agent.set_speaking(True) # suspend background listening temporarily
+    try:
+        text = await transcribe_local_audio()
+        return {"transcript": text}
+    finally:
+        voice_agent.set_speaking(False) # resume background listening
 
 class TTSStatusRequest(BaseModel):
     speaking: bool
