@@ -1,10 +1,10 @@
-# Maintainer: Arunachalam <arunachalam.gojosaturo@gmail.com>
+# Maintainer: Arunachalam (Vellore, Tamil Nadu, India) <arunachalamthehacker@gmail.com>
 # LUNA CLI - AI Coding Assistant for LUNA OS X
 
 pkgname=luna-cli
-pkgver=0.2.1
+pkgver=0.2.3
 pkgrel=1
-pkgdesc="🌙 LUNA - AI Coding Assistant CLI for LUNA OS X"
+pkgdesc="Luna CLI - Modern TUI in Ink. Built by Arunachalam for the Arch Linux ecosystem (Tamil Nadu)."
 arch=('x86_64' 'aarch64')
 url="https://github.com/Arunachalam-gojosaturo/Luna-cli"
 license=('MIT')
