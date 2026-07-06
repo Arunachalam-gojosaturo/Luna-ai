@@ -1,5 +1,5 @@
 pkgbase = luna-cli
-	pkgdesc = Luna CLI - Modern TUI in Ink. Built by Arunachalam for the Arch Linux ecosystem (Tamil Nadu).
+	pkgdesc = Arunachalam presents Luna CLI: A modern TUI in Ink. Built for open-source enthusiasts in Tamilnadu, India.
 	pkgver = 0.2.3
 	pkgrel = 1
 	url = https://github.com/Arunachalam-gojosaturo/Luna-cli
