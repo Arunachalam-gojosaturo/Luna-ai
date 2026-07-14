@@ -26,7 +26,27 @@ export default defineConfig(() => {
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      watch: process.env.DISABLE_HMR === 'true' ? null : {
+        ignored: [
+          '**/*.db',
+          '**/*.db-journal',
+          '**/*.db-wal',
+          '**/*.db-shm',
+          '**/*.log',
+          '**/*.webm',
+          '**/*.wav',
+          '**/*.mp3',
+          '**/luna_chat.db',
+          '**/luna_memory.db',
+          '**/audit.log',
+          '**/venv/**',
+          '**/.tts-tmp-*',
+          '**/.stt-tmp-*',
+          '**/luna_chroma_db/**',
+          '**/backend/agents/whatsapp_agent/**',
+          '**/qr_base64.txt'
+        ]
+      },
     },
   };
 });

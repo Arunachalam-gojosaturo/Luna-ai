@@ -4,7 +4,7 @@ import {
   Home, Mic, Folder, Smartphone, Code, BarChart2, MessageSquare, Settings,
   Cpu, Activity, CheckCircle2, AlertTriangle, ShieldAlert, Wifi, Battery, Play,
   Send, Plus, Trash2, Heart, Sparkles, Volume2, Globe, Server, Check, HelpCircle,
-  Sun, Moon, Gauge, Terminal
+  Sun, Moon, Gauge, Terminal, ArrowLeft, FileText, FileImage, File, X, ChevronRight
 } from "lucide-react";
 
 import { 
@@ -15,8 +15,17 @@ import {
 import ReactorCore from "./components/ReactorCore";
 import DeviceEcosystem from "./components/DeviceEcosystem";
 import DeveloperWorkspace from "./components/DeveloperWorkspace";
-import HealthHub from "./components/HealthHub";
+import GithubMonitor from "./components/GithubMonitor";
 import { SettingsPanel } from "./components/SettingsPanel";
+
+const formatBytes = (bytes: number, decimals = 2) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+};
 
 export default function App() {
   // Views and states
@@ -43,6 +52,30 @@ export default function App() {
   const [isGeneratingCode, setIsGeneratingCode] = useState<boolean>(false);
   const [apiHealth, setApiHealth] = useState<{ enabled: boolean; checked: boolean }>({ enabled: false, checked: false });
   const [showUserModal, setShowUserModal] = useState<boolean>(false);
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState<boolean>(false);
+  const [waConnected, setWaConnected] = useState<boolean>(false);
+  const [waQrCode, setWaQrCode] = useState<string | null>(null);
+  const [waRunning, setWaRunning] = useState<boolean>(false);
+
+  useEffect(() => {
+    let intervalId: any;
+    const fetchWhatsAppStatus = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/api/agents/whatsapp/status");
+        if (response.ok) {
+          const data = await response.json();
+          setWaConnected(data.connected);
+          setWaQrCode(data.qr);
+          setWaRunning(data.is_running);
+        }
+      } catch (e) {
+        // Silent error
+      }
+    };
+    fetchWhatsAppStatus();
+    intervalId = setInterval(fetchWhatsAppStatus, 4000);
+    return () => clearInterval(intervalId);
+  }, []);
   const [userDetails, setUserDetails] = useState({ name: 'Boss', role: 'Luna Prime' });
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const isListeningRef = useRef<boolean>(false);
@@ -54,7 +87,28 @@ export default function App() {
   const [settingsConfig, setSettingsConfig] = useState(() => {
     try {
       const saved = localStorage.getItem("settingsConfig");
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Ensure defaults are present in saved configs
+        return {
+          wakeWord: "LUNA",
+          speechRate: 1.0,
+          ambientGlow: true,
+          visualMode: "spatial-slate",
+          groqKey: localStorage.getItem("groqKey") || "",
+          openRouterKey: localStorage.getItem("openRouterKey") || "",
+          openaiKey: localStorage.getItem("openaiKey") || "",
+          modelSelection: "",
+          activeProvider: "groq",
+          isLocalLlm: false,
+          localLlmUrl: "http://localhost:11434",
+          localLlmModel: "llama3",
+          openClawUrl: "http://localhost:8000/v1",
+          openClawApiKey: "",
+          githubPat: localStorage.getItem("githubPat") || "",
+          ...parsed
+        };
+      }
     } catch {}
     return {
       wakeWord: "LUNA",
@@ -65,9 +119,16 @@ export default function App() {
       openRouterKey: localStorage.getItem("openRouterKey") || "",
       openaiKey: localStorage.getItem("openaiKey") || "",
       modelSelection: "",
-      activeProvider: "groq"
+      activeProvider: "groq",
+      isLocalLlm: false,
+      localLlmUrl: "http://localhost:11434",
+      localLlmModel: "llama3",
+      openClawUrl: "http://localhost:8000/v1",
+      openClawApiKey: "",
+      githubPat: localStorage.getItem("githubPat") || ""
     };
   });
+
 
   const [ttsSettings, setTtsSettings] = useState<TTSSettings>(() => {
     try {
@@ -183,6 +244,153 @@ export default function App() {
     sleepGoal: 8.0,
     heartRate: 72
   });
+
+  // Real Projects Folder State
+  const [realProjects, setRealProjects] = useState<{ name: string, path: string }[]>(() => {
+    try {
+      const saved = localStorage.getItem("realProjects");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
+
+  // File Explorer state
+  const [currentFolderPath, setCurrentFolderPath] = useState<string | null>(null);
+  const [folderFiles, setFolderFiles] = useState<{ name: string, isDir: boolean, size: number, path: string }[]>([]);
+  const [folderFilesLoading, setFolderFilesLoading] = useState<boolean>(false);
+  const [folderFilesError, setFolderFilesError] = useState<string | null>(null);
+  const [parentPath, setParentPath] = useState<string | null>(null);
+
+  // Draggable Image Viewer Popup state
+  const [viewerImage, setViewerImage] = useState<{ name: string, path: string } | null>(null);
+
+  // Draggable Video Player Popup state
+  const [viewerVideo, setViewerVideo] = useState<{ name: string, path: string } | null>(null);
+
+  // Notepad states
+  const [notepadFile, setNotepadFile] = useState<{ name: string, path: string } | null>(null);
+  const [notepadContent, setNotepadContent] = useState<string>("");
+  const [notepadLoading, setNotepadLoading] = useState<boolean>(false);
+  const [notepadSaving, setNotepadSaving] = useState<boolean>(false);
+  const [notepadSaveSuccess, setNotepadSaveSuccess] = useState<boolean>(false);
+  const [notepadError, setNotepadError] = useState<string | null>(null);
+  const notepadTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const scrollNotepad = (direction: 'up' | 'down') => {
+    const textarea = notepadTextareaRef.current;
+    if (textarea) {
+      const scrollAmount = 150;
+      textarea.scrollBy({
+        top: direction === 'up' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const openNotepad = async (item: { name: string, path: string }) => {
+    setNotepadFile(item);
+    setNotepadLoading(true);
+    setNotepadError(null);
+    setNotepadContent("");
+    setNotepadSaveSuccess(false);
+    try {
+      const res = await fetch(`http://localhost:3000/api/agents/files/content?path=${encodeURIComponent(item.path)}`);
+      if (res.ok) {
+        const text = await res.text();
+        setNotepadContent(text);
+      } else {
+        setNotepadError(`Failed to fetch file content (HTTP ${res.status})`);
+      }
+    } catch (e: any) {
+      setNotepadError(e.message || "Error reading file content.");
+    } finally {
+      setNotepadLoading(false);
+    }
+  };
+
+  const handleSaveNotepad = async () => {
+    if (!notepadFile) return;
+    setNotepadSaving(true);
+    setNotepadSaveSuccess(false);
+    try {
+      const res = await fetch("http://localhost:3000/api/agents/file", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "write",
+          path: notepadFile.path,
+          content: notepadContent
+        })
+      });
+      const data = await res.json();
+      if (data.status === "success") {
+        setNotepadSaveSuccess(true);
+        pushTerminalLog(`[NOTEPAD] Saved file successfully: ${notepadFile.name}`, "success");
+        setTimeout(() => setNotepadSaveSuccess(false), 3000);
+      } else {
+        alert("Failed to save: " + data.result);
+      }
+    } catch (e: any) {
+      alert("Error saving: " + e.message);
+    } finally {
+      setNotepadSaving(false);
+    }
+  };
+
+  const isTextFile = (filename: string) => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    return ['txt', 'sh', 'py', 'js', 'ts', 'tsx', 'json', 'css', 'html', 'md', 'env', 'yml', 'yaml', 'ini', 'conf', 'go', 'rs', 'c', 'cpp', 'h', 'java', 'xml'].includes(ext || '');
+  };
+
+  const fetchFolderContents = async (path: string) => {
+    setFolderFilesLoading(true);
+    setFolderFilesError(null);
+    try {
+      const res = await fetch(`http://localhost:3000/api/agents/files/list?path=${encodeURIComponent(path)}`);
+      const data = await res.json();
+      if (data.status === "success") {
+        setFolderFiles(data.files);
+        setParentPath(data.parent);
+        setCurrentFolderPath(path.replace(/\\/g, '/'));
+      } else {
+        setFolderFilesError(data.message || "Failed to load directory files.");
+      }
+    } catch (e: any) {
+      setFolderFilesError(e.message || "Network error while loading files.");
+    } finally {
+      setFolderFilesLoading(false);
+    }
+  };
+
+  const handleOpenRealFolder = async () => {
+    let selectedPath: string | null = null;
+    if ((window as any).__TAURI__) {
+      try {
+        const { open } = await import('@tauri-apps/plugin-dialog');
+        selectedPath = await open({
+          directory: true,
+          multiple: false,
+        }) as string | null;
+      } catch (e) {
+        console.error("Tauri dialog error:", e);
+      }
+    } 
+    
+    if (!selectedPath) {
+      selectedPath = prompt("Enter the absolute path of the project folder:");
+    }
+
+    if (selectedPath) {
+      const pathNormalized = selectedPath.replace(/\\/g, '/');
+      const folderName = pathNormalized.split('/').pop() || pathNormalized;
+      
+      if (!realProjects.some(p => p.path === pathNormalized)) {
+        const updated = [...realProjects, { name: folderName, path: pathNormalized }];
+        setRealProjects(updated);
+        localStorage.setItem("realProjects", JSON.stringify(updated));
+      }
+    }
+  };
 
   // GitHub Repos
   const [repos, setRepos] = useState<GitHubRepo[]>([
@@ -596,8 +804,14 @@ export default function App() {
           openRouterKey: settingsConfig.openRouterKey,
           openaiKey: settingsConfig.openaiKey,
           modelSelection: settingsConfig.modelSelection,
-          activeProvider: settingsConfig.activeProvider || "groq"
+          activeProvider: settingsConfig.activeProvider || "groq",
+          isLocalLlm: settingsConfig.isLocalLlm || false,
+          localLlmUrl: settingsConfig.localLlmUrl || "http://localhost:11434",
+          localLlmModel: settingsConfig.localLlmModel || "llama3",
+          openClawApiKey: settingsConfig.openClawApiKey || "",
+          openClawUrl: settingsConfig.openClawUrl || "http://localhost:8000/v1"
         })
+
       });
 
       if (!response.ok) {
@@ -1214,6 +1428,25 @@ export default function App() {
           </button>
 
           {/* Notifications Bell with count */}
+          {/* WhatsApp Agent Link Status Button */}
+          <button
+            onClick={() => setShowWhatsAppModal(true)}
+            className={`p-2 rounded-xl border relative transition-all flex items-center justify-center cursor-pointer ${
+              isLight 
+                ? "bg-white/60 border-slate-200 text-slate-600 hover:bg-slate-50" 
+                : "bg-slate-900/40 border-slate-900 text-slate-400 hover:text-white hover:border-slate-800"
+            }`}
+            title="WhatsApp Agent Integration"
+          >
+            <MessageSquare className={`w-4 h-4 ${waConnected ? "text-emerald-500 animate-pulse" : waQrCode ? "text-amber-500" : ""}`} />
+            {waConnected && (
+              <span className="absolute top-1 right-1 flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            )}
+            {!waConnected && waQrCode && (
+              <span className="absolute top-1 right-1 flex h-1.5 w-1.5 rounded-full bg-amber-500" />
+            )}
+          </button>
+
           <div className="relative">
             <button 
               onClick={() => {
@@ -1753,11 +1986,16 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="space-y-6 flex-1"
+              className="flex-1"
             >
-              <HealthHub 
-                healthData={healthData}
-                onLogExercise={handleLogExercise}
+              <GithubMonitor 
+                token={settingsConfig.githubPat || ""}
+                onUpdateToken={(newToken) => {
+                  const updated = { ...settingsConfig, githubPat: newToken };
+                  setSettingsConfig(updated);
+                  localStorage.setItem("settingsConfig", JSON.stringify(updated));
+                  localStorage.setItem("githubPat", newToken);
+                }}
                 isLight={isLight}
               />
             </motion.div>
@@ -1769,38 +2007,305 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1"
+              className="flex-1 space-y-6"
             >
-              {repos.map((repo, idx) => (
-                <div key={idx} className={`border rounded-2xl p-5 flex flex-col justify-between h-56 transition-all duration-500 ${
-                  isLight 
-                    ? "bg-white/40 border-white/60 shadow-md backdrop-blur-md text-slate-800" 
-                    : "bg-slate-950/60 border border-slate-900 text-slate-100 backdrop-blur-md"
-                }`}>
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-mono text-cyan-500 bg-cyan-950/10 border border-cyan-500/25 px-2 py-0.5 rounded">
-                        PROJECT ACTIVE
-                      </span>
-                      <span className="text-xs text-slate-500 font-mono">Branch: {repo.branch}</span>
-                    </div>
-                    <h3 className={`text-md font-bold font-display mt-2 ${isLight ? "text-slate-900" : "text-white"}`}>{repo.name}</h3>
-                    <p className={`text-xs mt-2.5 line-clamp-3 ${isLight ? "text-slate-600" : "text-slate-400"}`}>{repo.description}</p>
-                  </div>
-
-                  <div className={`flex items-center justify-between border-t pt-3 text-xs font-mono text-slate-500 ${
-                    isLight ? "border-slate-100" : "border-slate-900/60"
-                  }`}>
-                    <span>Stars: {repo.stars}</span>
-                    <button 
-                      onClick={() => { setActiveView("developer"); }}
-                      className="text-cyan-500 hover:text-cyan-600 font-bold"
+              {/* Header Panel */}
+              <div className={`p-6 rounded-3xl border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 backdrop-blur-md ${
+                isLight 
+                  ? "bg-white/40 border-white/60 shadow-md text-slate-800" 
+                  : "bg-slate-950/60 border border-slate-900 text-slate-100"
+              }`}>
+                <div>
+                  <h2 className={`text-lg font-bold font-display flex items-center gap-2 ${isLight ? "text-slate-900" : "text-white"}`}>
+                    <Folder className="w-5 h-5 text-cyan-500" />
+                    Local Workspace Directory
+                  </h2>
+                  <p className={`text-xs mt-1 ${isLight ? "text-slate-500" : "text-slate-400"}`}>
+                    {currentFolderPath 
+                      ? `Browsing: ${currentFolderPath}` 
+                      : "Directly browse, manage, and launch your real local coding projects."}
+                  </p>
+                </div>
+                <div className="flex gap-3 items-center flex-wrap">
+                  {currentFolderPath && (
+                    <button
+                      onClick={() => setCurrentFolderPath(null)}
+                      className={`px-4 py-2 bg-cyan-600/10 hover:bg-cyan-600/20 border border-cyan-550/20 text-cyan-400 rounded-xl text-xs font-bold font-mono tracking-wider flex items-center gap-1.5 transition-all cursor-pointer`}
                     >
-                      OPEN IN WORKSPACE →
+                      <ArrowLeft className="w-4 h-4" />
+                      PROJECTS GRID
+                    </button>
+                  )}
+                  <button
+                    onClick={handleOpenRealFolder}
+                    className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold font-mono tracking-wider flex items-center gap-2 transition-all shadow-lg shadow-cyan-600/20 cursor-pointer self-start sm:self-auto"
+                  >
+                    <Plus className="w-4 h-4" />
+                    OPEN REAL PROJECT FOLDER
+                  </button>
+                </div>
+              </div>
+
+              {/* Projects List / File Explorer */}
+              {currentFolderPath ? (
+                /* File Explorer UI */
+                <div className={`border rounded-3xl p-6 backdrop-blur-md flex flex-col gap-4 ${
+                  isLight 
+                    ? "bg-white/40 border-white/60 text-slate-850 shadow-md" 
+                    : "bg-slate-950/60 border border-slate-900 text-slate-100"
+                }`}>
+                  {/* Toolbar */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/10 pb-4">
+                    <button
+                      onClick={() => {
+                        const isRootProject = realProjects.some(p => p.path.replace(/\/$/, '') === currentFolderPath?.replace(/\/$/, ''));
+                        if (isRootProject || !parentPath || parentPath === currentFolderPath) {
+                          setCurrentFolderPath(null);
+                        } else {
+                          fetchFolderContents(parentPath);
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono tracking-wide flex items-center gap-1 transition-all cursor-pointer border ${
+                        isLight
+                          ? "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm"
+                          : "bg-slate-900 border-slate-800 text-slate-350 hover:bg-slate-850"
+                      }`}
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      BACK
+                    </button>
+                    
+                    <div className="flex items-center gap-2 flex-1 md:mx-4 max-w-full overflow-hidden">
+                      <span className="text-[10px] font-mono text-slate-500 shrink-0">CURRENT PATH:</span>
+                      <span className="text-xs font-mono bg-black/25 px-3 py-1.5 rounded-lg text-cyan-400 truncate block w-full">
+                        {currentFolderPath}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => executeSystemCommand(`code "${currentFolderPath}"`, false)}
+                      className="px-3 py-1.5 bg-cyan-600/10 hover:bg-cyan-600/25 border border-cyan-500/20 text-cyan-400 rounded-lg text-xs font-bold font-mono tracking-wide flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                    >
+                      <Code className="w-3.5 h-3.5" />
+                      OPEN IN VS CODE
                     </button>
                   </div>
+
+                  {/* File List/Table */}
+                  {folderFilesLoading ? (
+                    <div className="py-20 text-center text-xs text-slate-500 font-mono">
+                      Loading files and subfolders...
+                    </div>
+                  ) : folderFilesError ? (
+                    <div className="p-6 text-center border rounded-2xl border-rose-900/30 bg-rose-950/10 text-rose-400 text-xs">
+                      <AlertTriangle className="w-8 h-8 text-rose-500 mx-auto mb-2" />
+                      <span>{folderFilesError}</span>
+                    </div>
+                  ) : folderFiles.length === 0 ? (
+                    <div className="py-16 text-center text-xs text-slate-500 font-mono">
+                      This folder is empty.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto max-h-[500px]">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="border-b border-slate-200/10 text-[10px] font-mono text-slate-500 uppercase tracking-wider">
+                            <th className="py-2.5 pl-3">Name</th>
+                            <th className="py-2.5">Type</th>
+                            <th className="py-2.5">Size</th>
+                            <th className="py-2.5 text-right pr-3">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200/5">
+                          {folderFiles.map((item, idx) => {
+                            const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(item.name);
+                            const isVideo = /\.(mp4|webm|ogg|mkv|mov|avi)$/i.test(item.name);
+                            const isText = isTextFile(item.name);
+                            return (
+                              <tr 
+                                key={idx}
+                                className={`group hover:bg-cyan-500/5 transition-colors cursor-pointer`}
+                                onClick={() => {
+                                  if (item.isDir) {
+                                    fetchFolderContents(item.path);
+                                  } else if (isImage) {
+                                    setViewerImage(item);
+                                  } else if (isVideo) {
+                                    setViewerVideo(item);
+                                  } else if (isText) {
+                                    openNotepad(item);
+                                  }
+                                }}
+                              >
+                                <td className="py-3 pl-3 flex items-center gap-2.5 font-medium max-w-sm truncate">
+                                  {item.isDir ? (
+                                    <Folder className="w-4 h-4 text-cyan-400 fill-cyan-400/10 group-hover:scale-105 transition-transform" />
+                                  ) : isImage ? (
+                                    <FileImage className="w-4 h-4 text-emerald-400 fill-emerald-400/10 group-hover:scale-105 transition-transform" />
+                                  ) : isVideo ? (
+                                    <Play className="w-4 h-4 text-rose-400 fill-rose-400/10 group-hover:scale-105 transition-transform" />
+                                  ) : isText ? (
+                                    <FileText className="w-4 h-4 text-cyan-400 group-hover:scale-105 transition-transform" />
+                                  ) : (
+                                    <File className="w-4 h-4 text-slate-400" />
+                                  )}
+                                  <span className={
+                                    item.isDir ? "text-cyan-400 hover:underline" : 
+                                    isImage ? "text-emerald-400 font-medium" : 
+                                    isVideo ? "text-rose-400 font-medium" :
+                                    isText ? "text-cyan-350 hover:underline" : 
+                                    "text-slate-350"
+                                  }>
+                                    {item.name}
+                                  </span>
+                                </td>
+                                <td className="py-3 font-mono text-[10px] text-slate-500">
+                                  {item.isDir ? "Directory" : item.name.split('.').pop()?.toUpperCase() || "File"}
+                                </td>
+                                <td className="py-3 font-mono text-[10px] text-slate-500">
+                                  {item.isDir ? "--" : formatBytes(item.size)}
+                                </td>
+                                <td className="py-3 text-right pr-3">
+                                  {item.isDir ? (
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        fetchFolderContents(item.path);
+                                      }}
+                                      className="text-cyan-500 hover:text-cyan-400 font-bold font-mono text-[10px] flex items-center gap-0.5 ml-auto cursor-pointer"
+                                    >
+                                      BROWSE <ChevronRight className="w-3 h-3" />
+                                    </button>
+                                  ) : isImage ? (
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setViewerImage(item);
+                                      }}
+                                      className="text-emerald-500 hover:text-emerald-400 font-bold font-mono text-[10px] flex items-center gap-0.5 ml-auto cursor-pointer"
+                                    >
+                                      VIEW IMAGE
+                                    </button>
+                                  ) : isVideo ? (
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setViewerVideo(item);
+                                      }}
+                                      className="text-rose-500 hover:text-rose-400 font-bold font-mono text-[10px] flex items-center gap-0.5 ml-auto cursor-pointer"
+                                    >
+                                      PLAY VIDEO
+                                    </button>
+                                  ) : isText ? (
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openNotepad(item);
+                                      }}
+                                      className="text-cyan-500 hover:text-cyan-400 font-bold font-mono text-[10px] flex items-center gap-0.5 ml-auto cursor-pointer"
+                                    >
+                                      EDIT FILE
+                                    </button>
+                                  ) : (
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        executeSystemCommand(`xdg-open "${item.path}" || open "${item.path}"`, false);
+                                      }}
+                                      className="text-slate-400 hover:text-cyan-400 font-bold font-mono text-[10px] flex items-center gap-0.5 ml-auto cursor-pointer"
+                                    >
+                                      OPEN SYSTEM
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
-              ))}
+              ) : (
+                /* Projects Grid */
+                realProjects.length === 0 ? (
+                  <div className={`border rounded-3xl p-12 text-center backdrop-blur-md ${
+                    isLight 
+                      ? "bg-white/30 border-white/50 text-slate-500" 
+                      : "bg-slate-950/40 border-slate-900/60 text-slate-400"
+                  }`}>
+                    <Folder className="w-12 h-12 text-slate-600 mx-auto mb-4 stroke-[1.5]" />
+                    <h3 className={`text-sm font-semibold ${isLight ? "text-slate-700" : "text-slate-300"}`}>No local projects active</h3>
+                    <p className="text-xs mt-1 max-w-sm mx-auto leading-relaxed">
+                      Click the button above to link a real directory from your machine. You can directly launch it in VS Code or browse files.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {realProjects.map((project, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={() => fetchFolderContents(project.path)}
+                        className={`border rounded-2xl p-5 flex flex-col justify-between h-52 transition-all duration-500 cursor-pointer ${
+                          isLight 
+                            ? "bg-white/40 border-white/60 shadow-md backdrop-blur-md text-slate-850 hover:bg-white/50 hover:border-cyan-300" 
+                            : "bg-slate-950/60 border border-slate-900 text-slate-100 backdrop-blur-md hover:bg-slate-950/70 hover:border-cyan-900"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[9px] font-mono text-cyan-400 bg-cyan-950/10 border border-cyan-500/20 px-2 py-0.5 rounded uppercase">
+                              Local Dir
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const updated = realProjects.filter(p => p.path !== project.path);
+                                setRealProjects(updated);
+                                localStorage.setItem("realProjects", JSON.stringify(updated));
+                                if (currentFolderPath === project.path) setCurrentFolderPath(null);
+                              }}
+                              className="text-slate-500 hover:text-rose-500 transition-colors p-1 cursor-pointer"
+                              title="Remove project link"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <h3 className={`text-sm font-bold font-display truncate ${isLight ? "text-slate-900" : "text-white"}`}>
+                            {project.name}
+                          </h3>
+                          <p className={`text-[10px] mt-2 font-mono break-all line-clamp-3 p-2 rounded-lg ${isLight ? "text-slate-600 bg-slate-100/60" : "bg-black/25 text-slate-400"}`}>
+                            {project.path}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t border-slate-200/10 pt-3 text-xs font-mono text-slate-500">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              executeSystemCommand(`code "${project.path}"`, false);
+                            }}
+                            className="text-cyan-500 hover:text-cyan-400 font-bold flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Code className="w-3.5 h-3.5" />
+                            LAUNCH VS CODE
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              fetchFolderContents(project.path);
+                            }}
+                            className="text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1.5 cursor-pointer font-mono"
+                          >
+                            <Folder className="w-3.5 h-3.5" />
+                            BROWSE FILES
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
             </motion.div>
           )}
 
@@ -1938,210 +2443,32 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className={`max-w-2xl mx-auto w-full rounded-2xl p-6 relative border transition-all duration-500 ${
-                isLight 
-                  ? "bg-white/40 border-white/60 shadow-lg backdrop-blur-xl text-slate-850" 
-                  : "bg-slate-950/60 border border-slate-900 text-slate-300 backdrop-blur-md"
-              }`}
+              className="flex-1 w-full max-w-4xl mx-auto"
             >
-              <h2 className={`text-md font-bold font-display border-b pb-3 mb-6 flex items-center gap-2 ${
-                isLight ? "text-slate-900 border-slate-200" : "text-white border-slate-900/60"
+              <div className={`rounded-3xl p-6 border transition-all duration-500 ${
+                isLight 
+                  ? "bg-white/40 border-white/60 shadow-lg backdrop-blur-xl" 
+                  : "bg-slate-950/60 border border-slate-900 backdrop-blur-md"
               }`}>
-                <Settings className="w-4 h-4 text-cyan-500" />
-                Luna System Parameters
-              </h2>
-
-              <div className="space-y-6 text-xs">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 mb-6 border-b pb-4 border-slate-200/10">
+                  <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
+                    <Settings className="w-5 h-5" />
+                  </div>
                   <div>
-                    <p className={`font-bold ${isLight ? "text-slate-700" : "text-white"}`}>Wake Word Trigger</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Primary voice engine capture trigger.</p>
-                  </div>
-                  <select 
-                    value={settingsConfig.wakeWord}
-                    onChange={(e) => setSettingsConfig({ ...settingsConfig, wakeWord: e.target.value })}
-                    className={`border px-3 py-1.5 rounded-lg text-xs font-mono outline-none ${
-                      isLight 
-                        ? "bg-white border-slate-200 text-slate-700" 
-                        : "bg-slate-900 border-slate-800 text-slate-300"
-                    }`}
-                  >
-                    <option value="LUNA">"LUNA"</option>
-                    <option value="COMPUTER">"COMPUTER"</option>
-                    <option value="SYSTEM">"SYSTEM"</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center justify-between border-t pt-4 border-slate-200/20 dark:border-slate-900/40">
-                  <div>
-                    <p className={`font-bold ${isLight ? "text-slate-700" : "text-white"}`}>Neural Speech Synthesis</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Vocal speed modifier index.</p>
-                  </div>
-                  <input 
-                    type="range"
-                    min="0.5"
-                    max="1.5"
-                    step="0.1"
-                    value={settingsConfig.speechRate}
-                    onChange={(e) => setSettingsConfig({ ...settingsConfig, speechRate: parseFloat(e.target.value) })}
-                    className="w-24 accent-cyan-500"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between border-t pt-4 border-slate-200/20 dark:border-slate-900/40">
-                  <div>
-                    <p className={`font-bold ${isLight ? "text-slate-700" : "text-white"}`}>Interactive Core Glow</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Renders high-intensity ambient glows.</p>
-                  </div>
-                  <button 
-                    onClick={() => setSettingsConfig({ ...settingsConfig, ambientGlow: !settingsConfig.ambientGlow })}
-                    className={`h-5 w-10 rounded-full flex items-center p-0.5 transition-colors cursor-pointer ${
-                      settingsConfig.ambientGlow ? 'bg-cyan-500' : 'bg-slate-850'
-                    }`}
-                  >
-                    <div className={`h-4 w-4 rounded-full bg-white transition-transform ${settingsConfig.ambientGlow ? 'translate-x-5' : ''}`} />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between border-t pt-4 border-slate-200/20 dark:border-slate-900/40">
-                  <div>
-                    <p className={`font-bold ${isLight ? "text-slate-700" : "text-white"}`}>Groq API Key</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">For ultra-fast inference.</p>
-                  </div>
-                  <input 
-                    type="password"
-                    value={settingsConfig.groqKey}
-                    onChange={(e) => {
-                      setSettingsConfig({ ...settingsConfig, groqKey: e.target.value });
-                      localStorage.setItem("groqKey", e.target.value);
-                    }}
-                    placeholder="gsk_..."
-                    className={`w-48 px-3 py-1.5 rounded-lg text-xs font-mono outline-none border ${
-                      isLight 
-                        ? "bg-white border-slate-200 text-slate-700" 
-                        : "bg-slate-900 border-slate-800 text-slate-300"
-                    }`}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between border-t pt-4 border-slate-200/20 dark:border-slate-900/40">
-                  <div>
-                    <p className={`font-bold ${isLight ? "text-slate-700" : "text-white"}`}>OpenRouter API Key</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Route across multi-LLM networks.</p>
-                  </div>
-                  <input 
-                    type="password"
-                    value={settingsConfig.openRouterKey}
-                    onChange={(e) => {
-                      setSettingsConfig({ ...settingsConfig, openRouterKey: e.target.value });
-                      localStorage.setItem("openRouterKey", e.target.value);
-                    }}
-                    placeholder="sk-or-v1-..."
-                    className={`w-48 px-3 py-1.5 rounded-lg text-xs font-mono outline-none border ${
-                      isLight 
-                        ? "bg-white border-slate-200 text-slate-700" 
-                        : "bg-slate-900 border-slate-800 text-slate-300"
-                    }`}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between border-t pt-4 border-slate-200/20 dark:border-slate-900/40">
-                  <div>
-                    <p className={`font-bold ${isLight ? "text-slate-700" : "text-white"}`}>OpenAI API Key</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">GPT-4o, GPT-4o-mini, etc.</p>
-                  </div>
-                  <input 
-                    type="password"
-                    value={settingsConfig.openaiKey}
-                    onChange={(e) => {
-                      setSettingsConfig({ ...settingsConfig, openaiKey: e.target.value });
-                      localStorage.setItem("openaiKey", e.target.value);
-                    }}
-                    placeholder="sk-..."
-                    className={`w-48 px-3 py-1.5 rounded-lg text-xs font-mono outline-none border ${
-                      isLight 
-                        ? "bg-white border-slate-200 text-slate-700" 
-                        : "bg-slate-900 border-slate-800 text-slate-300"
-                    }`}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between border-t pt-4 border-slate-200/20 dark:border-slate-900/40">
-                  <div>
-                    <p className={`font-bold ${isLight ? "text-slate-700" : "text-white"}`}>Model Override</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Leave empty for provider default.</p>
-                  </div>
-                  <input 
-                    type="text"
-                    value={settingsConfig.modelSelection}
-                    onChange={(e) => setSettingsConfig({ ...settingsConfig, modelSelection: e.target.value })}
-                    placeholder="e.g. gpt-4o, llama3-70b-8192"
-                    className={`w-48 px-3 py-1.5 rounded-lg text-xs font-mono outline-none border ${
-                      isLight 
-                        ? "bg-white border-slate-200 text-slate-700" 
-                        : "bg-slate-900 border-slate-800 text-slate-300"
-                    }`}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between border-t pt-4 border-slate-200/20 dark:border-slate-900/40">
-                  <div>
-                    <p className={`font-bold ${isLight ? "text-slate-700" : "text-white"}`}>Active LLM Provider</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Select the primary AI engine.</p>
-                  </div>
-                  <select 
-                    value={settingsConfig.activeProvider || "groq"}
-                    onChange={(e) => setSettingsConfig({ ...settingsConfig, activeProvider: e.target.value })}
-                    className={`w-48 px-3 py-1.5 rounded-lg text-xs font-mono outline-none border ${
-                      isLight 
-                        ? "bg-white border-slate-200 text-slate-700" 
-                        : "bg-slate-900 border-slate-800 text-slate-300"
-                    }`}
-                  >
-                    <option value="groq" className={isLight ? "bg-white text-slate-900" : "bg-slate-900 text-slate-100"}>Groq (Ultra-Fast)</option>
-                    <option value="gemini" className={isLight ? "bg-white text-slate-900" : "bg-slate-900 text-slate-100"}>Gemini (Default)</option>
-                    <option value="openai" className={isLight ? "bg-white text-slate-900" : "bg-slate-900 text-slate-100"}>OpenAI (GPT-4)</option>
-                  </select>
-                </div>
-
-                <div className="border-t pt-4 mt-4 border-slate-200/20 dark:border-slate-900/40">
-                  <SettingsPanel 
-                    ttsSettings={ttsSettings} 
-                    setTtsSettings={setTtsSettings} 
-                    isLight={isLight} 
-                    customBg={customBg}
-                    setCustomBg={setCustomBg}
-                  />
-                </div>
-
-                <div className="border-t pt-6 mt-4 flex justify-end border-slate-200/20 dark:border-slate-900/40">
-                  <button 
-                    onClick={() => {
-                      localStorage.setItem("settingsConfig", JSON.stringify(settingsConfig));
-                      localStorage.setItem("groqKey", settingsConfig.groqKey);
-                      localStorage.setItem("openRouterKey", settingsConfig.openRouterKey);
-                      localStorage.setItem("openaiKey", settingsConfig.openaiKey);
-                      alert("Settings Configuration Saved!");
-                    }}
-                    className={`px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${
-                      isLight 
-                        ? "bg-cyan-500 hover:bg-cyan-600 text-white shadow-lg shadow-cyan-500/30" 
-                        : "bg-cyan-500 hover:bg-cyan-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.3)]"
-                    }`}
-                  >
-                    Save Configuration
-                  </button>
-                </div>
-
-                <div className="border-t pt-6 mt-4 text-center border-slate-200/20 dark:border-slate-900/40">
-                  <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase border ${
-                    isLight 
-                      ? "bg-slate-100 border-slate-200 text-slate-500" 
-                      : "bg-slate-900 border-slate-850 text-slate-400"
-                  }`}>
-                    <Server className="w-3 h-3 text-cyan-500" /> SECURE LINK GATEWAY: ACTIVE COMPLIANT LAYER
+                    <h2 className={`text-lg font-display font-bold ${isLight ? "text-slate-900" : "text-white"}`}>System Settings</h2>
+                    <p className={`text-xs ${isLight ? "text-slate-500" : "text-slate-400"}`}>Configure Voice Systems, LLM Providers, Local Connections, and Gateways.</p>
                   </div>
                 </div>
+                
+                <SettingsPanel 
+                  settingsConfig={settingsConfig}
+                  setSettingsConfig={setSettingsConfig}
+                  ttsSettings={ttsSettings} 
+                  setTtsSettings={setTtsSettings} 
+                  isLight={isLight} 
+                  customBg={customBg}
+                  setCustomBg={setCustomBg}
+                />
               </div>
             </motion.div>
           )}
@@ -2271,6 +2598,87 @@ export default function App() {
           </motion.div>
         </motion.div>
       )}
+
+      {/* WhatsApp Link Modal */}
+      {showWhatsAppModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className={`fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-sm px-4 ${isLight ? 'bg-white/60' : 'bg-slate-950/60'}`}
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+            className={`w-full max-w-sm rounded-3xl p-6 border shadow-2xl ${
+              isLight ? "bg-white border-slate-200" : "bg-slate-900 border-slate-800"
+            }`}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className={`text-sm font-bold font-display ${isLight ? "text-slate-900" : "text-white"}`}>Link WhatsApp Agent</h3>
+              <button onClick={() => setShowWhatsAppModal(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+
+            <div className="space-y-5 text-center flex flex-col items-center justify-center">
+              {waConnected ? (
+                <>
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-full">
+                    <Check className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h4 className={`text-sm font-semibold ${isLight ? "text-slate-800" : "text-white"}`}>WhatsApp Agent Linked</h4>
+                    <p className="text-xs text-slate-500 mt-1">Listening for incoming DMs to reply with text and voice note.</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      await fetch("http://localhost:3000/api/agents/whatsapp/stop", { method: "POST" });
+                      setWaConnected(false);
+                      setWaQrCode(null);
+                    }}
+                    className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold font-mono tracking-wider transition-all"
+                  >
+                    DISCONNECT AGENT
+                  </button>
+                </>
+              ) : waQrCode ? (
+                <>
+                  <div className="p-3 bg-slate-950 border border-slate-900 rounded-2xl">
+                    <img src={waQrCode} alt="WhatsApp QR Code" className="w-48 h-48 rounded-lg" />
+                  </div>
+                  <div>
+                    <h4 className={`text-sm font-semibold ${isLight ? "text-slate-800" : "text-white"}`}>Scan QR Code</h4>
+                    <p className="text-xs text-slate-500 mt-1">Open WhatsApp on your phone, go to Linked Devices, and scan this QR code to authenticate the agent.</p>
+                  </div>
+                  <div className="text-[10px] font-mono text-cyan-500 animate-pulse uppercase tracking-wider">
+                    Generating secure session...
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 text-cyan-500 rounded-full">
+                    <Server className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h4 className={`text-sm font-semibold ${isLight ? "text-slate-800" : "text-white"}`}>WhatsApp Agent Off</h4>
+                    <p className="text-xs text-slate-500 mt-1">Start the agent session to generate a registration QR code.</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      await fetch("http://localhost:3000/api/agents/whatsapp/start", { method: "POST" });
+                    }}
+                    className="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold font-mono tracking-wider transition-all"
+                  >
+                    START SESSION
+                  </button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </AnimatePresence>
 
       {/* PERMISSION MANAGER MODAL */}
@@ -2342,6 +2750,224 @@ export default function App() {
                 </div>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Draggable Image Viewer Popup */}
+      <AnimatePresence>
+        {viewerImage && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            drag
+            dragMomentum={false}
+            dragElastic={0.1}
+            className={`fixed top-1/4 left-1/3 z-[150] w-full max-w-lg rounded-2xl border backdrop-blur-lg shadow-2xl p-4 cursor-move ${
+              isLight 
+                ? "bg-white/90 border-slate-300 text-slate-800" 
+                : "bg-slate-950/90 border-slate-800 text-slate-100"
+            }`}
+          >
+            {/* Title Bar */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/15 mb-3 select-none">
+              <div className="flex items-center gap-2">
+                <FileImage className="w-4 h-4 text-cyan-500" />
+                <span className="text-xs font-mono font-bold truncate max-w-[280px]">{viewerImage.name}</span>
+              </div>
+              <button
+                onClick={() => setViewerImage(null)}
+                className="p-1 hover:bg-rose-500/20 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
+                title="Close image"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Image Container */}
+            <div className="flex items-center justify-center bg-black/40 rounded-xl overflow-hidden min-h-[200px] p-2">
+              <img
+                src={`http://localhost:3000/api/agents/files/content?path=${encodeURIComponent(viewerImage.path)}`}
+                alt={viewerImage.name}
+                className="max-h-[50vh] max-w-full object-contain rounded-lg shadow pointer-events-none"
+              />
+            </div>
+            
+            {/* Drag Hint Footer */}
+            <div className="text-[10px] text-center text-slate-500 font-mono mt-2 select-none">
+              Drag anywhere to move
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Draggable Video Player Popup */}
+      <AnimatePresence>
+        {viewerVideo && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            drag
+            dragMomentum={false}
+            dragElastic={0.1}
+            className={`fixed top-1/4 left-1/3 z-[150] w-full max-w-xl rounded-2xl border backdrop-blur-lg shadow-2xl p-4 cursor-move ${
+              isLight 
+                ? "bg-white/90 border-slate-350 text-slate-800" 
+                : "bg-slate-950/90 border-slate-800 text-slate-100"
+            }`}
+          >
+            {/* Title Bar */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/15 mb-3 select-none">
+              <div className="flex items-center gap-2">
+                <Play className="w-4 h-4 text-cyan-500 fill-cyan-500/10" />
+                <span className="text-xs font-mono font-bold truncate max-w-[340px]">{viewerVideo.name}</span>
+              </div>
+              <button
+                onClick={() => setViewerVideo(null)}
+                className="p-1 hover:bg-rose-500/20 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
+                title="Close video"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Video Container */}
+            <div className="flex items-center justify-center bg-black/60 rounded-xl overflow-hidden min-h-[240px] p-1">
+              <video
+                src={`http://localhost:3000/api/agents/files/content?path=${encodeURIComponent(viewerVideo.path)}`}
+                controls
+                autoPlay
+                className="max-h-[50vh] max-w-full rounded-lg shadow"
+                style={{ pointerEvents: 'auto' }}
+              />
+            </div>
+            
+            {/* Drag Hint Footer */}
+            <div className="text-[10px] text-center text-slate-500 font-mono mt-2 select-none">
+              Drag anywhere to move
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Notepad Editor Popup */}
+      <AnimatePresence>
+        {notepadFile && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            drag
+            dragMomentum={false}
+            dragElastic={0.1}
+            className={`fixed top-12 left-1/4 z-[150] w-full max-w-2xl rounded-2xl border backdrop-blur-lg shadow-2xl p-5 cursor-move ${
+              isLight 
+                ? "bg-white/95 border-slate-300 text-slate-800" 
+                : "bg-slate-950/95 border-slate-850 text-slate-100"
+            }`}
+          >
+            {/* Title Bar */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/10 mb-3 select-none">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-cyan-400" />
+                <div className="max-w-md overflow-hidden">
+                  <span className="text-xs font-mono font-bold block truncate">{notepadFile.name}</span>
+                  <span className="text-[9px] font-mono text-slate-500 block truncate">{notepadFile.path}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setNotepadFile(null);
+                  setNotepadContent("");
+                  setNotepadError(null);
+                }}
+                className="p-1 hover:bg-rose-500/20 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
+                title="Close notepad"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Notepad Controls */}
+            <div className="flex items-center justify-between gap-3 mb-2.5 select-none">
+              {/* File Type Display */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-mono uppercase bg-slate-900 border border-slate-800 px-2 py-0.5 rounded text-cyan-400">
+                  {notepadFile.name.split('.').pop()?.toUpperCase() || "TEXT"} File
+                </span>
+                {notepadSaveSuccess && (
+                  <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-0.5 animate-pulse">
+                    <Check className="w-3.5 h-3.5" /> SAVED
+                  </span>
+                )}
+              </div>
+              
+              {/* Scroll & Save Buttons */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => scrollNotepad('up')}
+                  className={`px-2.5 py-1 rounded text-[10px] font-bold font-mono tracking-wide transition-all border cursor-pointer ${
+                    isLight 
+                      ? "bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700" 
+                      : "bg-slate-900 border-slate-850 hover:bg-slate-800 text-slate-300"
+                  }`}
+                  title="Scroll Up"
+                >
+                  SCROLL UP
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollNotepad('down')}
+                  className={`px-2.5 py-1 rounded text-[10px] font-bold font-mono tracking-wide transition-all border cursor-pointer ${
+                    isLight 
+                      ? "bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700" 
+                      : "bg-slate-900 border-slate-850 hover:bg-slate-800 text-slate-300"
+                  }`}
+                  title="Scroll Down"
+                >
+                  SCROLL DOWN
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSaveNotepad}
+                  disabled={notepadSaving}
+                  className="px-3.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-[10px] font-bold font-mono tracking-wider transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {notepadSaving ? "SAVING..." : "SAVE CHANGES"}
+                </button>
+              </div>
+            </div>
+
+            {/* Notepad Body */}
+            <div className="relative border border-slate-200/10 rounded-xl overflow-hidden bg-black/40">
+              {notepadLoading ? (
+                <div className="py-24 text-center text-xs text-slate-500 font-mono">
+                  Fetching file content...
+                </div>
+              ) : notepadError ? (
+                <div className="p-6 text-center text-rose-400 text-xs font-mono">
+                  {notepadError}
+                </div>
+              ) : (
+                <textarea
+                  ref={notepadTextareaRef}
+                  value={notepadContent}
+                  onChange={(e) => setNotepadContent(e.target.value)}
+                  className="w-full h-80 p-4 text-xs font-mono bg-transparent text-slate-200 outline-none resize-none overflow-y-auto leading-relaxed cursor-text"
+                  style={{ pointerEvents: 'auto' }}
+                  placeholder="File is empty"
+                />
+              )}
+            </div>
+
+            {/* Drag Hint Footer */}
+            <div className="text-[10px] text-center text-slate-500 font-mono mt-2.5 select-none">
+              Drag anywhere to move
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

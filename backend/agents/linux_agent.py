@@ -53,6 +53,44 @@ class LinuxAgent(BaseAgent):
 
     async def execute(self, command: str, category: str):
         self.append_audit_log(command, category, command, "sudo" in command or "pkexec" in command)
+        
+        # Intercept common system controls and route to SystemController abstraction
+        from backend.utils.sys_control import system_controller
+        
+        # 1. Workspace switching
+        ws_match = re.search(r"workspace\s+(\d+)", command) or re.search(r"wmctrl\s+-s\s+(\d+)", command)
+        if ws_match:
+            num = int(ws_match.group(1))
+            # wmctrl is 0-indexed, system_controller is 1-indexed
+            if "wmctrl" in command:
+                num += 1
+            success = system_controller.switch_workspace(num)
+            return {"success": success, "stdout": f"Switched to workspace {num}", "stderr": ""}
+
+        # 2. Close Active Window
+        if "killactive" in command or "windowkill" in command or "wmctrl -c" in command:
+            success = system_controller.close_active_window()
+            return {"success": success, "stdout": "Closed active window", "stderr": ""}
+
+        # 3. Fullscreen
+        if "fullscreen" in command:
+            success = system_controller.toggle_fullscreen()
+            return {"success": success, "stdout": "Toggled fullscreen", "stderr": ""}
+
+        # 4. Volume Control
+        vol_match = re.search(r"set-volume.*([\d%+-]+)", command) or re.search(r"amixer.*set.*Master.*([\d%+-]+)", command)
+        if vol_match:
+            change = vol_match.group(1)
+            success = system_controller.set_volume(change)
+            return {"success": success, "stdout": f"Volume adjusted by {change}", "stderr": ""}
+
+        # 5. Media Control
+        media_match = re.search(r"playerctl\s+(\w+)", command)
+        if media_match:
+            action = media_match.group(1)
+            success = system_controller.control_media(action)
+            return {"success": success, "stdout": f"Media command: {action}", "stderr": ""}
+
         val = self.validate_command(command)
         if not val or not val.get("allowed", False):
             return {"success": False, "stdout": "", "stderr": val.get("reason", "Command validation failed") if val else "Invalid validation response"}
@@ -88,3 +126,4 @@ class LinuxAgent(BaseAgent):
         
     async def verify(self, execution_result: dict) -> bool:
         return execution_result.get("success", False)
+

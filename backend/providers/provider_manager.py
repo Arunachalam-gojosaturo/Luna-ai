@@ -87,6 +87,57 @@ class ProviderManager:
         """Fetch JSON from the selected provider, fallback if failed"""
         
         provider = getattr(req, "activeProvider", "groq")
+
+        # 0. Local LLM (Ollama) via LiteLLM
+        if provider == "local":
+            try:
+                import litellm
+                local_url = getattr(req, "localLlmUrl", "http://localhost:11434")
+                local_model = getattr(req, "localLlmModel", "llama3")
+                
+                loop = asyncio.get_event_loop()
+                # Run completion in executor to keep it async friendly
+                response = await loop.run_in_executor(
+                    None,
+                    lambda: litellm.completion(
+                        model=f"ollama/{local_model}",
+                        messages=messages,
+                        api_base=local_url,
+                        temperature=0.2
+                    )
+                )
+                content = response.choices[0].message.content.strip()
+                parsed = self._extract_json_from_content(content)
+                if parsed:
+                    return parsed
+            except Exception as e:
+                print(f"[litellm-local] Error: {e}")
+
+        # 0.5. Open Claw Connector via LiteLLM
+        if provider == "openclaw":
+            try:
+                import litellm
+                claw_url = getattr(req, "openClawUrl", "http://localhost:8000/v1")
+                claw_key = getattr(req, "openClawApiKey", "default-key")
+                claw_model = getattr(req, "modelSelection", "gpt-3.5-turbo") or "gpt-3.5-turbo"
+                
+                loop = asyncio.get_event_loop()
+                response = await loop.run_in_executor(
+                    None,
+                    lambda: litellm.completion(
+                        model=f"openai/{claw_model}",
+                        messages=messages,
+                        api_base=claw_url,
+                        api_key=claw_key,
+                        temperature=0.3
+                    )
+                )
+                content = response.choices[0].message.content.strip()
+                parsed = self._extract_json_from_content(content)
+                if parsed:
+                    return parsed
+            except Exception as e:
+                print(f"[litellm-openclaw] Error: {e}")
         
         # 1. Groq
         if provider == "groq" and getattr(req, "groqKey", None):

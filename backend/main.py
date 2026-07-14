@@ -22,10 +22,23 @@ async def startup_event():
         voice_agent.start_background_listening()
     except Exception as e:
         print(f"Failed to start native mic: {e}")
+    
+    # Start WhatsApp Agent
+    try:
+        from backend.agents.whatsapp_agent import whatsapp_manager
+        whatsapp_manager.start()
+        print("WhatsApp agent successfully started.")
+    except Exception as e:
+        print(f"Failed to start WhatsApp agent: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     context_engine.stop()
+    try:
+        from backend.agents.whatsapp_agent import whatsapp_manager
+        whatsapp_manager.stop()
+    except Exception:
+        pass
 
 app.add_middleware(
     CORSMiddleware,

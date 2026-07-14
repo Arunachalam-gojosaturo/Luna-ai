@@ -34,6 +34,12 @@ class CommandRequest(BaseModel):
     openaiKey: str = ""
     modelSelection: str = ""
     activeProvider: str = "groq"
+    isLocalLlm: bool = False
+    localLlmUrl: str = ""
+    localLlmModel: str = ""
+    openClawApiKey: str = ""
+    openClawUrl: str = ""
+
 
 @router.post("/luna/command")
 async def luna_command(req: CommandRequest):
