@@ -76,7 +76,23 @@ class LinuxAgent(BaseAgent):
                     all_ok = False
             return {"success": all_ok, "stdout": "\n".join(outputs), "stderr": ""}
 
-        # 1. WhatsApp / Mobile App Launching Interceptor
+        # 1. Mobile Lock, Unlock, PIN Update & App Launch Interceptors
+        pin_update_match = re.search(r"(?:change|set|update|remember)\s+(?:mobile|phone)\s+(?:pin|password)\s+(?:to\s+)?(\d+)", cmd_lower) or re.search(r"(?:pin|password)\s+is\s+(\d+)", cmd_lower)
+        if pin_update_match:
+            new_pin = pin_update_match.group(1)
+            adb_manager.set_mobile_pin(new_pin)
+            return {"success": True, "stdout": f"Updated mobile unlock PIN to {new_pin}", "stderr": ""}
+
+        if "unlock" in cmd_lower and ("mobile" in cmd_lower or "phone" in cmd_lower or "device" in cmd_lower or "android" in cmd_lower):
+            pin_specified = re.search(r"\b(\d{4,8})\b", command)
+            pin_val = pin_specified.group(1) if pin_specified else None
+            res = await adb_manager.unlock_device(pin=pin_val)
+            return {"success": res["status"] == "success", "stdout": res.get("result", "Unlocked mobile"), "stderr": res.get("stderr", "")}
+
+        if "lock" in cmd_lower and ("mobile" in cmd_lower or "phone" in cmd_lower or "device" in cmd_lower or "android" in cmd_lower) and "session" not in cmd_lower:
+            res = await adb_manager.lock_device()
+            return {"success": res["status"] == "success", "stdout": res.get("result", "Locked mobile"), "stderr": res.get("stderr", "")}
+
         if "whatsapp" in cmd_lower and ("open" in cmd_lower or "start" in cmd_lower or "launch" in cmd_lower or "mobile" in cmd_lower):
             res = await adb_manager.launch_app("whatsapp")
             return {"success": res["status"] == "success", "stdout": res.get("result", "Launched WhatsApp"), "stderr": res.get("stderr", "")}

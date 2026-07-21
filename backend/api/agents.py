@@ -201,6 +201,44 @@ async def adb_control(req: ADBControlRequest):
     except Exception as e:
         return {"status": "error", "result": str(e)}
 
+class ADBPinRequest(BaseModel):
+    pin: str = ""
+
+@router.get("/adb/pin")
+async def get_adb_pin():
+    try:
+        from backend.utils.adb_manager import adb_manager
+        return {"status": "success", "pin": adb_manager.get_mobile_pin()}
+    except Exception as e:
+        return {"status": "error", "result": str(e)}
+
+@router.post("/adb/pin")
+async def set_adb_pin(req: ADBPinRequest):
+    try:
+        from backend.utils.adb_manager import adb_manager
+        success = adb_manager.set_mobile_pin(req.pin)
+        return {"status": "success" if success else "error", "pin": adb_manager.get_mobile_pin()}
+    except Exception as e:
+        return {"status": "error", "result": str(e)}
+
+@router.post("/adb/unlock")
+async def adb_unlock(req: ADBControlRequest):
+    try:
+        from backend.utils.adb_manager import adb_manager
+        res = await adb_manager.unlock_device(pin=req.text if req.text else None, serial=req.target)
+        return res
+    except Exception as e:
+        return {"status": "error", "result": str(e)}
+
+@router.post("/adb/lock")
+async def adb_lock(req: ADBControlRequest):
+    try:
+        from backend.utils.adb_manager import adb_manager
+        res = await adb_manager.lock_device(serial=req.target)
+        return res
+    except Exception as e:
+        return {"status": "error", "result": str(e)}
+
 @router.post("/adb/launch_app")
 async def adb_launch_app(req: ADBLaunchAppRequest):
     try:

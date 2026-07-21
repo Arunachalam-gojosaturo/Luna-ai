@@ -7,6 +7,7 @@ from typing import List, Dict, Optional
 from backend.config.paths import get_config_dir
 
 SAVED_DEVICES_FILE = get_config_dir() / "saved_adb_devices.json"
+MOBILE_PIN_FILE = get_config_dir() / "mobile_pin.json"
 
 class ADBManager:
     """
@@ -15,8 +16,10 @@ class ADBManager:
     - Auto-detects Wi-Fi IP of USB-connected Android phones
     - Configures Wireless TCP/IP ONCE per USB connection
     - Remembers devices in saved_adb_devices.json
-    - Reconnects saved wireless devices cleanly without causing connection drops
-    - Provides high-level mobile controls (WhatsApp, apps, keyevents, tap, text)
+    - Remembers mobile unlock PIN in mobile_pin.json (default 769680)
+    - Unlocks mobile phone automatically with swipe & PIN input
+    - Locks mobile phone screen
+    - Launches apps cleanly with intent & wake-up handling
     """
 
     def __init__(self):
@@ -30,6 +33,34 @@ class ADBManager:
                     json.dump({}, f, indent=2)
             except Exception as e:
                 print(f"[ADBManager] Could not create saved devices file: {e}")
+
+        if not MOBILE_PIN_FILE.exists():
+            try:
+                with open(MOBILE_PIN_FILE, "w") as f:
+                    json.dump({"pin": "769680"}, f, indent=2)
+            except Exception as e:
+                print(f"[ADBManager] Could not create mobile PIN file: {e}")
+
+    def get_mobile_pin(self) -> str:
+        try:
+            if MOBILE_PIN_FILE.exists():
+                with open(MOBILE_PIN_FILE, "r") as f:
+                    data = json.load(f)
+                    return data.get("pin", "769680")
+        except Exception as e:
+            print(f"[ADBManager] Error reading PIN: {e}")
+        return "769680"
+
+    def set_mobile_pin(self, new_pin: str) -> bool:
+        try:
+            cleaned_pin = str(new_pin).strip()
+            with open(MOBILE_PIN_FILE, "w") as f:
+                json.dump({"pin": cleaned_pin}, f, indent=2)
+            print(f"[ADBManager] Mobile PIN updated to: {cleaned_pin}")
+            return True
+        except Exception as e:
+            print(f"[ADBManager] Error setting PIN: {e}")
+            return False
 
     def load_saved_devices(self) -> Dict[str, dict]:
         try:
@@ -49,9 +80,28 @@ class ADBManager:
         except Exception as e:
             print(f"[ADBManager] Failed to save device info: {e}")
 
+    async def _resolve_device_serial(self, serial: Optional[str] = None) -> Optional[str]:
+        """Resolves target device serial to avoid 'more than one device' errors."""
+        devices = await self.scan_and_auto_connect()
+        online_devices = [d["serial"] for d in devices if d["status"] == "device"]
+
+        if not online_devices:
+            return None
+
+        if serial and serial in online_devices:
+            return serial
+
+        # Match partial IP or target
+        if serial:
+            for s in online_devices:
+                if serial in s:
+                    return s
+
+        # Default to first online device
+        return online_devices[0]
+
     async def get_device_ip(self, serial: str) -> Optional[str]:
         """Attempt multiple methods to retrieve the Wi-Fi IP of an Android device over USB."""
-        # Method 1: getprop dhcp.wlan0.ipaddress
         try:
             proc = await asyncio.create_subprocess_exec(
                 "adb", "-s", serial, "shell", "getprop", "dhcp.wlan0.ipaddress",
@@ -64,7 +114,6 @@ class ADBManager:
         except Exception:
             pass
 
-        # Method 2: ip route (look for 'src X.X.X.X')
         try:
             proc = await asyncio.create_subprocess_exec(
                 "adb", "-s", serial, "shell", "ip", "route",
@@ -80,7 +129,6 @@ class ADBManager:
         except Exception:
             pass
 
-        # Method 3: ip addr show wlan0
         try:
             proc = await asyncio.create_subprocess_exec(
                 "adb", "-s", serial, "shell", "ip", "-f", "inet", "addr", "show", "wlan0",
@@ -99,9 +147,7 @@ class ADBManager:
         return None
 
     async def scan_and_auto_connect(self) -> List[dict]:
-        """
-        Scan devices safely without continuously restarting tcpip on every poll.
-        """
+        """Scan devices safely without continuously restarting tcpip on every poll."""
         devices = []
         try:
             proc = await asyncio.create_subprocess_exec(
@@ -141,7 +187,6 @@ class ADBManager:
                         }
                         devices.append(device_entry)
 
-                        # Auto-detect IP for USB connected device once
                         if not is_wireless and status == "device" and serial not in self._configured_serials:
                             ip = await self.get_device_ip(serial)
                             if ip:
@@ -154,13 +199,11 @@ class ADBManager:
                                 })
                                 self._configured_serials.add(serial)
 
-            # If an offline wireless device is detected, reconnect cleanly
             if has_offline:
                 saved = self.load_saved_devices()
                 for dkey, info in saved.items():
                     ip = info.get("ip")
                     if ip:
-                        # disconnect offline target
                         await (await asyncio.create_subprocess_exec("adb", "disconnect", f"{ip}:5555")).communicate()
                         await (await asyncio.create_subprocess_exec("adb", "connect", f"{ip}:5555")).communicate()
 
@@ -169,32 +212,71 @@ class ADBManager:
 
         return devices
 
+    async def unlock_device(self, pin: Optional[str] = None, serial: Optional[str] = None) -> dict:
+        """Unlock mobile device screen using swipe and PIN typing."""
+        target_serial = await self._resolve_device_serial(serial)
+        if not target_serial:
+            return {"status": "error", "result": "No online Android device connected via ADB"}
+
+        use_pin = pin if pin else self.get_mobile_pin()
+        cmd_prefix = ["adb", "-s", target_serial]
+
+        # 1. Wake screen
+        await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", "224")).communicate()
+        await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", "82")).communicate()
+        await asyncio.sleep(0.2)
+
+        # 2. Swipe up to bring PIN keypad
+        await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "swipe", "500", "1500", "500", "300", "300")).communicate()
+        await asyncio.sleep(0.3)
+
+        # 3. Enter PIN text
+        await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "text", str(use_pin))).communicate()
+        await asyncio.sleep(0.2)
+
+        # 4. Press Enter
+        await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", "66")).communicate()
+        await asyncio.sleep(0.2)
+
+        # 5. Fallback keyevent 82 / Home if needed
+        await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", "3")).communicate()
+
+        return {"status": "success", "result": f"Unlocked device '{target_serial}' with PIN '{use_pin}'", "pin": use_pin}
+
+    async def lock_device(self, serial: Optional[str] = None) -> dict:
+        """Lock mobile device screen."""
+        target_serial = await self._resolve_device_serial(serial)
+        if not target_serial:
+            return {"status": "error", "result": "No online Android device connected via ADB"}
+
+        cmd_prefix = ["adb", "-s", target_serial]
+        await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", "26")).communicate()
+        return {"status": "success", "result": f"Locked mobile screen for '{target_serial}'"}
+
     async def launch_scrcpy(self, target: str = "") -> dict:
         """Safely launch scrcpy window."""
         try:
-            # Check devices first
-            devices = await self.scan_and_auto_connect()
-            online_device = None
-            
-            for d in devices:
-                if d["status"] == "device":
-                    if not target or target in d["serial"] or target in d.get("ip", ""):
-                        online_device = d["serial"]
-                        break
-            
+            target_serial = await self._resolve_device_serial(target)
             cmd = ["scrcpy"]
-            if online_device:
-                cmd.extend(["-s", online_device])
+            if target_serial:
+                cmd.extend(["-s", target_serial])
             elif target:
                 cmd.extend(["-s", target])
                 
             subprocess.Popen(cmd)
-            return {"status": "success", "result": f"Launched scrcpy window for {online_device or target or 'default device'}"}
+            return {"status": "success", "result": f"Launched scrcpy window for {target_serial or target or 'default device'}"}
         except Exception as e:
             return {"status": "error", "result": str(e)}
 
-    async def launch_app(self, app_name_or_pkg: str, serial: str = None) -> dict:
-        """Launch an app on the Android device via ADB."""
+    async def launch_app(self, app_name_or_pkg: str, serial: Optional[str] = None) -> dict:
+        """Launch an app on the Android device via ADB after ensuring device is awake/unlocked."""
+        target_serial = await self._resolve_device_serial(serial)
+        if not target_serial:
+            return {"status": "error", "result": "No active Android device found to launch app"}
+
+        # First wake/unlock device screen
+        await self.unlock_device(serial=target_serial)
+
         pkg_map = {
             "whatsapp": "com.whatsapp",
             "whatsapp business": "com.whatsapp.w4b",
@@ -205,14 +287,14 @@ class ADBManager:
             "settings": "com.android.settings",
             "camera": "com.android.camera",
             "gallery": "com.google.android.apps.photos",
-            "maps": "com.google.android.apps.maps"
+            "photos": "com.google.android.apps.photos",
+            "maps": "com.google.android.apps.maps",
+            "phone": "com.google.android.dialer",
+            "messages": "com.google.android.apps.messaging"
         }
         
         target_pkg = pkg_map.get(app_name_or_pkg.lower().strip(), app_name_or_pkg.strip())
-        
-        cmd_prefix = ["adb"]
-        if serial:
-            cmd_prefix.extend(["-s", serial])
+        cmd_prefix = ["adb", "-s", target_serial]
             
         monkey_cmd = cmd_prefix + ["shell", "monkey", "-p", target_pkg, "-c", "android.intent.category.LAUNCHER", "1"]
         proc = await asyncio.create_subprocess_exec(
@@ -226,7 +308,8 @@ class ADBManager:
         if "Events injected: 1" in out_str or proc.returncode == 0:
             return {"status": "success", "result": f"Opened {app_name_or_pkg} on device", "package": target_pkg}
             
-        fallback_cmd = cmd_prefix + ["shell", "am", "start", "-a", "android.intent.action.MAIN", "-c", "android.intent.category.LAUNCHER", "-n", f"{target_pkg}/.Main"]
+        # Intent launch fallback
+        fallback_cmd = cmd_prefix + ["shell", "am", "start", "-a", "android.intent.action.MAIN", "-c", "android.intent.category.LAUNCHER", "-p", target_pkg]
         proc2 = await asyncio.create_subprocess_exec(
             *fallback_cmd,
             stdout=asyncio.subprocess.PIPE,
@@ -240,23 +323,23 @@ class ADBManager:
             "stderr": stderr2.decode()
         }
 
-    async def control_input(self, action: str, text: str = "", x: int = 0, y: int = 0, serial: str = None) -> dict:
-        """Control Android device inputs (keyevent, text typing, tap, swipe, unlock)."""
-        cmd_prefix = ["adb"]
-        if serial:
-            cmd_prefix.extend(["-s", serial])
+    async def control_input(self, action: str, text: str = "", x: int = 0, y: int = 0, serial: Optional[str] = None) -> dict:
+        """Control Android device inputs (keyevent, text typing, tap, swipe, unlock, lock)."""
+        target_serial = await self._resolve_device_serial(serial)
+        if not target_serial:
+            return {"status": "error", "result": "No online Android device connected via ADB"}
+
+        cmd_prefix = ["adb", "-s", target_serial]
             
-        if action == "text":
+        if action == "unlock":
+            return await self.unlock_device(pin=text if text else None, serial=target_serial)
+        elif action == "lock":
+            return await self.lock_device(serial=target_serial)
+        elif action == "text":
             safe_text = text.replace(" ", "%s")
             cmd = cmd_prefix + ["shell", "input", "text", safe_text]
         elif action == "tap":
             cmd = cmd_prefix + ["shell", "input", "tap", str(x), str(y)]
-        elif action == "unlock":
-            cmd1 = cmd_prefix + ["shell", "input", "keyevent", "224"]
-            cmd2 = cmd_prefix + ["shell", "input", "keyevent", "82"]
-            await (await asyncio.create_subprocess_exec(*cmd1)).communicate()
-            await (await asyncio.create_subprocess_exec(*cmd2)).communicate()
-            return {"status": "success", "result": "Unlocked device"}
         else:
             keyevents = {
                 "power": "26", "back": "4", "home": "3",

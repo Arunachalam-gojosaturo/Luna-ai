@@ -521,15 +521,27 @@ export default function DeviceEcosystem({
                     }`}>
                       <div className="grid grid-cols-2 gap-3">
                         <button
-                          onClick={() => handleAdbControl("power")}
+                          onClick={() => handleAdbControl("unlock")}
                           className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 ${
                             isLight 
-                              ? 'bg-white border-slate-200 hover:bg-slate-50 text-slate-800' 
-                              : 'bg-slate-900/40 border-slate-900 hover:bg-slate-900/70 text-slate-200'
+                              ? 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100 text-emerald-800' 
+                              : 'bg-emerald-950/30 border-emerald-900/40 hover:bg-emerald-900/40 text-emerald-300'
+                          }`}
+                        >
+                          <Power className="w-4 h-4 text-emerald-400" />
+                          <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">Unlock Mobile</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleAdbControl("lock")}
+                          className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 ${
+                            isLight 
+                              ? 'bg-rose-50 border-rose-200 hover:bg-rose-100 text-rose-800' 
+                              : 'bg-rose-950/30 border-rose-900/40 hover:bg-rose-900/40 text-rose-400'
                           }`}
                         >
                           <Power className="w-4 h-4 text-rose-500" />
-                          <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">Power Screen</span>
+                          <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">Lock Mobile</span>
                         </button>
                         
                         <button
