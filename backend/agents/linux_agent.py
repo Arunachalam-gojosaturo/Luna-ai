@@ -83,25 +83,29 @@ class LinuxAgent(BaseAgent):
             adb_manager.set_mobile_pin(new_pin)
             return {"success": True, "stdout": f"Updated mobile unlock PIN to {new_pin}", "stderr": ""}
 
-        if "unlock" in cmd_lower and ("mobile" in cmd_lower or "phone" in cmd_lower or "device" in cmd_lower or "android" in cmd_lower):
+        if "unlock" in cmd_lower and ("mobile" in cmd_lower or "phone" in cmd_lower or "device" in cmd_lower or "android" in cmd_lower or "screen" in cmd_lower or cmd_lower == "unlock"):
             pin_specified = re.search(r"\b(\d{4,8})\b", command)
             pin_val = pin_specified.group(1) if pin_specified else None
             res = await adb_manager.unlock_device(pin=pin_val)
-            return {"success": res["status"] == "success", "stdout": res.get("result", "Unlocked mobile"), "stderr": res.get("stderr", "")}
+            return {"success": res["status"] == "success", "stdout": res.get("result", "Unlocked mobile device successfully"), "stderr": res.get("stderr", "")}
 
-        if "lock" in cmd_lower and ("mobile" in cmd_lower or "phone" in cmd_lower or "device" in cmd_lower or "android" in cmd_lower) and "session" not in cmd_lower:
+        if "lock" in cmd_lower and ("mobile" in cmd_lower or "phone" in cmd_lower or "device" in cmd_lower or "android" in cmd_lower or "screen" in cmd_lower) and "session" not in cmd_lower:
             res = await adb_manager.lock_device()
-            return {"success": res["status"] == "success", "stdout": res.get("result", "Locked mobile"), "stderr": res.get("stderr", "")}
+            return {"success": res["status"] == "success", "stdout": res.get("result", "Locked mobile device successfully"), "stderr": res.get("stderr", "")}
 
-        if "whatsapp" in cmd_lower and ("open" in cmd_lower or "start" in cmd_lower or "launch" in cmd_lower or "mobile" in cmd_lower):
-            res = await adb_manager.launch_app("whatsapp")
-            return {"success": res["status"] == "success", "stdout": res.get("result", "Launched WhatsApp"), "stderr": res.get("stderr", "")}
+        if any(app in cmd_lower for app in ["whatsapp", "instagram", "youtube", "facebook", "twitter", "x", "telegram", "spotify", "camera", "gallery", "settings"]):
+            if any(verb in cmd_lower for verb in ["open", "launch", "start", "run"]):
+                for app_candidate in ["whatsapp", "instagram", "youtube", "facebook", "twitter", "telegram", "spotify", "camera", "gallery", "settings"]:
+                    if app_candidate in cmd_lower:
+                        res = await adb_manager.launch_app(app_candidate)
+                        return {"success": res["status"] == "success", "stdout": res.get("result", f"Launched {app_candidate}"), "stderr": res.get("stderr", "")}
 
-        mobile_app_match = re.search(r"(?:open|launch|start)\s+(\w+)\s+(?:on|in)\s+(?:mobile|phone|android)", cmd_lower)
+        mobile_app_match = re.search(r"(?:open|launch|start)\s+(\w+)\s+(?:on|in)?\s*(?:mobile|phone|android|device)?", cmd_lower)
         if mobile_app_match:
             app_name = mobile_app_match.group(1)
-            res = await adb_manager.launch_app(app_name)
-            return {"success": res["status"] == "success", "stdout": res.get("result", f"Launched {app_name}"), "stderr": res.get("stderr", "")}
+            if app_name not in ["code", "firefox", "kitty", "terminal", "browser"]:
+                res = await adb_manager.launch_app(app_name)
+                return {"success": res["status"] == "success", "stdout": res.get("result", f"Launched {app_name}"), "stderr": res.get("stderr", "")}
 
         # 2. System Power Actions (Shutdown, Reboot, Suspend, Lock)
         if "poweroff" in cmd_lower or "shutdown" in cmd_lower:

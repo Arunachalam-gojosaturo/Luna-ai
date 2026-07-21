@@ -66,7 +66,13 @@ class ADBManager:
         try:
             if SAVED_DEVICES_FILE.exists():
                 with open(SAVED_DEVICES_FILE, "r") as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    cleaned = {}
+                    for k, v in data.items():
+                        ip = v.get("ip", "")
+                        if ip and not ip.endswith(".0") and not ip.endswith(".255"):
+                            cleaned[k] = v
+                    return cleaned
         except Exception as e:
             print(f"[ADBManager] Error loading saved devices: {e}")
         return {}
@@ -142,19 +148,28 @@ class ADBManager:
         return telemetry
 
     async def get_device_ip(self, serial: str) -> Optional[str]:
-        """Attempt multiple methods to retrieve the Wi-Fi IP of an Android device over USB."""
+        """Attempt multiple methods to retrieve the valid Wi-Fi host IP of an Android device."""
+        def is_valid_host_ip(ip_str: str) -> bool:
+            if not ip_str or not re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", ip_str):
+                return False
+            parts = [int(x) for x in ip_str.split(".")]
+            return 0 < parts[3] < 255 and parts[0] != 127
+
+        # Method 1: ip -f inet addr show wlan0
         try:
             proc = await asyncio.create_subprocess_exec(
-                "adb", "-s", serial, "shell", "getprop", "dhcp.wlan0.ipaddress",
+                "adb", "-s", serial, "shell", "ip", "-f", "inet", "addr", "show", "wlan0",
                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
             stdout, _ = await proc.communicate()
-            ip = stdout.decode().strip()
-            if ip and not ip.endswith(".0") and not ip.endswith(".255") and re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", ip):
-                return ip
+            out = stdout.decode().strip()
+            match = re.search(r"inet\s+((?:\d{1,3}\.){3}\d{1,3})", out)
+            if match and is_valid_host_ip(match.group(1)):
+                return match.group(1)
         except Exception:
             pass
 
+        # Method 2: ip route (search all src IPs)
         try:
             proc = await asyncio.create_subprocess_exec(
                 "adb", "-s", serial, "shell", "ip", "route",
@@ -162,11 +177,23 @@ class ADBManager:
             )
             stdout, _ = await proc.communicate()
             out = stdout.decode().strip()
-            src_match = re.search(r"src\s+((?:\d{1,3}\.){3}\d{1,3})", out)
-            if src_match:
-                ip = src_match.group(1)
-                if not ip.endswith(".0") and not ip.endswith(".255"):
-                    return ip
+            matches = re.findall(r"src\s+((?:\d{1,3}\.){3}\d{1,3})", out)
+            for ip_cand in matches:
+                if is_valid_host_ip(ip_cand):
+                    return ip_cand
+        except Exception:
+            pass
+
+        # Method 3: dhcp.wlan0.ipaddress property
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "adb", "-s", serial, "shell", "getprop", "dhcp.wlan0.ipaddress",
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            stdout, _ = await proc.communicate()
+            ip_cand = stdout.decode().strip()
+            if is_valid_host_ip(ip_cand):
+                return ip_cand
         except Exception:
             pass
 

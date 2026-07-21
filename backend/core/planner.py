@@ -23,10 +23,14 @@ class Planner:
         # Fast path heuristics (bypasses LLM for simple requests)
         words = user_input.lower().split()
         fast_keywords = {"what", "who", "where", "why", "how", "hello", "hi"}
-        action_keywords = {"create", "debug", "install", "update", "search", "run", "make", "delete", "remove"}
+        action_keywords = {"create", "debug", "install", "update", "search", "run", "make", "delete", "remove", "unlock", "lock", "open", "launch", "start", "take", "turn", "set", "adjust", "send", "call"}
         
         # Check for specialized agent keywords first
-        has_specialized_keyword = any(kw in user_input.lower() for kw in ["git", "commit", "push", "pull", "file", "read", "write", "code", "package", "pacman"])
+        has_specialized_keyword = any(kw in user_input.lower() for kw in [
+            "git", "commit", "push", "pull", "file", "read", "write", "code", "package", "pacman",
+            "mobile", "phone", "android", "device", "whatsapp", "instagram", "youtube", "app",
+            "volume", "brightness", "screenshot", "pin", "screen"
+        ])
         
         # Only use fast path if short, no action keywords, AND no specialized keywords
         if len(words) < 8 and not any(kw in user_input.lower() for kw in action_keywords) and not has_specialized_keyword:
