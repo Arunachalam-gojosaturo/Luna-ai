@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 3000 & vite",
+    "app": "venv/bin/python luna_desktop.py",
+    "desktop:app": "venv/bin/python luna_desktop.py",
     "tauri": "tauri",
     "desktop": "tauri dev",
     "desktop:build": "tauri build",
