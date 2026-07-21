@@ -65,12 +65,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const handleSaveAll = () => {
     localStorage.setItem("settingsConfig", JSON.stringify(settingsConfig));
     localStorage.setItem("groqKey", settingsConfig.groqKey || "");
+    localStorage.setItem("geminiKey", settingsConfig.geminiKey || "");
     localStorage.setItem("openRouterKey", settingsConfig.openRouterKey || "");
-    localStorage.setItem("openaiKey", settingsConfig.openaiKey || "");
     localStorage.setItem("githubPat", settingsConfig.githubPat || "");
+    localStorage.setItem("nvidiaKey", settingsConfig.nvidiaKey || "");
+    localStorage.setItem("cerebrasKey", settingsConfig.cerebrasKey || "");
+    localStorage.setItem("bazaarlinkKey", settingsConfig.bazaarlinkKey || "");
+    localStorage.setItem("togetherKey", settingsConfig.togetherKey || "");
+    localStorage.setItem("cohereKey", settingsConfig.cohereKey || "");
+    localStorage.setItem("openaiKey", settingsConfig.openaiKey || "");
     localStorage.setItem("ttsSettings", JSON.stringify(ttsSettings));
     localStorage.setItem("elevenLabsKey", ttsSettings.elevenLabsApiKey || "");
-    alert("Luna System Configurations Saved Successfully!");
+    alert("Luna System Configurations & Free Tier Keys Saved Successfully!");
   };
 
   const borderClass = isLight ? "border-slate-200" : "border-slate-800/80";
@@ -209,9 +215,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               onChange={(e) => setSettingsConfig({ ...settingsConfig, activeProvider: e.target.value })}
               className={`text-xs p-2 rounded-lg border outline-none transition-all ${inputClass}`}
             >
-              <option value="gemini">Gemini (Studio)</option>
-              <option value="groq">Groq Cloud</option>
-              <option value="openai">OpenAI (GPT)</option>
+              <option value="gemini">Google AI Studio (Gemini 2.5)</option>
+              <option value="groq">Groq Cloud (Llama 3.3 70B)</option>
+              <option value="openrouter">OpenRouter (Free Tier Models)</option>
+              <option value="github">GitHub Models (GPT-4o / Llama)</option>
+              <option value="nvidia">NVIDIA NIM Developer (DeepSeek)</option>
+              <option value="cerebras">Cerebras Cloud (Ultra Fast)</option>
+              <option value="openai">OpenAI (GPT-4o)</option>
               <option value="local">Local LLM (Ollama)</option>
               <option value="openclaw">Open Claw Gateway</option>
             </select>
@@ -254,7 +264,23 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <h4 className="text-[11px] font-bold tracking-wider font-mono text-slate-400 uppercase">Cloud API Keys</h4>
               
               <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>Groq API Key</label>
+                <label className={labelClass}>Google AI Studio Key (Gemini Free 1500 req/day)</label>
+                <div className="relative">
+                  <input 
+                    type={showKeys['gemini'] ? "text" : "password"}
+                    value={settingsConfig.geminiKey || ""}
+                    onChange={(e) => setSettingsConfig({ ...settingsConfig, geminiKey: e.target.value })}
+                    placeholder="AIzaSy..."
+                    className={`text-xs p-2 pr-9 w-full rounded-lg border outline-none transition-all ${inputClass}`}
+                  />
+                  <button type="button" onClick={() => toggleShowKey('gemini')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500">
+                    {showKeys['gemini'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className={labelClass}>Groq API Key (Free 1000 req/day)</label>
                 <div className="relative">
                   <input 
                     type={showKeys['groq'] ? "text" : "password"}
@@ -270,23 +296,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>OpenAI API Key</label>
-                <div className="relative">
-                  <input 
-                    type={showKeys['openai'] ? "text" : "password"}
-                    value={settingsConfig.openaiKey || ""}
-                    onChange={(e) => setSettingsConfig({ ...settingsConfig, openaiKey: e.target.value })}
-                    placeholder="sk-..."
-                    className={`text-xs p-2 pr-9 w-full rounded-lg border outline-none transition-all ${inputClass}`}
-                  />
-                  <button type="button" onClick={() => toggleShowKey('openai')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500">
-                    {showKeys['openai'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>OpenRouter API Key</label>
+                <label className={labelClass}>OpenRouter API Key (Free Tier Models)</label>
                 <div className="relative">
                   <input 
                     type={showKeys['openrouter'] ? "text" : "password"}
@@ -302,7 +312,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>GitHub PAT (Personal Access Token)</label>
+                <label className={labelClass}>GitHub PAT (Personal Access Token / Models)</label>
                 <div className="relative">
                   <input 
                     type={showKeys['github'] ? "text" : "password"}
@@ -313,6 +323,38 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   />
                   <button type="button" onClick={() => toggleShowKey('github')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500">
                     {showKeys['github'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className={labelClass}>NVIDIA NIM Developer Key (DeepSeek-R1 / Qwen)</label>
+                <div className="relative">
+                  <input 
+                    type={showKeys['nvidia'] ? "text" : "password"}
+                    value={settingsConfig.nvidiaKey || ""}
+                    onChange={(e) => setSettingsConfig({ ...settingsConfig, nvidiaKey: e.target.value })}
+                    placeholder="nvapi-..."
+                    className={`text-xs p-2 pr-9 w-full rounded-lg border outline-none transition-all ${inputClass}`}
+                  />
+                  <button type="button" onClick={() => toggleShowKey('nvidia')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500">
+                    {showKeys['nvidia'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className={labelClass}>Cerebras Cloud Key (Ultra-Fast Llama 3.3 70B)</label>
+                <div className="relative">
+                  <input 
+                    type={showKeys['cerebras'] ? "text" : "password"}
+                    value={settingsConfig.cerebrasKey || ""}
+                    onChange={(e) => setSettingsConfig({ ...settingsConfig, cerebrasKey: e.target.value })}
+                    placeholder="csk-..."
+                    className={`text-xs p-2 pr-9 w-full rounded-lg border outline-none transition-all ${inputClass}`}
+                  />
+                  <button type="button" onClick={() => toggleShowKey('cerebras')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500">
+                    {showKeys['cerebras'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
               </div>

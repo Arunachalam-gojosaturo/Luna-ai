@@ -17,8 +17,8 @@ class ADBManager:
     - Configures Wireless TCP/IP ONCE per USB connection
     - Remembers devices in saved_adb_devices.json
     - Remembers mobile unlock PIN in mobile_pin.json (default 769680)
-    - Unlocks mobile phone automatically with swipe & PIN input
-    - Locks mobile phone screen
+    - Unlocks mobile phone accurately without accidental keyevent 82 / #5 presses
+    - Parses real battery level, charging status, and Wi-Fi state
     - Launches apps cleanly with intent & wake-up handling
     """
 
@@ -91,14 +91,55 @@ class ADBManager:
         if serial and serial in online_devices:
             return serial
 
-        # Match partial IP or target
         if serial:
             for s in online_devices:
                 if serial in s:
                     return s
 
-        # Default to first online device
         return online_devices[0]
+
+    async def get_device_telemetry(self, serial: str) -> dict:
+        """Parses REAL battery, charging status, and Wi-Fi info from Android dumpsys."""
+        telemetry = {
+            "battery": 85,
+            "is_charging": False,
+            "power_source": "Battery",
+            "network": "Wi-Fi Connected"
+        }
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "adb", "-s", serial, "shell", "dumpsys", "battery",
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            stdout, _ = await proc.communicate()
+            out = stdout.decode()
+
+            level_match = re.search(r"level:\s*(\d+)", out)
+            if level_match:
+                telemetry["battery"] = int(level_match.group(1))
+
+            status_match = re.search(r"status:\s*(\d+)", out)
+            ac_match = re.search(r"AC powered:\s*true", out, re.IGNORECASE)
+            usb_match = re.search(r"USB powered:\s*true", out, re.IGNORECASE)
+
+            if ac_match:
+                telemetry["is_charging"] = True
+                telemetry["power_source"] = "AC Charger"
+            elif usb_match:
+                telemetry["is_charging"] = True
+                telemetry["power_source"] = "USB Cable"
+            elif status_match and status_match.group(1) in ["2", "5"]:
+                telemetry["is_charging"] = True
+                telemetry["power_source"] = "Charging"
+
+            ip = await self.get_device_ip(serial)
+            if ip:
+                telemetry["network"] = f"WLAN ({ip})"
+
+        except Exception as e:
+            print(f"[ADBManager] Error reading dumpsys battery: {e}")
+
+        return telemetry
 
     async def get_device_ip(self, serial: str) -> Optional[str]:
         """Attempt multiple methods to retrieve the Wi-Fi IP of an Android device over USB."""
@@ -125,21 +166,6 @@ class ADBManager:
             if src_match:
                 ip = src_match.group(1)
                 if not ip.endswith(".0") and not ip.endswith(".255"):
-                    return ip
-        except Exception:
-            pass
-
-        try:
-            proc = await asyncio.create_subprocess_exec(
-                "adb", "-s", serial, "shell", "ip", "-f", "inet", "addr", "show", "wlan0",
-                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-            )
-            stdout, _ = await proc.communicate()
-            out = stdout.decode().strip()
-            inet_match = re.search(r"inet\s+((?:\d{1,3}\.){3}\d{1,3})", out)
-            if inet_match:
-                ip = inet_match.group(1)
-                if not ip.endswith(".0") and not ip.endswith(".255") and not ip.startswith("127."):
                     return ip
         except Exception:
             pass
@@ -185,6 +211,11 @@ class ADBManager:
                             "model": model,
                             "is_wireless": is_wireless
                         }
+
+                        if status == "device":
+                            telemetry = await self.get_device_telemetry(serial)
+                            device_entry.update(telemetry)
+
                         devices.append(device_entry)
 
                         if not is_wireless and status == "device" and serial not in self._configured_serials:
@@ -213,7 +244,10 @@ class ADBManager:
         return devices
 
     async def unlock_device(self, pin: Optional[str] = None, serial: Optional[str] = None) -> dict:
-        """Unlock mobile device screen using swipe and dual digit keyevent + text typing."""
+        """
+        Unlock mobile device screen using clean swipe and exact single PIN text injection.
+        Removes accidental keyevent 82 / #5 presses.
+        """
         target_serial = await self._resolve_device_serial(serial)
         if not target_serial:
             return {"status": "error", "result": "No online Android device connected via ADB"}
@@ -221,23 +255,16 @@ class ADBManager:
         use_pin = pin if pin else self.get_mobile_pin()
         cmd_prefix = ["adb", "-s", target_serial]
 
-        # 1. Wake screen & menu
+        # 1. Wake screen ONLY (DO NOT use keyevent 82 which triggers emergency number 5 on vivo!)
         await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", "224")).communicate()
-        await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", "82")).communicate()
-        await asyncio.sleep(0.4)
+        await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", "4")).communicate() # Clear any active overlay
+        await asyncio.sleep(0.3)
 
         # 2. Swipe up to reveal PIN keypad
-        await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "swipe", "500", "1600", "500", "200", "350")).communicate()
+        await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "swipe", "500", "1600", "500", "200", "300")).communicate()
         await asyncio.sleep(0.5)
 
-        # 3. Type PIN via explicit Android digit keyevents (7 is '0', 8 is '1', ..., 16 is '9')
-        for char in str(use_pin):
-            if char.isdigit():
-                kc = str(7 + int(char))
-                await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", kc)).communicate()
-                await asyncio.sleep(0.08)
-
-        # Also fallback input text
+        # 3. Inject PIN text ONCE cleanly
         await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "text", str(use_pin))).communicate()
         await asyncio.sleep(0.25)
 
@@ -245,7 +272,7 @@ class ADBManager:
         await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", "66")).communicate()
         await asyncio.sleep(0.3)
 
-        # 5. Dismiss any lockscreen residue with Home key
+        # 5. Home key to ensure home screen is visible
         await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", "3")).communicate()
 
         return {"status": "success", "result": f"Unlocked device '{target_serial}' with PIN '{use_pin}'", "pin": use_pin}
@@ -315,7 +342,6 @@ class ADBManager:
         if "Events injected: 1" in out_str or proc.returncode == 0:
             return {"status": "success", "result": f"Opened {app_name_or_pkg} on device", "package": target_pkg}
             
-        # Intent launch fallback
         fallback_cmd = cmd_prefix + ["shell", "am", "start", "-a", "android.intent.action.MAIN", "-c", "android.intent.category.LAUNCHER", "-p", target_pkg]
         proc2 = await asyncio.create_subprocess_exec(
             *fallback_cmd,

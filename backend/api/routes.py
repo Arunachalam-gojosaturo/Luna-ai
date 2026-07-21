@@ -30,7 +30,14 @@ class CommandRequest(BaseModel):
     deviceStates: list = []
     history: list = []
     groqKey: str = ""
+    geminiKey: str = ""
     openRouterKey: str = ""
+    githubToken: str = ""
+    nvidiaKey: str = ""
+    cerebrasKey: str = ""
+    bazaarlinkKey: str = ""
+    togetherKey: str = ""
+    cohereKey: str = ""
     openaiKey: str = ""
     modelSelection: str = ""
     activeProvider: str = "groq"
