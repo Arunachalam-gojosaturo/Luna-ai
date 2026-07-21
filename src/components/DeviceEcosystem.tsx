@@ -20,7 +20,12 @@ export default function DeviceEcosystem({
 }: DeviceEcosystemProps) {
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>(devices[1]?.id || devices[0]?.id || "");
 
-  const [adbIp, setAdbIp] = useState(() => localStorage.getItem("adbIp") || "192.168.1.100");
+  const [adbIp, setAdbIp] = useState(() => {
+    const saved = localStorage.getItem("adbIp");
+    if (saved && !saved.endsWith(".0") && !saved.endsWith(".255")) return saved;
+    localStorage.removeItem("adbIp");
+    return "";
+  });
   const [adbPort, setAdbPort] = useState(() => localStorage.getItem("adbPort") || "5555");
   const [adbStatus, setAdbStatus] = useState<string>("");
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
@@ -30,6 +35,7 @@ export default function DeviceEcosystem({
     status: string;
     model: string;
     is_wireless: boolean;
+    ip?: string;
   }
 
   const [realDevices, setRealDevices] = useState<RealADBDevice[]>([]);
@@ -42,8 +48,16 @@ export default function DeviceEcosystem({
       const data = await response.json();
       if (data.status === "success") {
         setRealDevices(data.devices);
-        if (data.devices.length > 0 && !selectedRealDevice) {
-          setSelectedRealDevice(data.devices[0].serial);
+        if (data.devices.length > 0) {
+          if (!selectedRealDevice) {
+            setSelectedRealDevice(data.devices[0].serial);
+          }
+          // Auto-populate IP input from active device telemetry
+          const deviceWithIp = data.devices.find((d: any) => d.ip && !d.ip.endsWith(".0") && !d.ip.endsWith(".255"));
+          if (deviceWithIp && (!adbIp || adbIp.endsWith(".0") || adbIp === "192.168.1.100")) {
+            setAdbIp(deviceWithIp.ip);
+            localStorage.setItem("adbIp", deviceWithIp.ip);
+          }
         }
       }
     } catch (e) {

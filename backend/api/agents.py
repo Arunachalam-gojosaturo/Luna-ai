@@ -140,8 +140,30 @@ async def adb_devices():
 async def adb_connect(req: ADBConnectRequest):
     try:
         from backend.utils.adb_manager import adb_manager
+        target = req.target.strip()
+        
+        # Auto-correct target IP if it's a subnet ending in .0 or .255
+        ip_part = target.split(":")[0]
+        port_part = target.split(":")[1] if ":" in target else "5555"
+        
+        if ip_part.endswith(".0") or ip_part.endswith(".255"):
+            devices = await adb_manager.scan_and_auto_connect()
+            real_ip = None
+            for d in devices:
+                if d.get("ip") and not d["ip"].endswith(".0") and not d["ip"].endswith(".255"):
+                    real_ip = d["ip"]
+                    break
+                if d.get("status") == "device" and not d.get("is_wireless"):
+                    real_ip = await adb_manager.get_device_ip(d["serial"])
+                    if real_ip:
+                        break
+            if real_ip:
+                target = f"{real_ip}:{port_part}"
+            else:
+                return {"status": "error", "stderr": f"Invalid target IP '{req.target}'. Subnet '.0' is not a valid device host IP."}
+
         proc = await asyncio.create_subprocess_exec(
-            "adb", "connect", req.target,
+            "adb", "connect", target,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
@@ -150,15 +172,15 @@ async def adb_connect(req: ADBConnectRequest):
         err = stderr.decode().strip()
         success = "connected" in out.lower() or "already connected" in out.lower()
         if success:
-            ip, port = req.target.split(":") if ":" in req.target else (req.target, "5555")
-            adb_manager.save_device_info(req.target, {
-                "serial": req.target,
+            real_ip_clean = target.split(":")[0]
+            adb_manager.save_device_info(target, {
+                "serial": target,
                 "model": "Wireless Android Device",
-                "ip": ip,
-                "port": port
+                "ip": real_ip_clean,
+                "port": port_part
             })
             await adb_manager.scan_and_auto_connect()
-        return {"status": "success" if success else "error", "stdout": out, "stderr": err}
+        return {"status": "success" if success else "error", "stdout": out, "stderr": err, "target": target}
     except Exception as e:
         return {"status": "error", "result": str(e)}
 
