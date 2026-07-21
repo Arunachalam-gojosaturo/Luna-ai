@@ -213,7 +213,7 @@ class ADBManager:
         return devices
 
     async def unlock_device(self, pin: Optional[str] = None, serial: Optional[str] = None) -> dict:
-        """Unlock mobile device screen using swipe and PIN typing."""
+        """Unlock mobile device screen using swipe and dual digit keyevent + text typing."""
         target_serial = await self._resolve_device_serial(serial)
         if not target_serial:
             return {"status": "error", "result": "No online Android device connected via ADB"}
@@ -221,24 +221,31 @@ class ADBManager:
         use_pin = pin if pin else self.get_mobile_pin()
         cmd_prefix = ["adb", "-s", target_serial]
 
-        # 1. Wake screen
+        # 1. Wake screen & menu
         await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", "224")).communicate()
         await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", "82")).communicate()
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.4)
 
-        # 2. Swipe up to bring PIN keypad
-        await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "swipe", "500", "1500", "500", "300", "300")).communicate()
-        await asyncio.sleep(0.3)
+        # 2. Swipe up to reveal PIN keypad
+        await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "swipe", "500", "1600", "500", "200", "350")).communicate()
+        await asyncio.sleep(0.5)
 
-        # 3. Enter PIN text
+        # 3. Type PIN via explicit Android digit keyevents (7 is '0', 8 is '1', ..., 16 is '9')
+        for char in str(use_pin):
+            if char.isdigit():
+                kc = str(7 + int(char))
+                await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", kc)).communicate()
+                await asyncio.sleep(0.08)
+
+        # Also fallback input text
         await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "text", str(use_pin))).communicate()
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.25)
 
         # 4. Press Enter
         await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", "66")).communicate()
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.3)
 
-        # 5. Fallback keyevent 82 / Home if needed
+        # 5. Dismiss any lockscreen residue with Home key
         await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", "3")).communicate()
 
         return {"status": "success", "result": f"Unlocked device '{target_serial}' with PIN '{use_pin}'", "pin": use_pin}
