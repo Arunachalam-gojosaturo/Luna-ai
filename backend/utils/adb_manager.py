@@ -125,7 +125,7 @@ class ADBManager:
 
             # Wi-Fi / Wayland optimized scrcpy parameters
             if final_target and ":" in final_target:
-                cmd.extend(["--max-size=1280", "--bit-rate=6M", "--max-fps=30"])
+                cmd.extend(["--max-size=1280", "-b", "6M", "--max-fps=30"])
 
             subprocess.Popen(cmd)
             return {"status": "success", "result": f"Launched scrcpy mirror for {final_target or 'default device'}"}
