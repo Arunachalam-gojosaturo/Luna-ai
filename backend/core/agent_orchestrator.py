@@ -36,7 +36,8 @@ class AgentOrchestrator:
             logs.append(f"[{agent_name.upper()} AGENT] Invoked.")
             # We simply invoke it with a basic command for now
             try:
-                exec_res = await agent.execute(plan.intent)
+                cmd_to_run = plan.user_input if plan.user_input else plan.intent
+                exec_res = await agent.execute(cmd_to_run, plan.intent)
                 verified = await agent.verify(exec_res)
                 logs.append(f"[{agent_name.upper()} AGENT] Execution {'verified' if verified else 'failed verification'}.")
                 

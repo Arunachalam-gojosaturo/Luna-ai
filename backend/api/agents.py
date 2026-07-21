@@ -139,6 +139,7 @@ async def adb_devices():
 @router.post("/adb/connect")
 async def adb_connect(req: ADBConnectRequest):
     try:
+        from backend.utils.adb_manager import adb_manager
         proc = await asyncio.create_subprocess_exec(
             "adb", "connect", req.target,
             stdout=asyncio.subprocess.PIPE,
@@ -147,7 +148,16 @@ async def adb_connect(req: ADBConnectRequest):
         stdout, stderr = await proc.communicate()
         out = stdout.decode().strip()
         err = stderr.decode().strip()
-        success = "connected" in out.lower()
+        success = "connected" in out.lower() or "already connected" in out.lower()
+        if success:
+            ip, port = req.target.split(":") if ":" in req.target else (req.target, "5555")
+            adb_manager.save_device_info(req.target, {
+                "serial": req.target,
+                "model": "Wireless Android Device",
+                "ip": ip,
+                "port": port
+            })
+            await adb_manager.scan_and_auto_connect()
         return {"status": "success" if success else "error", "stdout": out, "stderr": err}
     except Exception as e:
         return {"status": "error", "result": str(e)}

@@ -10,6 +10,7 @@ class ReasoningDepth(Enum):
 class ExecutionPlan(BaseModel):
     depth: ReasoningDepth
     intent: str
+    user_input: str = ""
     steps: List[str]
     required_agents: List[str]
     requires_confirmation: bool = False
@@ -32,6 +33,7 @@ class Planner:
             return ExecutionPlan(
                 depth=ReasoningDepth.FAST,
                 intent="casual_conversation",
+                user_input=user_input,
                 steps=["respond_directly"],
                 required_agents=[],
                 requires_confirmation=False
@@ -54,7 +56,7 @@ class Planner:
             intent = "package_management"
             agents.append("package_manager")
             requires_conf = False
-        elif "pacman" in user_input or "update" in user_input or "system" in user_input:
+        elif "pacman" in user_input or "update" in user_input or "system" in user_input or "mobile" in user_input or "phone" in user_input or "unlock" in user_input or "lock" in user_input or "whatsapp" in user_input:
             intent = "system_management"
             agents.append("linux")
             requires_conf = False
@@ -76,6 +78,7 @@ class Planner:
         return ExecutionPlan(
             depth=depth,
             intent=intent,
+            user_input=user_input,
             steps=[f"Analyze intent: {intent}", f"Invoke {', '.join(agents)} agents", "Verify result"],
             required_agents=agents,
             requires_confirmation=requires_conf
