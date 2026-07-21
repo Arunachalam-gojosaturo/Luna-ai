@@ -94,15 +94,43 @@ class ADBManager:
         if not online_devices:
             return None
 
-        if serial and serial in online_devices:
-            return serial
-
         if serial:
+            if serial in online_devices:
+                return serial
             for s in online_devices:
                 if serial in s:
                     return s
+            if "wireless" in serial.lower() or "wifi" in serial.lower() or "tcp" in serial.lower():
+                for s in online_devices:
+                    if ":" in s:
+                        return s
 
         return online_devices[0]
+
+    async def launch_scrcpy(self, target: str = "") -> dict:
+        """Safely launch scrcpy window with Wi-Fi auto-connect and optimized streaming flags."""
+        try:
+            # If target specifies a wireless IP, ensure adb connect is run first
+            if target and (":" in target or re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", target)):
+                target_ip = target if ":" in target else f"{target}:5555"
+                proc = await asyncio.create_subprocess_exec("adb", "connect", target_ip, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                await proc.communicate()
+
+            target_serial = await self._resolve_device_serial(target)
+            final_target = target_serial or target
+
+            cmd = ["scrcpy"]
+            if final_target:
+                cmd.extend(["-s", final_target])
+
+            # Wi-Fi / Wayland optimized scrcpy parameters
+            if final_target and ":" in final_target:
+                cmd.extend(["--max-size=1280", "--bit-rate=6M", "--max-fps=30"])
+
+            subprocess.Popen(cmd)
+            return {"status": "success", "result": f"Launched scrcpy mirror for {final_target or 'default device'}"}
+        except Exception as e:
+            return {"status": "error", "result": str(e)}
 
     async def get_device_telemetry(self, serial: str) -> dict:
         """Parses REAL battery, charging status, and Wi-Fi info from Android dumpsys."""
@@ -314,20 +342,7 @@ class ADBManager:
         await (await asyncio.create_subprocess_exec(*cmd_prefix, "shell", "input", "keyevent", "26")).communicate()
         return {"status": "success", "result": f"Locked mobile screen for '{target_serial}'"}
 
-    async def launch_scrcpy(self, target: str = "") -> dict:
-        """Safely launch scrcpy window."""
-        try:
-            target_serial = await self._resolve_device_serial(target)
-            cmd = ["scrcpy"]
-            if target_serial:
-                cmd.extend(["-s", target_serial])
-            elif target:
-                cmd.extend(["-s", target])
-                
-            subprocess.Popen(cmd)
-            return {"status": "success", "result": f"Launched scrcpy window for {target_serial or target or 'default device'}"}
-        except Exception as e:
-            return {"status": "error", "result": str(e)}
+
 
     async def launch_app(self, app_name_or_pkg: str, serial: Optional[str] = None) -> dict:
         """Launch an app on the Android device via ADB after ensuring device is awake/unlocked."""
