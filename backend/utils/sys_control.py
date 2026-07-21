@@ -1,11 +1,11 @@
 import os
 import subprocess
 import shutil
+import time
 
 class SystemController:
     """
-    Abstractions for window, workspace, volume, and media management
-    across various Linux environments.
+    Abstractions for Arch Linux, Hyprland, Wayland, and audio/display/power controls.
     """
     def __init__(self):
         self.desktop = os.getenv("XDG_CURRENT_DESKTOP", "").lower()
@@ -17,22 +17,19 @@ class SystemController:
         try:
             subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             return True
-        except Exception:
+        except Exception as e:
+            print(f"[SystemController] Command {cmd} failed: {e}")
             return False
 
     def switch_workspace(self, workspace_num: int) -> bool:
         """Switches to a specific workspace (1-indexed)."""
-        # 1. Hyprland
         if "hyprland" in self.desktop or shutil.which("hyprctl"):
             return self.execute_cmd(["hyprctl", "dispatch", "workspace", str(workspace_num)])
         
-        # 2. KDE Plasma
         if "kde" in self.desktop or shutil.which("qdbus"):
             return self.execute_cmd(["qdbus", "org.kde.KWin", "/KWin", "org.kde.KWin.setCurrentDesktop", str(workspace_num)])
             
-        # 3. GNOME (using D-Bus eval fallback or keyboard emulation if X11)
         if "gnome" in self.desktop:
-            # We can use gdbus call to change workspace
             gdbus_cmd = [
                 "gdbus", "call", "--session", 
                 "--dest", "org.gnome.Shell", 
@@ -43,12 +40,9 @@ class SystemController:
             if self.execute_cmd(gdbus_cmd):
                 return True
 
-        # 4. Generic X11 (using wmctrl)
         if shutil.which("wmctrl"):
-            # wmctrl workspaces are 0-indexed
             return self.execute_cmd(["wmctrl", "-s", str(workspace_num - 1)])
 
-        # 5. Keyboard simulation fallback
         if self.session_type == "x11" and shutil.which("xdotool"):
             return self.execute_cmd(["xdotool", "key", f"super+{workspace_num}"])
         elif shutil.which("wtype"):
@@ -85,25 +79,91 @@ class SystemController:
     def set_volume(self, change: str) -> bool:
         """
         Adjusts system volume.
-        change can be "5%+" or "5%-".
+        change can be "5%+" or "5%-", "up", "down", "mute".
         """
-        # 1. WirePlumber wpctl (modern standard)
+        if change in ["mute", "toggle_mute"]:
+            return self.toggle_mute()
+
+        direction = "+" if "+" in change or change == "up" else "-"
+        amount = "5%"
+        if "%" in change:
+            amount = change.strip()
+
+        # 1. WirePlumber wpctl (standard on modern Arch/Hyprland)
         if shutil.which("wpctl"):
-            direction = "+" if "+" in change else "-"
-            # wpctl uses fractional values e.g. 0.05 for 5%
-            return self.execute_cmd(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", f"0.05{direction}"])
+            val = "0.05"
+            if "10" in amount: val = "0.10"
+            return self.execute_cmd(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", f"{val}{direction}"])
             
         # 2. PulseAudio pactl
         if shutil.which("pactl"):
-            prefix = "+" if "+" in change else "-"
-            val = change.replace("+", "").replace("-", "")
-            return self.execute_cmd(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{prefix}{val}"])
+            val_pct = "5%" if "5" in amount else "10%"
+            return self.execute_cmd(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{direction}{val_pct}"])
             
         # 3. ALSA amixer fallback
         if shutil.which("amixer"):
-            val = "5%+" if "+" in change else "5%-"
-            return self.execute_cmd(["amixer", "set", "Master", val])
+            return self.execute_cmd(["amixer", "set", "Master", f"{amount}{direction}"])
 
+        return False
+
+    def toggle_mute(self) -> bool:
+        """Toggles audio mute."""
+        if shutil.which("wpctl"):
+            return self.execute_cmd(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"])
+        if shutil.which("pactl"):
+            return self.execute_cmd(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "toggle"])
+        if shutil.which("amixer"):
+            return self.execute_cmd(["amixer", "set", "Master", "toggle"])
+        return False
+
+    def adjust_brightness(self, change: str) -> bool:
+        """
+        Adjusts display brightness.
+        change can be "+10%", "-10%", "up", "down".
+        """
+        direction = "+" if "+" in change or change == "up" else "-"
+        pct = "10%"
+        if "%" in change:
+            pct = change.replace("+", "").replace("-", "").strip()
+
+        if shutil.which("brightnessctl"):
+            return self.execute_cmd(["brightnessctl", "set", f"{pct}{direction}"])
+        if shutil.which("light"):
+            flag = "-A" if direction == "+" else "-U"
+            val = pct.replace("%", "")
+            return self.execute_cmd(["light", flag, val])
+        return False
+
+    def power_action(self, action: str) -> bool:
+        """Handles Linux system power management (shutdown, reboot, suspend, lock)."""
+        action = action.lower().strip()
+        if action in ["shutdown", "poweroff"]:
+            return self.execute_cmd(["systemctl", "poweroff"])
+        elif action in ["reboot", "restart"]:
+            return self.execute_cmd(["systemctl", "reboot"])
+        elif action in ["suspend", "sleep"]:
+            return self.execute_cmd(["systemctl", "suspend"])
+        elif action in ["lock", "lockscreen"]:
+            if shutil.which("hyprlock"):
+                return self.execute_cmd(["hyprlock"])
+            elif shutil.which("swaylock"):
+                return self.execute_cmd(["swaylock"])
+            else:
+                return self.execute_cmd(["loginctl", "lock-session"])
+        return False
+
+    def take_screenshot(self) -> bool:
+        """Takes a full screen screenshot and saves to ~/Pictures."""
+        pictures_dir = os.path.expanduser("~/Pictures")
+        os.makedirs(pictures_dir, exist_ok=True)
+        filename = f"{pictures_dir}/screenshot_{int(time.time())}.png"
+
+        if shutil.which("hyprshot"):
+            return self.execute_cmd(["hyprshot", "-m", "output", "-o", pictures_dir, "-f", os.path.basename(filename)])
+        if shutil.which("grim"):
+            return self.execute_cmd(["grim", filename])
+        if shutil.which("maim"):
+            return self.execute_cmd(["maim", filename])
         return False
 
     def control_media(self, action: str) -> bool:

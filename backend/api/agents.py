@@ -112,6 +112,13 @@ class ADBConnectRequest(BaseModel):
 class ADBControlRequest(BaseModel):
     action: str
     target: str = ""
+    text: str = ""
+    x: int = 0
+    y: int = 0
+
+class ADBLaunchAppRequest(BaseModel):
+    app: str
+    target: str = ""
 
 class ADBTcpIpRequest(BaseModel):
     serial: str
@@ -123,37 +130,8 @@ class ADBDisconnectRequest(BaseModel):
 @router.get("/adb/devices")
 async def adb_devices():
     try:
-        proc = await asyncio.create_subprocess_exec(
-            "adb", "devices", "-l",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await proc.communicate()
-        out = stdout.decode().strip().split('\n')
-        devices = []
-        if len(out) > 1:
-            for line in out[1:]:
-                line = line.strip()
-                if not line:
-                    continue
-                parts = line.split()
-                if len(parts) >= 2:
-                    serial = parts[0]
-                    status = parts[1]
-                    model = "Unknown Model"
-                    for p in parts[2:]:
-                        if p.startswith("model:"):
-                            model = p.split("model:")[1]
-                        elif p.startswith("device:"):
-                            model = p.split("device:")[1]
-                    
-                    is_wireless = ":" in serial
-                    devices.append({
-                        "serial": serial,
-                        "status": status,
-                        "model": model,
-                        "is_wireless": is_wireless
-                    })
+        from backend.utils.adb_manager import adb_manager
+        devices = await adb_manager.scan_and_auto_connect()
         return {"status": "success", "devices": devices}
     except Exception as e:
         return {"status": "error", "result": str(e)}
@@ -218,36 +196,22 @@ async def adb_scrcpy(req: ADBConnectRequest):
 
 @router.post("/adb/control")
 async def adb_control(req: ADBControlRequest):
-    keyevents = {
-        "power": "26",
-        "back": "4",
-        "home": "3",
-        "vol_up": "24",
-        "vol_down": "25"
-    }
-    event_code = keyevents.get(req.action)
-    if not event_code:
-        return {"status": "error", "result": "Invalid action"}
-        
     try:
-        cmd = ["adb"]
-        if req.target:
-            cmd.extend(["-s", req.target])
-        cmd.extend(["shell", "input", "keyevent", event_code])
-        
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await proc.communicate()
-        return {
-            "status": "success",
-            "stdout": stdout.decode().strip(),
-            "stderr": stderr.decode().strip()
-        }
+        from backend.utils.adb_manager import adb_manager
+        res = await adb_manager.control_input(req.action, req.text, req.x, req.y, req.target)
+        return res
     except Exception as e:
         return {"status": "error", "result": str(e)}
+
+@router.post("/adb/launch_app")
+async def adb_launch_app(req: ADBLaunchAppRequest):
+    try:
+        from backend.utils.adb_manager import adb_manager
+        res = await adb_manager.launch_app(req.app, req.target)
+        return res
+    except Exception as e:
+        return {"status": "error", "result": str(e)}
+
 
 # --- WhatsApp Agent ---
 from backend.agents.whatsapp_agent import whatsapp_manager

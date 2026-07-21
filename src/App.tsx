@@ -79,6 +79,19 @@ export default function App() {
   const [userDetails, setUserDetails] = useState({ name: 'Boss', role: 'Luna Prime' });
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const isListeningRef = useRef<boolean>(false);
+  const [isHandsFree, setIsHandsFree] = useState<boolean>(false);
+  const isHandsFreeRef = useRef<boolean>(false);
+
+  const toggleHandsFree = () => {
+    const next = !isHandsFree;
+    setIsHandsFree(next);
+    isHandsFreeRef.current = next;
+    pushTerminalLog(next ? "🟢 Continuous Hands-Free Listening Mode Activated." : "⚪ Hands-Free Mode Deactivated.", next ? "success" : "info");
+    if (next && !isListeningRef.current) {
+      startListening();
+    }
+  };
+
 
   // System Agent Security
   const [pendingCommand, setPendingCommand] = useState<{ command: string, requiresPrivilege: boolean, category?: string } | null>(null);
@@ -1040,6 +1053,15 @@ export default function App() {
         } finally {
           // Release the microphone
           stream.getTracks().forEach(track => track.stop());
+          setIsListening(false);
+          isListeningRef.current = false;
+          if (isHandsFreeRef.current) {
+            setTimeout(() => {
+              if (isHandsFreeRef.current && !isListeningRef.current) {
+                startListening();
+              }
+            }, 800);
+          }
         }
       };
 
@@ -1878,6 +1900,39 @@ export default function App() {
                 <p className={`text-sm max-w-md ${isLight ? "text-slate-600" : "text-slate-400"}`}>
                   Vocal controls bypass traditional command prompt arrays. Luna will respond directly to spoken triggers.
                 </p>
+
+                {/* Hands-Free Mode Toggle Card */}
+                <div className={`w-full max-w-md p-4 rounded-2xl border flex items-center justify-between gap-4 ${
+                  isHandsFree 
+                    ? "bg-emerald-950/30 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]" 
+                    : isLight ? "bg-slate-100/80 border-slate-300" : "bg-slate-900/60 border-slate-800"
+                }`}>
+                  <div className="text-left">
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2.5 w-2.5 rounded-full ${isHandsFree ? "bg-emerald-400 animate-pulse" : "bg-slate-500"}`} />
+                      <span className={`text-xs font-bold font-mono uppercase tracking-wider ${isHandsFree ? "text-emerald-400" : isLight ? "text-slate-700" : "text-slate-300"}`}>
+                        {isHandsFree ? "Continuous Hands-Free ON" : "Hands-Free Mode OFF"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      {isHandsFree 
+                        ? "Luna continuously listens and replies hands-free without stopping." 
+                        : "Enable for uninterrupted hands-free voice dialogue."}
+                    </p>
+                  </div>
+                  
+                  <button 
+                    onClick={toggleHandsFree}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer border ${
+                      isHandsFree 
+                        ? "bg-emerald-500 text-slate-950 border-emerald-400 hover:bg-emerald-400 shadow-md" 
+                        : "bg-cyan-500/10 text-cyan-400 border-cyan-500/40 hover:bg-cyan-500/20"
+                    }`}
+                  >
+                    {isHandsFree ? "DISABLE HANDS-FREE" : "ENABLE HANDS-FREE"}
+                  </button>
+                </div>
+
                 
                 {/* Stylized Voice Button */}
                 <div className="w-48 h-48 rounded-full border border-cyan-500/30 flex items-center justify-center relative my-4 bg-black/10 backdrop-blur-md shadow-[0_0_30px_rgba(6,182,212,0.1)]">

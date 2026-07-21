@@ -8,28 +8,33 @@ from backend.agents.base_agent import BaseAgent
 
 class LinuxAgent(BaseAgent):
     def __init__(self):
-        self.os_type = "arch" # Explicitly designed for Arch Linux compatibility
+        self.os_type = "arch" # Designed specifically for Arch Linux & Hyprland
         from backend.config.paths import get_log_dir
         self.audit_log_path = str(get_log_dir() / "luna_audit.log")
-        # Whitelist of allowed command prefixes for safety
+        
+        # Complete allowed commands whitelist for Linux System & Mobile ADB
         self.allowed_commands = [
             "ls", "cat", "pwd", "cd", "echo", "mkdir", "touch", "cp", "mv", "rm",
             "find", "grep", "git", "pip", "npm", "python", "node", "curl", "wget",
             "systemctl", "sudo", "pacman", "apt", "yum", "docker", "docker-compose",
             "tmux", "screen", "less", "more", "head", "tail", "wc", "chmod", "chown",
-            "ps", "kill", "df", "du", "free", "top", "htop", "uname", "whoami", "xdg-open", "open", "playerctl",
-            "hyprctl", "wpctl", "ydotool", "wtype", "yay", "paru"
+            "ps", "kill", "df", "du", "free", "top", "htop", "uname", "whoami", "xdg-open", "open",
+            "playerctl", "hyprctl", "wpctl", "pactl", "amixer", "brightnessctl", "light",
+            "ydotool", "wtype", "yay", "paru", "adb", "scrcpy", "grim", "slurp", "hyprshot",
+            "loginctl", "hyprlock", "swaylock", "poweroff", "reboot", "shutdown", "rofi", "kitty"
         ]
         
     def append_audit_log(self, command: str, intent: str, sys_command: str, privilege: bool):
         timestamp = datetime.datetime.now().isoformat()
         log_entry = f"[{timestamp}] INTENT: {intent} | PRIVILEGE: {privilege} | CMD: {command} | EXEC: {sys_command}\n"
-        with open(self.audit_log_path, "a") as f:
-            f.write(log_entry)
+        try:
+            with open(self.audit_log_path, "a") as f:
+                f.write(log_entry)
+        except Exception:
+            pass
 
     def validate_command(self, command: str):
         """Validate command for safety - check against dangerous patterns."""
-        # Block destructive operations
         dangerous_patterns = [
             r"rm\s+-.*rf\s+/",  # rm -rf / style commands
             r"dd\s+if=.*of=/dev/[a-z]+",  # dd commands targeting devices
@@ -40,51 +45,88 @@ class LinuxAgent(BaseAgent):
         
         for pattern in dangerous_patterns:
             if re.search(pattern, command, re.IGNORECASE):
-                return {"allowed": False, "reason": f"Dangerous command pattern detected"}
+                return {"allowed": False, "reason": "Dangerous command pattern detected"}
         
-        # Check if command starts with allowed prefix
         cmd_parts = shlex.split(command) if command else []
         if cmd_parts:
-            base_cmd = cmd_parts[0].split('/')[-1]  # Get just the command name
+            base_cmd = cmd_parts[0].split('/')[-1]
             if base_cmd not in self.allowed_commands and not command.startswith("sudo"):
                 return {"allowed": False, "reason": f"Command '{base_cmd}' not in allowed list"}
         
         return {"allowed": True, "wrappedCommand": command}
 
-    async def execute(self, command: str, category: str):
+    async def execute(self, command: str, category: str = "RAW_COMMAND"):
         self.append_audit_log(command, category, command, "sudo" in command or "pkexec" in command)
         
-        # Intercept common system controls and route to SystemController abstraction
         from backend.utils.sys_control import system_controller
+        from backend.utils.adb_manager import adb_manager
         
-        # 1. Workspace switching
+        cmd_lower = command.lower().strip()
+
+        # 1. WhatsApp / Mobile App Launching Interceptor
+        if "whatsapp" in cmd_lower and ("open" in cmd_lower or "start" in cmd_lower or "launch" in cmd_lower or "mobile" in cmd_lower):
+            res = await adb_manager.launch_app("whatsapp")
+            return {"success": res["status"] == "success", "stdout": res.get("result", "Launched WhatsApp"), "stderr": res.get("stderr", "")}
+
+        mobile_app_match = re.search(r"(?:open|launch|start)\s+(\w+)\s+(?:on|in)\s+(?:mobile|phone|android)", cmd_lower)
+        if mobile_app_match:
+            app_name = mobile_app_match.group(1)
+            res = await adb_manager.launch_app(app_name)
+            return {"success": res["status"] == "success", "stdout": res.get("result", f"Launched {app_name}"), "stderr": res.get("stderr", "")}
+
+        # 2. System Power Actions (Shutdown, Reboot, Suspend, Lock)
+        if "poweroff" in cmd_lower or "shutdown" in cmd_lower:
+            success = system_controller.power_action("shutdown")
+            return {"success": success, "stdout": "Initiating system shutdown...", "stderr": ""}
+        if "reboot" in cmd_lower or "restart" in cmd_lower:
+            success = system_controller.power_action("reboot")
+            return {"success": success, "stdout": "Initiating system reboot...", "stderr": ""}
+        if "suspend" in cmd_lower or "sleep" in cmd_lower:
+            success = system_controller.power_action("suspend")
+            return {"success": success, "stdout": "Suspending system...", "stderr": ""}
+        if "lockscreen" in cmd_lower or "lock screen" in cmd_lower or "lock" in cmd_lower and "session" in cmd_lower:
+            success = system_controller.power_action("lock")
+            return {"success": success, "stdout": "Locking screen...", "stderr": ""}
+
+        # 3. Brightness Control
+        bright_match = re.search(r"brightness(?:ctl)?\s+(?:set\s+)?([+\-]?\d+%?)", cmd_lower) or re.search(r"(increase|decrease|up|down)\s+brightness", cmd_lower)
+        if bright_match:
+            val = bright_match.group(1)
+            success = system_controller.adjust_brightness(val)
+            return {"success": success, "stdout": f"Brightness adjusted: {val}", "stderr": ""}
+
+        # 4. Volume & Mute Control
+        vol_match = re.search(r"set-volume.*([\d%+-]+)", cmd_lower) or re.search(r"amixer.*set.*Master.*([\d%+-]+)", cmd_lower) or re.search(r"(volume|sound)\s+(up|down|mute|unmute|\d+%)", cmd_lower)
+        if vol_match:
+            change = vol_match.group(1) if len(vol_match.groups()) == 1 else vol_match.group(2)
+            success = system_controller.set_volume(change)
+            return {"success": success, "stdout": f"Volume adjusted: {change}", "stderr": ""}
+
+        # 5. Screenshot
+        if "screenshot" in cmd_lower or "hyprshot" in cmd_lower or "grim" in cmd_lower:
+            success = system_controller.take_screenshot()
+            return {"success": success, "stdout": "Screenshot captured and saved to ~/Pictures", "stderr": ""}
+
+        # 6. Workspace switching
         ws_match = re.search(r"workspace\s+(\d+)", command) or re.search(r"wmctrl\s+-s\s+(\d+)", command)
         if ws_match:
             num = int(ws_match.group(1))
-            # wmctrl is 0-indexed, system_controller is 1-indexed
             if "wmctrl" in command:
                 num += 1
             success = system_controller.switch_workspace(num)
             return {"success": success, "stdout": f"Switched to workspace {num}", "stderr": ""}
 
-        # 2. Close Active Window
+        # 7. Close Active Window
         if "killactive" in command or "windowkill" in command or "wmctrl -c" in command:
             success = system_controller.close_active_window()
             return {"success": success, "stdout": "Closed active window", "stderr": ""}
 
-        # 3. Fullscreen
+        # 8. Fullscreen
         if "fullscreen" in command:
             success = system_controller.toggle_fullscreen()
             return {"success": success, "stdout": "Toggled fullscreen", "stderr": ""}
 
-        # 4. Volume Control
-        vol_match = re.search(r"set-volume.*([\d%+-]+)", command) or re.search(r"amixer.*set.*Master.*([\d%+-]+)", command)
-        if vol_match:
-            change = vol_match.group(1)
-            success = system_controller.set_volume(change)
-            return {"success": success, "stdout": f"Volume adjusted by {change}", "stderr": ""}
-
-        # 5. Media Control
+        # 9. Media Control
         media_match = re.search(r"playerctl\s+(\w+)", command)
         if media_match:
             action = media_match.group(1)
@@ -102,14 +144,13 @@ class LinuxAgent(BaseAgent):
                 stderr=asyncio.subprocess.PIPE
             )
             try:
-                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=5.0)
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=8.0)
                 return {
                     "success": proc.returncode == 0,
                     "stdout": stdout.decode() if stdout else "",
                     "stderr": stderr.decode() if stderr else ""
                 }
             except asyncio.TimeoutError:
-                # Command is still running (e.g. xdg-open), which is a success for GUI apps
                 return {
                     "success": True,
                     "stdout": "Command started in background",
@@ -126,4 +167,3 @@ class LinuxAgent(BaseAgent):
         
     async def verify(self, execution_result: dict) -> bool:
         return execution_result.get("success", False)
-

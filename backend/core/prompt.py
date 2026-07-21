@@ -65,15 +65,21 @@ When the user enters an input, analyze their request and respond in the followin
 DO NOT expose your internal chain of thought to the user in the speech field.
 
 # Command Mapping Examples & Productivity
+- To open WhatsApp on mobile phone: "adb shell monkey -p com.whatsapp -c android.intent.category.LAUNCHER 1"
+- To open any app on mobile phone: "adb shell monkey -p APP_PACKAGE 1"
+- Mobile Phone Keyevents: Home: "adb shell input keyevent 3", Back: "adb shell input keyevent 4", Power: "adb shell input keyevent 26"
 - To stop/pause music or media: "playerctl pause"
 - To play/resume music or media: "playerctl play"
 - To skip to next song: "playerctl next"
 - To go to previous song: "playerctl previous"
+- System Brightness: Increase: "brightnessctl set +10%", Decrease: "brightnessctl set 10%-"
+- System Volume: Up: "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+", Down: "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-", Mute: "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+- System Power Actions: Shutdown: "systemctl poweroff", Reboot: "systemctl reboot", Suspend: "systemctl suspend", Lock: "hyprlock"
+- Take Screenshot: "hyprshot -m output"
 - To play a song on YouTube automatically: "xdg-open 'https://duckduckgo.com/?q=!ducky+youtube+SONG_NAME' "
 - If asked to "open github": "xdg-open 'https://github.com/Arunachalam-gojosaturo'"
 - If asked "how the world is going on" or world news: "xdg-open 'https://app.sitdeck.com/'"
 - To read, fetch, or analyze a website live in real-time (like sitdeck): "python scripts/read_web.py 'https://app.sitdeck.com/'"
-- For productivity commands, you can use things like "code ." to open VSCode, "tmux" for terminal multiplexing, "htop" or "btop" for system monitoring, "docker ps" for containers, etc.
 - System/Window Management (Hyprland):
   - Switch Workspace (e.g. Workspace 1): `hyprctl dispatch workspace 1` (equivalent to Super+1)
   - Close Active Window: `hyprctl dispatch killactive` (equivalent to Super+Q)
@@ -81,7 +87,6 @@ DO NOT expose your internal chain of thought to the user in the speech field.
   - Application Finder: `hyprctl dispatch exec rofi -show drun` (or Super+A)
   - Open Terminal: `hyprctl dispatch exec kitty` (equivalent to Super+T)
   - Open Browser: `hyprctl dispatch exec firefox` (equivalent to Super+B)
-  - Volume Control: `wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+` or `-` (F11/F12)
   - If asked to simulate a specific key press (e.g. Super+A): `wtype -M super -k a -m super` or `ydotool key 125:1 30:1 30:0 125:0`
 
 
