@@ -51,35 +51,51 @@ class ADBManager:
 
     async def get_device_ip(self, serial: str) -> Optional[str]:
         """Attempt multiple methods to retrieve the Wi-Fi IP of an Android device over USB."""
-        commands = [
-            ["adb", "-s", serial, "shell", "ip", "-f", "inet", "addr", "show", "wlan0"],
-            ["adb", "-s", serial, "shell", "ip", "route"],
-            ["adb", "-s", serial, "shell", "getprop", "dhcp.wlan0.ipaddress"],
-            ["adb", "-s", serial, "shell", "ifconfig", "wlan0"]
-        ]
-        
-        for cmd in commands:
-            try:
-                proc = await asyncio.create_subprocess_exec(
-                    *cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
-                )
-                stdout, _ = await proc.communicate()
-                out = stdout.decode().strip()
-                
-                # Look for IPv4 addresses (excluding 127.0.0.1)
-                matches = re.findall(r"\b(?:192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})\b", out)
-                if matches:
-                    return matches[0]
-                
-                # Generic IPv4 fallback if on custom subnet
-                matches_gen = re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", out)
-                for ip in matches_gen:
-                    if not ip.startswith("127.") and not ip.startswith("0.") and not ip.endswith(".255"):
-                        return ip
-            except Exception:
-                continue
+        # Method 1: getprop dhcp.wlan0.ipaddress
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "adb", "-s", serial, "shell", "getprop", "dhcp.wlan0.ipaddress",
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            stdout, _ = await proc.communicate()
+            ip = stdout.decode().strip()
+            if ip and not ip.endswith(".0") and not ip.endswith(".255") and re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", ip):
+                return ip
+        except Exception:
+            pass
+
+        # Method 2: ip route (look for 'src X.X.X.X')
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "adb", "-s", serial, "shell", "ip", "route",
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            stdout, _ = await proc.communicate()
+            out = stdout.decode().strip()
+            src_match = re.search(r"src\s+((?:\d{1,3}\.){3}\d{1,3})", out)
+            if src_match:
+                ip = src_match.group(1)
+                if not ip.endswith(".0") and not ip.endswith(".255"):
+                    return ip
+        except Exception:
+            pass
+
+        # Method 3: ip addr show wlan0 (look for inet X.X.X.X/)
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "adb", "-s", serial, "shell", "ip", "-f", "inet", "addr", "show", "wlan0",
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            stdout, _ = await proc.communicate()
+            out = stdout.decode().strip()
+            inet_match = re.search(r"inet\s+((?:\d{1,3}\.){3}\d{1,3})", out)
+            if inet_match:
+                ip = inet_match.group(1)
+                if not ip.endswith(".0") and not ip.endswith(".255") and not ip.startswith("127."):
+                    return ip
+        except Exception:
+            pass
+
         return None
 
     async def scan_and_auto_connect(self) -> List[dict]:

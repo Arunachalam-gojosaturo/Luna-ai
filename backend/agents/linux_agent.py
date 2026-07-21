@@ -63,6 +63,19 @@ class LinuxAgent(BaseAgent):
         
         cmd_lower = command.lower().strip()
 
+        # 0. Chained shell commands (e.g. "hyprctl dispatch workspace 2 && hyprctl dispatch exec code .")
+        if "&&" in command or ";" in command:
+            sub_cmds = [c.strip() for c in re.split(r"&&|;", command) if c.strip()]
+            outputs = []
+            all_ok = True
+            for sub in sub_cmds:
+                sub_res = await self.execute(sub, category)
+                if sub_res.get("stdout"):
+                    outputs.append(sub_res["stdout"])
+                if not sub_res.get("success", False):
+                    all_ok = False
+            return {"success": all_ok, "stdout": "\n".join(outputs), "stderr": ""}
+
         # 1. WhatsApp / Mobile App Launching Interceptor
         if "whatsapp" in cmd_lower and ("open" in cmd_lower or "start" in cmd_lower or "launch" in cmd_lower or "mobile" in cmd_lower):
             res = await adb_manager.launch_app("whatsapp")
@@ -84,14 +97,14 @@ class LinuxAgent(BaseAgent):
         if "suspend" in cmd_lower or "sleep" in cmd_lower:
             success = system_controller.power_action("suspend")
             return {"success": success, "stdout": "Suspending system...", "stderr": ""}
-        if "lockscreen" in cmd_lower or "lock screen" in cmd_lower or "lock" in cmd_lower and "session" in cmd_lower:
+        if "lockscreen" in cmd_lower or "lock screen" in cmd_lower or ("lock" in cmd_lower and "session" in cmd_lower):
             success = system_controller.power_action("lock")
             return {"success": success, "stdout": "Locking screen...", "stderr": ""}
 
         # 3. Brightness Control
         bright_match = re.search(r"brightness(?:ctl)?\s+(?:set\s+)?([+\-]?\d+%?)", cmd_lower) or re.search(r"(increase|decrease|up|down)\s+brightness", cmd_lower)
         if bright_match:
-            val = bright_match.group(1)
+            val = bright_match.group(1) if len(bright_match.groups()) == 1 and bright_match.group(1) else ("+10%" if "increase" in cmd_lower or "up" in cmd_lower else "-10%")
             success = system_controller.adjust_brightness(val)
             return {"success": success, "stdout": f"Brightness adjusted: {val}", "stderr": ""}
 
@@ -107,14 +120,28 @@ class LinuxAgent(BaseAgent):
             success = system_controller.take_screenshot()
             return {"success": success, "stdout": "Screenshot captured and saved to ~/Pictures", "stderr": ""}
 
-        # 6. Workspace switching
+        # 6. Compound Workspace + App Launching or Workspace switching
         ws_match = re.search(r"workspace\s+(\d+)", command) or re.search(r"wmctrl\s+-s\s+(\d+)", command)
+        app_in_cmd = None
+        if "code" in cmd_lower or "vscode" in cmd_lower:
+            app_in_cmd = "code ."
+        elif "firefox" in cmd_lower or "browser" in cmd_lower:
+            app_in_cmd = "firefox"
+        elif "terminal" in cmd_lower or "kitty" in cmd_lower:
+            app_in_cmd = "kitty"
+
         if ws_match:
             num = int(ws_match.group(1))
             if "wmctrl" in command:
                 num += 1
-            success = system_controller.switch_workspace(num)
-            return {"success": success, "stdout": f"Switched to workspace {num}", "stderr": ""}
+            system_controller.switch_workspace(num)
+            
+            if app_in_cmd:
+                await asyncio.sleep(0.3)
+                launch_cmd = f"hyprctl dispatch exec {app_in_cmd}" if "hyprland" in system_controller.desktop else app_in_cmd
+                await asyncio.create_subprocess_shell(launch_cmd)
+                return {"success": True, "stdout": f"Switched to workspace {num} and launched {app_in_cmd}", "stderr": ""}
+            return {"success": True, "stdout": f"Switched to workspace {num}", "stderr": ""}
 
         # 7. Close Active Window
         if "killactive" in command or "windowkill" in command or "wmctrl -c" in command:

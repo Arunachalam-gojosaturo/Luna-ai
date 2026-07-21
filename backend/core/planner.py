@@ -46,15 +46,18 @@ class Planner:
         depth = ReasoningDepth.NORMAL
         
         # Check for package management
-        if ("install" in user_input or "remove" in user_input or "uninstall" in user_input or 
-            ("search" in user_input and ("package" in user_input or "pacman" in user_input))):
+        if ("remove" in user_input or "uninstall" in user_input or "delete" in user_input or "rm -rf" in user_input):
             intent = "package_management"
             agents.append("package_manager")
             requires_conf = True
-        elif "pacman" in user_input or "update" in user_input:
+        elif ("install" in user_input or "search" in user_input or "package" in user_input):
+            intent = "package_management"
+            agents.append("package_manager")
+            requires_conf = False
+        elif "pacman" in user_input or "update" in user_input or "system" in user_input:
             intent = "system_management"
             agents.append("linux")
-            requires_conf = True
+            requires_conf = False
         
         if "git" in user_input or "commit" in user_input or "push" in user_input:
             intent = "git_operation"
