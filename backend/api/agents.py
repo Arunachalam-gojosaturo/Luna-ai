@@ -186,11 +186,9 @@ async def adb_disconnect(req: ADBDisconnectRequest):
 @router.post("/adb/scrcpy")
 async def adb_scrcpy(req: ADBConnectRequest):
     try:
-        cmd = ["scrcpy"]
-        if req.target:
-            cmd.extend(["-s", req.target])
-        subprocess.Popen(cmd)
-        return {"status": "success", "result": "Launched scrcpy in background"}
+        from backend.utils.adb_manager import adb_manager
+        res = await adb_manager.launch_scrcpy(req.target)
+        return res
     except Exception as e:
         return {"status": "error", "result": str(e)}
 

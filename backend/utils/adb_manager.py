@@ -13,13 +13,14 @@ class ADBManager:
     Automated ADB Manager:
     - Scans connected ADB devices (USB & Wireless)
     - Auto-detects Wi-Fi IP of USB-connected Android phones
-    - Automatically enables TCP/IP mode and connects via Wireless ADB
-    - Saves & remembers devices persistently in saved_adb_devices.json
-    - Automatically reconnects saved wireless devices when disconnected
+    - Configures Wireless TCP/IP ONCE per USB connection
+    - Remembers devices in saved_adb_devices.json
+    - Reconnects saved wireless devices cleanly without causing connection drops
     - Provides high-level mobile controls (WhatsApp, apps, keyevents, tap, text)
     """
 
     def __init__(self):
+        self._configured_serials = set()
         self._ensure_config()
 
     def _ensure_config(self):
@@ -45,7 +46,6 @@ class ADBManager:
             saved[key] = info
             with open(SAVED_DEVICES_FILE, "w") as f:
                 json.dump(saved, f, indent=2)
-            print(f"[ADBManager] Saved device '{key}': {info}")
         except Exception as e:
             print(f"[ADBManager] Failed to save device info: {e}")
 
@@ -80,7 +80,7 @@ class ADBManager:
         except Exception:
             pass
 
-        # Method 3: ip addr show wlan0 (look for inet X.X.X.X/)
+        # Method 3: ip addr show wlan0
         try:
             proc = await asyncio.create_subprocess_exec(
                 "adb", "-s", serial, "shell", "ip", "-f", "inet", "addr", "show", "wlan0",
@@ -100,27 +100,8 @@ class ADBManager:
 
     async def scan_and_auto_connect(self) -> List[dict]:
         """
-        Scan devices, detect USB phone IPs, configure Wireless TCP/IP, 
-        auto-reconnect saved wireless devices, and return active device list.
+        Scan devices safely without continuously restarting tcpip on every poll.
         """
-        # 1. First attempt to reconnect all saved wireless devices
-        saved = self.load_saved_devices()
-        for device_key, info in saved.items():
-            ip = info.get("ip")
-            port = info.get("port", "5555")
-            if ip:
-                target = f"{ip}:{port}"
-                try:
-                    proc = await asyncio.create_subprocess_exec(
-                        "adb", "connect", target,
-                        stdout=asyncio.subprocess.PIPE,
-                        stderr=asyncio.subprocess.PIPE
-                    )
-                    await proc.communicate()
-                except Exception:
-                    pass
-
-        # 2. Get current adb devices list
         devices = []
         try:
             proc = await asyncio.create_subprocess_exec(
@@ -131,6 +112,7 @@ class ADBManager:
             stdout, _ = await proc.communicate()
             lines = stdout.decode().strip().split("\n")
             
+            has_offline = False
             if len(lines) > 1:
                 for line in lines[1:]:
                     line = line.strip()
@@ -147,8 +129,10 @@ class ADBManager:
                             elif p.startswith("device:"):
                                 model = p.split("device:")[1]
 
-                        is_wireless = ":" in serial
+                        if status == "offline":
+                            has_offline = True
 
+                        is_wireless = ":" in serial
                         device_entry = {
                             "serial": serial,
                             "status": status,
@@ -157,8 +141,8 @@ class ADBManager:
                         }
                         devices.append(device_entry)
 
-                        # 3. If USB connected, auto-discover Wireless IP & enable tcpip
-                        if not is_wireless and status == "device":
+                        # Auto-detect IP for USB connected device once
+                        if not is_wireless and status == "device" and serial not in self._configured_serials:
                             ip = await self.get_device_ip(serial)
                             if ip:
                                 device_entry["ip"] = ip
@@ -168,25 +152,46 @@ class ADBManager:
                                     "ip": ip,
                                     "port": "5555"
                                 })
-                                # Enable TCP/IP on port 5555
-                                tcp_proc = await asyncio.create_subprocess_exec(
-                                    "adb", "-s", serial, "tcpip", "5555",
-                                    stdout=asyncio.subprocess.PIPE,
-                                    stderr=asyncio.subprocess.PIPE
-                                )
-                                await tcp_proc.communicate()
-                                # Try connecting wirelessly
-                                conn_proc = await asyncio.create_subprocess_exec(
-                                    "adb", "connect", f"{ip}:5555",
-                                    stdout=asyncio.subprocess.PIPE,
-                                    stderr=asyncio.subprocess.PIPE
-                                )
-                                await conn_proc.communicate()
+                                self._configured_serials.add(serial)
+
+            # If an offline wireless device is detected, reconnect cleanly
+            if has_offline:
+                saved = self.load_saved_devices()
+                for dkey, info in saved.items():
+                    ip = info.get("ip")
+                    if ip:
+                        # disconnect offline target
+                        await (await asyncio.create_subprocess_exec("adb", "disconnect", f"{ip}:5555")).communicate()
+                        await (await asyncio.create_subprocess_exec("adb", "connect", f"{ip}:5555")).communicate()
 
         except Exception as e:
             print(f"[ADBManager] Error scanning ADB devices: {e}")
 
         return devices
+
+    async def launch_scrcpy(self, target: str = "") -> dict:
+        """Safely launch scrcpy window."""
+        try:
+            # Check devices first
+            devices = await self.scan_and_auto_connect()
+            online_device = None
+            
+            for d in devices:
+                if d["status"] == "device":
+                    if not target or target in d["serial"] or target in d.get("ip", ""):
+                        online_device = d["serial"]
+                        break
+            
+            cmd = ["scrcpy"]
+            if online_device:
+                cmd.extend(["-s", online_device])
+            elif target:
+                cmd.extend(["-s", target])
+                
+            subprocess.Popen(cmd)
+            return {"status": "success", "result": f"Launched scrcpy window for {online_device or target or 'default device'}"}
+        except Exception as e:
+            return {"status": "error", "result": str(e)}
 
     async def launch_app(self, app_name_or_pkg: str, serial: str = None) -> dict:
         """Launch an app on the Android device via ADB."""
@@ -205,12 +210,10 @@ class ADBManager:
         
         target_pkg = pkg_map.get(app_name_or_pkg.lower().strip(), app_name_or_pkg.strip())
         
-        # Determine target device
         cmd_prefix = ["adb"]
         if serial:
             cmd_prefix.extend(["-s", serial])
             
-        # First try monkey launcher
         monkey_cmd = cmd_prefix + ["shell", "monkey", "-p", target_pkg, "-c", "android.intent.category.LAUNCHER", "1"]
         proc = await asyncio.create_subprocess_exec(
             *monkey_cmd,
@@ -223,7 +226,6 @@ class ADBManager:
         if "Events injected: 1" in out_str or proc.returncode == 0:
             return {"status": "success", "result": f"Opened {app_name_or_pkg} on device", "package": target_pkg}
             
-        # Fallback to am start
         fallback_cmd = cmd_prefix + ["shell", "am", "start", "-a", "android.intent.action.MAIN", "-c", "android.intent.category.LAUNCHER", "-n", f"{target_pkg}/.Main"]
         proc2 = await asyncio.create_subprocess_exec(
             *fallback_cmd,
@@ -245,13 +247,11 @@ class ADBManager:
             cmd_prefix.extend(["-s", serial])
             
         if action == "text":
-            # Escape spaces for adb input text
             safe_text = text.replace(" ", "%s")
             cmd = cmd_prefix + ["shell", "input", "text", safe_text]
         elif action == "tap":
             cmd = cmd_prefix + ["shell", "input", "tap", str(x), str(y)]
         elif action == "unlock":
-            # Wake up and swipe to unlock
             cmd1 = cmd_prefix + ["shell", "input", "keyevent", "224"]
             cmd2 = cmd_prefix + ["shell", "input", "keyevent", "82"]
             await (await asyncio.create_subprocess_exec(*cmd1)).communicate()

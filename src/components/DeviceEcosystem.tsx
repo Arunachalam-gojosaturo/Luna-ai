@@ -7,6 +7,7 @@ interface DeviceEcosystemProps {
   devices: DeviceTelemetry[];
   onSyncDevice: (id: string) => void;
   onToggleTask: (deviceId: string, task: string) => void;
+  onOpenMobileScreen?: () => void;
   isLight?: boolean;
 }
 
@@ -14,6 +15,7 @@ export default function DeviceEcosystem({
   devices,
   onSyncDevice,
   onToggleTask,
+  onOpenMobileScreen,
   isLight = false
 }: DeviceEcosystemProps) {
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>(devices[1]?.id || devices[0]?.id || "");
@@ -478,11 +480,20 @@ export default function DeviceEcosystem({
                           </button>
                           <button
                             onClick={handleAdbScrcpy}
-                            className="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-550 text-white rounded-xl text-xs font-bold font-mono flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-cyan-600/10 cursor-pointer"
+                            className="px-3 py-2.5 bg-cyan-600 hover:bg-cyan-550 text-white rounded-xl text-xs font-bold font-mono flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-cyan-600/10 cursor-pointer"
                           >
                             <Play className="w-3.5 h-3.5" />
                             MIRROR
                           </button>
+                          {onOpenMobileScreen && (
+                            <button
+                              onClick={onOpenMobileScreen}
+                              className="px-3 py-2.5 bg-indigo-600 hover:bg-indigo-550 text-white rounded-xl text-xs font-bold font-mono flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-indigo-600/10 cursor-pointer"
+                            >
+                              <Smartphone className="w-3.5 h-3.5" />
+                              FLOATING SCREEN
+                            </button>
+                          )}
                         </div>
                       </div>
 

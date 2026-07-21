@@ -17,6 +17,7 @@ import DeviceEcosystem from "./components/DeviceEcosystem";
 import DeveloperWorkspace from "./components/DeveloperWorkspace";
 import GithubMonitor from "./components/GithubMonitor";
 import { SettingsPanel } from "./components/SettingsPanel";
+import MobileScreenModal from "./components/MobileScreenModal";
 
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return '0 Bytes';
@@ -53,6 +54,7 @@ export default function App() {
   const [apiHealth, setApiHealth] = useState<{ enabled: boolean; checked: boolean }>({ enabled: false, checked: false });
   const [showUserModal, setShowUserModal] = useState<boolean>(false);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState<boolean>(false);
+  const [showMobileScreenModal, setShowMobileScreenModal] = useState<boolean>(false);
   const [waConnected, setWaConnected] = useState<boolean>(false);
   const [waQrCode, setWaQrCode] = useState<string | null>(null);
   const [waRunning, setWaRunning] = useState<boolean>(false);
@@ -2009,6 +2011,7 @@ export default function App() {
                 devices={devices}
                 onSyncDevice={handleSyncDevice}
                 onToggleTask={handleToggleTask}
+                onOpenMobileScreen={() => setShowMobileScreenModal(true)}
                 isLight={isLight}
               />
             </motion.div>
@@ -3025,6 +3028,15 @@ export default function App() {
             </div>
           </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* Draggable Mobile Screen Floating Modal */}
+      <AnimatePresence>
+        <MobileScreenModal
+          isOpen={showMobileScreenModal}
+          onClose={() => setShowMobileScreenModal(false)}
+          isLight={isLight}
+        />
       </AnimatePresence>
 
     </div>
