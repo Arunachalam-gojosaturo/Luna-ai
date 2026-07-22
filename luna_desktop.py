@@ -11,8 +11,7 @@ import socket
 import subprocess
 from pathlib import Path
 
-# Disable GPU flags causing Vulkan/Wayland driver crashes on Hyprland
-os.environ["QT_WEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu --no-sandbox"
+os.environ["QT_WEBENGINE_CHROMIUM_FLAGS"] = "--no-sandbox --autoplay-policy=no-user-gesture-required --enable-features=NetworkService,NetworkServiceInProcess"
 
 BASE_DIR = Path(__file__).parent.resolve()
 VENV_PYTHON = BASE_DIR / "venv" / "bin" / "python"

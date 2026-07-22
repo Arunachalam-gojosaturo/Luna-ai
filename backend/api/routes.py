@@ -262,7 +262,7 @@ async def open_file_manager(req: FolderActionRequest):
 from fastapi import Request
 from fastapi.responses import StreamingResponse
 
-@router.get("/system/media")
+@router.api_route("/system/media", methods=["GET", "HEAD"])
 async def get_system_media(path: str, request: Request):
     """Serves local image and video files securely with full HTTP 206 Range streaming support for HTML5 video/audio."""
     if not path or not os.path.exists(path):
@@ -274,6 +274,16 @@ async def get_system_media(path: str, request: Request):
         mime_type = "application/octet-stream"
 
     file_size = os.path.getsize(path)
+
+    # Support HEAD requests for Qt WebEngine / Chrome media validation
+    if request.method == "HEAD":
+        headers = {
+            "Accept-Ranges": "bytes",
+            "Content-Length": str(file_size),
+            "Content-Type": mime_type,
+        }
+        return Response(status_code=200, headers=headers, media_type=mime_type)
+
     range_header = request.headers.get("range")
 
     if range_header and mime_type.startswith(("video/", "audio/")):
