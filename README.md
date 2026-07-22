@@ -23,6 +23,85 @@ Unlike simple chat web pages, Luna acts as an **always-on digital companion and 
 
 ---
 
+## 🖼️ Application Showcase & Interface Preview
+
+<div align="center">
+
+### 🏠 Primary Interface & System Overview
+<a href="Preview/home.png"><img src="Preview/home.png" alt="Luna AI Home Interface" width="95%" style="border-radius: 8px;" /></a>
+
+<br/><br/>
+
+### 📱 Android Device Ecosystem & Wireless Control
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <strong>📱 Wireless Android Device Controller</strong><br/><br/>
+      <a href="Preview/Androidcontroll.png"><img src="Preview/Androidcontroll.png" alt="Android Device Control" width="100%"/></a>
+    </td>
+    <td width="50%" align="center">
+      <strong>🔗 Device Pairing & QR Link</strong><br/><br/>
+      <a href="Preview/qr.png"><img src="Preview/qr.png" alt="QR Code & Device Connection" width="100%"/></a>
+    </td>
+  </tr>
+</table>
+
+<br/>
+
+### 📸 Core Feature Screenshots & Desktop Workspaces
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <strong>🖥️ Desktop Telemetry & Voice Assistant</strong><br/><br/>
+      <a href="Preview/260722_03h48m48s_screenshot.png"><img src="Preview/260722_03h48m48s_screenshot.png" alt="Desktop Workspace" width="100%"/></a>
+    </td>
+    <td width="50%" align="center">
+      <strong>💬 Interactive Chat & Execution Core</strong><br/><br/>
+      <a href="Preview/260723_04h36m02s_screenshot.png"><img src="Preview/260723_04h36m02s_screenshot.png" alt="Luna AI Chat Workspace" width="100%"/></a>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <strong>⚡ Developer Workspace & Code Inspector</strong><br/><br/>
+      <a href="Preview/260723_04h36m17s_screenshot.png"><img src="Preview/260723_04h36m17s_screenshot.png" alt="Developer Workspace" width="100%"/></a>
+    </td>
+    <td width="50%" align="center">
+      <strong>🐙 GitHub Monitor & Repo Integration</strong><br/><br/>
+      <a href="Preview/260723_04h36m30s_screenshot.png"><img src="Preview/260723_04h36m30s_screenshot.png" alt="GitHub Dashboard" width="100%"/></a>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <strong>📊 System Health & Diagnostics Core</strong><br/><br/>
+      <a href="Preview/260723_04h36m46s_screenshot.png"><img src="Preview/260723_04h36m46s_screenshot.png" alt="Health Hub" width="100%"/></a>
+    </td>
+    <td width="50%" align="center">
+      <strong>⚙️ AI Provider & Key Settings</strong><br/><br/>
+      <a href="Preview/260723_04h37m02s_screenshot.png"><img src="Preview/260723_04h37m02s_screenshot.png" alt="Settings Panel" width="100%"/></a>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <strong>🎙️ Audio VAD & Voice Telemetry</strong><br/><br/>
+      <a href="Preview/260723_04h37m15s_screenshot.png"><img src="Preview/260723_04h37m15s_screenshot.png" alt="Voice Telemetry" width="100%"/></a>
+    </td>
+    <td width="50%" align="center">
+      <strong>📲 Wireless Android Screen Mirroring</strong><br/><br/>
+      <a href="Preview/260723_04h40m23s_screenshot.png"><img src="Preview/260723_04h40m23s_screenshot.png" alt="Screen Mirroring" width="100%"/></a>
+    </td>
+  </tr>
+  <tr>
+    <td width="100%" colspan="2" align="center">
+      <strong>🌙 Full Desktop Environment View</strong><br/><br/>
+      <a href="Preview/260723_04h40m34s_screenshot.png"><img src="Preview/260723_04h40m34s_screenshot.png" alt="Full Desktop Environment" width="95%"/></a>
+    </td>
+  </tr>
+</table>
+
+</div>
+
+---
+
 ## ⚡ Quick Installation
 
 ### 🌐 Option A: Universal One-Line Installer (Any Linux Distro)
@@ -129,6 +208,7 @@ Luna-ai/
 │   ├── deskopticon.png             # Official Luna AI Desktop Icon
 │   ├── readme-header.png           # Official GitHub README Header Banner
 │   └── luna-logo.png               # Brand Logo
+├── Preview/                        # Application Preview Screenshots & Media Showcase
 ├── backend/                        # Python FastAPI AI Operating System Core
 │   ├── agents/                     # Specialized Microservice Agents
 │   │   ├── base_agent.py           # Base Agent Interface Class
