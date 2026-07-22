@@ -2294,7 +2294,7 @@ export default function App() {
                                     <Folder className="w-4 h-4 text-cyan-400 fill-cyan-400/10 group-hover:scale-105 transition-transform" />
                                   ) : isImage ? (
                                     <img 
-                                      src={`http://localhost:3000/api/system/media?path=${encodeURIComponent(item.path)}`}
+                                      src={`http://127.0.0.1:3000/api/system/media?path=${encodeURIComponent(item.path)}`}
                                       alt={item.name}
                                       className="w-6 h-6 object-cover rounded shadow border border-emerald-500/30 shrink-0"
                                       onError={(e) => {
@@ -2947,7 +2947,7 @@ export default function App() {
             {/* Image Container */}
             <div className="flex items-center justify-center bg-black/40 rounded-xl overflow-hidden min-h-[200px] p-2">
               <img
-                src={`http://localhost:3000/api/system/media?path=${encodeURIComponent(viewerImage.path)}`}
+                src={`http://127.0.0.1:3000/api/system/media?path=${encodeURIComponent(viewerImage.path)}`}
                 alt={viewerImage.name}
                 className="max-h-[50vh] max-w-full object-contain rounded-lg shadow pointer-events-none"
               />
@@ -3005,7 +3005,7 @@ export default function App() {
             {/* Video Container */}
             <div className="flex items-center justify-center bg-black/60 rounded-xl overflow-hidden min-h-[240px] p-1">
               <video
-                src={`http://localhost:3000/api/system/media?path=${encodeURIComponent(viewerVideo.path)}`}
+                src={`http://127.0.0.1:3000/api/system/media?path=${encodeURIComponent(viewerVideo.path)}`}
                 controls
                 autoPlay
                 className="max-h-[50vh] max-w-full rounded-lg shadow"

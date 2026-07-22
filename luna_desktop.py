@@ -70,6 +70,7 @@ def launch_native_qt_app():
         from PyQt6.QtCore import QUrl
         from PyQt6.QtWidgets import QApplication, QMainWindow
         from PyQt6.QtWebEngineWidgets import QWebEngineView
+        from PyQt6.QtWebEngineCore import QWebEngineSettings
         from PyQt6.QtGui import QIcon
 
         app = QApplication(sys.argv)
@@ -85,6 +86,17 @@ def launch_native_qt_app():
             window.setWindowIcon(QIcon(icon_path))
 
         web_view = QWebEngineView()
+        
+        # Configure WebEngine Settings for full media, video playback, and local file permissions
+        settings = web_view.settings()
+        settings.setAttribute(QWebEngineSettings.WebAttribute.PlaybackRequiresUserGesture, False)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.PluginsEnabled, True)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, True)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessFileUrls, True)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.AllowRunningInsecureContent, True)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.FullScreenSupportEnabled, True)
+        settings.setAttribute(QWebEngineSettings.WebAttribute.AutoLoadImages, True)
+
         web_view.setUrl(QUrl(url))
         window.setCentralWidget(web_view)
 
