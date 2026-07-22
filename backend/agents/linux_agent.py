@@ -25,6 +25,42 @@ def get_youtube_video_url(query: str) -> str:
     import urllib.parse
     return f"https://www.youtube.com/results?search_query={urllib.parse.quote(query)}"
 
+async def auto_trigger_youtube_play():
+    """
+    Waits 2.2s after opening YouTube.
+    Checks if media is currently playing via playerctl status.
+    If ALREADY playing: skips trigger.
+    If NOT playing: sends 'playerctl play' / 'k' play trigger.
+    """
+    await asyncio.sleep(2.2)
+    try:
+        proc = await asyncio.create_subprocess_exec("playerctl", "status", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        stdout, _ = await proc.communicate()
+        status = stdout.decode().strip().lower()
+
+        if "playing" in status:
+            print("[YouTube Autoplay Trigger] Song is ALREADY playing! Autoplay trigger skipped.")
+            return
+
+        print(f"[YouTube Autoplay Trigger] Song is not playing (status: '{status}'). Triggering 'k' play command...")
+        
+        # 1. Trigger playerctl play
+        p_proc = await asyncio.create_subprocess_exec("playerctl", "play", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+        await p_proc.wait()
+        await asyncio.sleep(0.5)
+
+        # 2. Check if playing after playerctl play
+        proc2 = await asyncio.create_subprocess_exec("playerctl", "status", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        stdout2, _ = await proc2.communicate()
+        if "playing" in stdout2.decode().strip().lower():
+            print("[YouTube Autoplay Trigger] Song started playing via playerctl!")
+            return
+
+        # 3. Fallback: Send play-pause / 'k' trigger for YouTube
+        await asyncio.create_subprocess_exec("playerctl", "play-pause", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+    except Exception as e:
+        print(f"[YouTube Autoplay Trigger Error]: {e}")
+
 class LinuxAgent(BaseAgent):
     def __init__(self):
         self.os_type = "arch" # Designed specifically for Arch Linux & Hyprland
@@ -115,9 +151,11 @@ class LinuxAgent(BaseAgent):
                 if query and query != "youtube":
                     yt_url = await asyncio.to_thread(get_youtube_video_url, query)
                     await asyncio.create_subprocess_exec("xdg-open", yt_url, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                    asyncio.create_task(auto_trigger_youtube_play())
                     return {"success": True, "stdout": f"Playing '{query}' on YouTube ({yt_url})", "stderr": ""}
                 else:
                     await asyncio.create_subprocess_exec("xdg-open", "https://www.youtube.com", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                    asyncio.create_task(auto_trigger_youtube_play())
                     return {"success": True, "stdout": "Opened YouTube in browser", "stderr": ""}
 
         # 2. Mobile Lock, Unlock, PIN Update & Mobile App Interceptors (Strictly scoped)
