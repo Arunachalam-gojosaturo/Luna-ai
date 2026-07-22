@@ -63,7 +63,7 @@ EOF
 Name=Luna AI
 Comment=Autonomous Personal AI Operating System & Daily Companion
 Exec=/usr/bin/luna-ai
-Icon=/opt/luna-ai/public/vite.svg
+Icon=/opt/luna-ai/public/deskopticon.png
 Terminal=false
 Type=Application
 Categories=Utility;Development;System;

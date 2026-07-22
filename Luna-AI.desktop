@@ -2,7 +2,7 @@
 Name=Luna AI
 Comment=Autonomous Personal AI Operating System & Daily Companion
 Exec=/home/arunachalam/Luna-ai/venv/bin/python /home/arunachalam/Luna-ai/luna_desktop.py
-Icon=/home/arunachalam/Luna-ai/public/vite.svg
+Icon=/home/arunachalam/Luna-ai/public/deskopticon.png
 Terminal=false
 Type=Application
 Categories=Utility;Development;System;

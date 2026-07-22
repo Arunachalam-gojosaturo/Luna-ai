@@ -153,7 +153,7 @@ cat << EOF > "$DESKTOP_DIR/Luna-AI.desktop"
 Name=Luna AI
 Comment=Autonomous Personal AI Operating System & Daily Companion
 Exec=$BIN_DIR/luna-ai
-Icon=$TARGET_DIR/public/vite.svg
+Icon=$TARGET_DIR/public/deskopticon.png
 Terminal=false
 Type=Application
 Categories=Utility;Development;System;

@@ -80,7 +80,9 @@ def launch_native_qt_app():
         window.setWindowTitle("Luna AI | Autonomous Personal AI Operating System")
         window.resize(1340, 850)
 
-        icon_path = str(BASE_DIR / "public" / "vite.svg")
+        icon_path = str(BASE_DIR / "public" / "deskopticon.png")
+        if not os.path.exists(icon_path):
+            icon_path = str(BASE_DIR / "assets" / "deskopticon.png")
         if os.path.exists(icon_path):
             window.setWindowIcon(QIcon(icon_path))
 
