@@ -155,33 +155,25 @@ class FolderActionRequest(BaseModel):
 @router.post("/system/pick-folder")
 async def pick_folder():
     """Opens a native Arch Linux GTK/Qt GUI folder picker dialog."""
+    import asyncio, sys, os, shutil
+    from pathlib import Path
+    
+    venv_python = sys.executable
+    script = "from PyQt6.QtWidgets import QApplication, QFileDialog; app = QApplication([]); print(QFileDialog.getExistingDirectory(None, 'Select Project Folder', '/home/arunachalam'))"
+    
     selected_path = ""
     try:
-        from PyQt6.QtWidgets import QApplication, QFileDialog
-        app = QApplication.instance()
-        if not app:
-            app = QApplication([])
-        dialog = QFileDialog()
-        dialog.setFileMode(QFileDialog.FileMode.Directory)
-        dialog.setOption(QFileDialog.Option.ShowDirsOnly, True)
-        if dialog.exec():
-            dirs = dialog.selectedFiles()
-            if dirs:
-                selected_path = dirs[0]
+        proc = await asyncio.create_subprocess_exec(
+            venv_python, "-c", script,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await proc.communicate()
+        out_str = stdout.decode().strip()
+        if out_str and os.path.exists(out_str):
+            selected_path = out_str
     except Exception as e:
-        print(f"[PickFolder] PyQt6 dialog exception: {e}")
-
-    if not selected_path:
-        try:
-            import tkinter as tk
-            from tkinter import filedialog
-            root = tk.Tk()
-            root.withdraw()
-            root.attributes('-topmost', True)
-            selected_path = filedialog.askdirectory(title="Select Project Folder")
-            root.destroy()
-        except Exception as e2:
-            print(f"[PickFolder] tkinter fallback exception: {e2}")
+        print(f"[PickFolder Subprocess Exception]: {e}")
 
     if selected_path:
         return {"status": "success", "path": selected_path}
