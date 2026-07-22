@@ -372,31 +372,37 @@ class ADBManager:
         target_pkg = pkg_map.get(app_name_or_pkg.lower().strip(), app_name_or_pkg.strip())
         cmd_prefix = ["adb", "-s", target_serial]
             
-        monkey_cmd = cmd_prefix + ["shell", "monkey", "-p", target_pkg, "-c", "android.intent.category.LAUNCHER", "1"]
-        proc = await asyncio.create_subprocess_exec(
-            *monkey_cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await proc.communicate()
-        out_str = stdout.decode() + stderr.decode()
-        
-        if "Events injected: 1" in out_str or proc.returncode == 0:
-            return {"status": "success", "result": f"Opened {app_name_or_pkg} on device", "package": target_pkg}
+        try:
+            monkey_cmd = cmd_prefix + ["shell", "monkey", "-p", target_pkg, "-c", "android.intent.category.LAUNCHER", "1"]
+            proc = await asyncio.create_subprocess_exec(
+                *monkey_cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=4.0)
+            out_str = stdout.decode() + stderr.decode()
             
-        fallback_cmd = cmd_prefix + ["shell", "am", "start", "-a", "android.intent.action.MAIN", "-c", "android.intent.category.LAUNCHER", "-p", target_pkg]
-        proc2 = await asyncio.create_subprocess_exec(
-            *fallback_cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout2, stderr2 = await proc2.communicate()
-        return {
-            "status": "success" if proc2.returncode == 0 else "error",
-            "result": f"Launched {target_pkg}",
-            "stdout": stdout2.decode(),
-            "stderr": stderr2.decode()
-        }
+            if "Events injected: 1" in out_str or proc.returncode == 0:
+                return {"status": "success", "result": f"Opened {app_name_or_pkg} on device", "package": target_pkg}
+        except Exception:
+            pass
+
+        try:
+            fallback_cmd = cmd_prefix + ["shell", "am", "start", "-a", "android.intent.action.MAIN", "-c", "android.intent.category.LAUNCHER", "-p", target_pkg]
+            proc2 = await asyncio.create_subprocess_exec(
+                *fallback_cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout2, stderr2 = await asyncio.wait_for(proc2.communicate(), timeout=4.0)
+            return {
+                "status": "success" if proc2.returncode == 0 else "error",
+                "result": f"Launched {target_pkg}",
+                "stdout": stdout2.decode(),
+                "stderr": stderr2.decode()
+            }
+        except Exception as e:
+            return {"status": "error", "result": f"App launch timeout or error: {str(e)}"}
 
     async def control_input(self, action: str, text: str = "", x: int = 0, y: int = 0, serial: Optional[str] = None) -> dict:
         """Control Android device inputs (keyevent, text typing, tap, swipe, unlock, lock)."""

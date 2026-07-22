@@ -6,6 +6,25 @@ import re
 
 from backend.agents.base_agent import BaseAgent
 
+def get_youtube_video_url(query: str) -> str:
+    query = query.strip()
+    if not query:
+        return "https://www.youtube.com"
+    try:
+        import urllib.request, urllib.parse
+        encoded = urllib.parse.quote(query)
+        search_url = f"https://www.youtube.com/results?search_query={encoded}"
+        req = urllib.request.Request(search_url, headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"})
+        with urllib.request.urlopen(req, timeout=3.5) as resp:
+            html = resp.read().decode('utf-8')
+            video_ids = re.findall(r"watch\?v=([a-zA-Z0-9_-]{11})", html)
+            if video_ids:
+                return f"https://www.youtube.com/watch?v={video_ids[0]}&autoplay=1"
+    except Exception:
+        pass
+    import urllib.parse
+    return f"https://www.youtube.com/results?search_query={urllib.parse.quote(query)}"
+
 class LinuxAgent(BaseAgent):
     def __init__(self):
         self.os_type = "arch" # Designed specifically for Arch Linux & Hyprland
@@ -76,28 +95,27 @@ class LinuxAgent(BaseAgent):
                     all_ok = False
             return {"success": all_ok, "stdout": "\n".join(outputs), "stderr": ""}
 
-        # 1. YouTube Play & Search Handler (Desktop & Mobile)
-        yt_play_match = re.search(r"(?:play|search|watch)\s+(.+?)(?:\s+on\s+youtube)?$", cmd_lower) if "youtube" in cmd_lower or "play" in cmd_lower else None
-        if "youtube" in cmd_lower or (yt_play_match and "on mobile" not in cmd_lower and "on phone" not in cmd_lower):
+        # 1. YouTube Play & Direct Watch Autoplay Handler (Desktop & Mobile)
+        yt_play_match = re.search(r"(?:play|search|watch)\s+(.+?)(?:\s+on\s+youtube)?$", cmd_lower) if ("youtube" in cmd_lower or "play" in cmd_lower or "song" in cmd_lower) else None
+        if yt_play_match or "youtube" in cmd_lower:
             is_mobile_req = any(m in cmd_lower for m in ["on mobile", "on phone", "on android", "on device"])
             if is_mobile_req:
                 res = await adb_manager.launch_app("youtube")
                 return {"success": res["status"] == "success", "stdout": res.get("result", "Launched YouTube on mobile"), "stderr": res.get("stderr", "")}
             else:
                 query = ""
-                if "play" in cmd_lower:
-                    query = re.sub(r"^(?:luna\s+)?play\s+", "", cmd_lower, flags=re.IGNORECASE)
-                    query = re.sub(r"\s+on\s+youtube$", "", query, flags=re.IGNORECASE).strip()
-                elif "search" in cmd_lower:
-                    query = re.sub(r"^(?:luna\s+)?search\s+", "", cmd_lower, flags=re.IGNORECASE)
-                    query = re.sub(r"\s+on\s+youtube$", "", query, flags=re.IGNORECASE).strip()
+                if yt_play_match:
+                    query = yt_play_match.group(1)
+                else:
+                    query = re.sub(r"^(?:luna\s+)?(?:play|search|watch|open)\s+", "", cmd_lower, flags=re.IGNORECASE)
+                
+                query = re.sub(r"^(?:song|music|video)\s+", "", query, flags=re.IGNORECASE)
+                query = re.sub(r"\s+on\s+youtube$", "", query, flags=re.IGNORECASE).strip()
 
-                if query:
-                    import urllib.parse
-                    encoded_query = urllib.parse.quote(query)
-                    yt_url = f"https://www.youtube.com/results?search_query={encoded_query}"
+                if query and query != "youtube":
+                    yt_url = await asyncio.to_thread(get_youtube_video_url, query)
                     await asyncio.create_subprocess_exec("xdg-open", yt_url, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
-                    return {"success": True, "stdout": f"Playing '{query}' on YouTube in browser", "stderr": ""}
+                    return {"success": True, "stdout": f"Playing '{query}' on YouTube ({yt_url})", "stderr": ""}
                 else:
                     await asyncio.create_subprocess_exec("xdg-open", "https://www.youtube.com", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
                     return {"success": True, "stdout": "Opened YouTube in browser", "stderr": ""}
