@@ -36,19 +36,34 @@ Whether you want to launch applications, switch workspaces, control your media, 
 * **AI & Voice Engine:** Groq API (Whisper v3), Google Speech Recognition, gTTS, OpenAI LLM routing.
 * **System Utilities:** `mpv`, `hyprctl`, `xdg-open`, `pkexec`
 
-## 🚀 Installation & Setup (Arch Linux)
+## 🚀 Installation & Setup
 
-### Prerequisites
-Make sure you have the following system dependencies installed:
+### ⚡ Option A: Universal One-Line Installer (All Linux Distros)
+Supports **Arch Linux, Ubuntu, Debian, Pop!_OS, Linux Mint, Fedora, RHEL, openSUSE, Alpine**.
+Automatically detects your OS, installs system dependencies, builds web assets, and sets up launchers:
+
 ```bash
-sudo pacman -S nodejs npm python python-pip mpv xdg-utils polkit
+curl -sSL https://raw.githubusercontent.com/Arunachalam-gojosaturo/Luna-ai/main/install.sh | bash
 ```
-*(Ensure your user is part of the `audio` group for microphone access: `sudo usermod -aG audio $(whoami)`)*
 
-### 1. Clone the Repository
+---
+
+### 📦 Option B: Arch Linux AUR (`yay` / `paru`)
+If you are running Arch Linux or an Arch-based distribution:
+
+```bash
+yay -S luna-ai
+# or
+paru -S luna-ai
+```
+
+---
+
+### 🛠️ Option C: Manual Installation
 ```bash
 git clone https://github.com/Arunachalam-gojosaturo/Luna-ai.git
 cd Luna-ai
+./install.sh
 ```
 
 ### 2. Set Up Environment Variables
