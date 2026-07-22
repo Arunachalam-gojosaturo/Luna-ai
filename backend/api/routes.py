@@ -212,3 +212,34 @@ async def open_file_manager(req: FolderActionRequest):
         return {"status": "success", "message": f"Opened {target_path} in {fm_bin}"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+@router.get("/system/media")
+async def get_system_media(path: str):
+    """Serves local image and video files securely with correct MIME types for thumbnails & players."""
+    if not path or not os.path.exists(path):
+        return JSONResponse({"status": "error", "message": "File not found"}, status_code=404)
+    
+    import mimetypes
+    mime_type, _ = mimetypes.guess_type(path)
+    if not mime_type:
+        mime_type = "application/octet-stream"
+        
+    return FileResponse(path, media_type=mime_type)
+
+class OpenMediaRequest(BaseModel):
+    path: str = ""
+
+@router.post("/system/open-external-media")
+async def open_external_media(req: OpenMediaRequest):
+    """Opens video or image in external Arch Linux player (mpv, vlc, celluloid, xdg-open)."""
+    target_path = req.path.strip()
+    if not target_path or not os.path.exists(target_path):
+        return {"status": "error", "message": "Media file does not exist"}
+        
+    import shutil, subprocess
+    player_bin = next((cmd for cmd in ["mpv", "vlc", "celluloid", "dragon", "xdg-open"] if shutil.which(cmd)), "xdg-open")
+    try:
+        subprocess.Popen([player_bin, target_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return {"status": "success", "message": f"Opened in {player_bin}"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

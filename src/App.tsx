@@ -442,6 +442,18 @@ export default function App() {
     }
   };
 
+  const handleOpenExternalMedia = async (filePath: string) => {
+    try {
+      await fetch("http://localhost:3000/api/system/open-external-media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: filePath })
+      });
+    } catch (e) {
+      console.error("Error opening external media:", e);
+    }
+  };
+
   // GitHub Repos
   const [repos, setRepos] = useState<GitHubRepo[]>([
     {
@@ -2285,7 +2297,14 @@ export default function App() {
                                   {item.isDir ? (
                                     <Folder className="w-4 h-4 text-cyan-400 fill-cyan-400/10 group-hover:scale-105 transition-transform" />
                                   ) : isImage ? (
-                                    <FileImage className="w-4 h-4 text-emerald-400 fill-emerald-400/10 group-hover:scale-105 transition-transform" />
+                                    <img 
+                                      src={`http://localhost:3000/api/system/media?path=${encodeURIComponent(item.path)}`}
+                                      alt={item.name}
+                                      className="w-6 h-6 object-cover rounded shadow border border-emerald-500/30 shrink-0"
+                                      onError={(e) => {
+                                        (e.target as HTMLElement).style.display = 'none';
+                                      }}
+                                    />
                                   ) : isVideo ? (
                                     <Play className="w-4 h-4 text-rose-400 fill-rose-400/10 group-hover:scale-105 transition-transform" />
                                   ) : isText ? (
@@ -2932,7 +2951,7 @@ export default function App() {
             {/* Image Container */}
             <div className="flex items-center justify-center bg-black/40 rounded-xl overflow-hidden min-h-[200px] p-2">
               <img
-                src={`http://localhost:3000/api/agents/files/content?path=${encodeURIComponent(viewerImage.path)}`}
+                src={`http://localhost:3000/api/system/media?path=${encodeURIComponent(viewerImage.path)}`}
                 alt={viewerImage.name}
                 className="max-h-[50vh] max-w-full object-contain rounded-lg shadow pointer-events-none"
               />
@@ -2966,21 +2985,31 @@ export default function App() {
             <div className="flex items-center justify-between pb-3 border-b border-slate-200/15 mb-3 select-none">
               <div className="flex items-center gap-2">
                 <Play className="w-4 h-4 text-cyan-500 fill-cyan-500/10" />
-                <span className="text-xs font-mono font-bold truncate max-w-[340px]">{viewerVideo.name}</span>
+                <span className="text-xs font-mono font-bold truncate max-w-[260px]">{viewerVideo.name}</span>
               </div>
-              <button
-                onClick={() => setViewerVideo(null)}
-                className="p-1 hover:bg-rose-500/20 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
-                title="Close video"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleOpenExternalMedia(viewerVideo.path)}
+                  className="px-2.5 py-1 bg-rose-600/10 hover:bg-rose-600/20 border border-rose-500/20 text-rose-400 rounded-lg text-[10px] font-bold font-mono tracking-wide flex items-center gap-1 transition-all cursor-pointer"
+                  title="Open video in external player (MPV / VLC)"
+                >
+                  <Play className="w-3 h-3" />
+                  OPEN IN MPV / VLC
+                </button>
+                <button
+                  onClick={() => setViewerVideo(null)}
+                  className="p-1 hover:bg-rose-500/20 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
+                  title="Close video"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Video Container */}
             <div className="flex items-center justify-center bg-black/60 rounded-xl overflow-hidden min-h-[240px] p-1">
               <video
-                src={`http://localhost:3000/api/agents/files/content?path=${encodeURIComponent(viewerVideo.path)}`}
+                src={`http://localhost:3000/api/system/media?path=${encodeURIComponent(viewerVideo.path)}`}
                 controls
                 autoPlay
                 className="max-h-[50vh] max-w-full rounded-lg shadow"
