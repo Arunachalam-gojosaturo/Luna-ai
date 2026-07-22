@@ -243,6 +243,16 @@ luna-cli
 
 ---
 
+## 👨‍💻 Lead Developer & Contact
+
+**Arunachalam** — Creator & Core Architect of Luna AI (Luna OS X)
+
+- 📧 **Email**: [arunachalamthehacker@gmail.com](mailto:arunachalamthehacker@gmail.com)
+- 🐙 **GitHub**: [github.com/Arunachalam-gojosaturo](https://github.com/Arunachalam-gojosaturo)
+- 💼 **LinkedIn**: [linkedin.com/in/arunachalam-gojosaturo](https://www.linkedin.com/in/arunachalam-gojosaturo)
+
+---
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to open issues or submit pull requests on [GitHub](https://github.com/Arunachalam-gojosaturo/Luna-ai).

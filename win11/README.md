@@ -123,6 +123,16 @@ After running `install.ps1` or `install_win11.bat`:
 
 ---
 
+## 👨‍💻 Lead Developer & Contact
+
+**Arunachalam** — Creator & Core Architect of Luna AI
+
+- 📧 **Email**: [arunachalamthehacker@gmail.com](mailto:arunachalamthehacker@gmail.com)
+- 🐙 **GitHub**: [github.com/Arunachalam-gojosaturo](https://github.com/Arunachalam-gojosaturo)
+- 💼 **LinkedIn**: [linkedin.com/in/arunachalam-gojosaturo](https://www.linkedin.com/in/arunachalam-gojosaturo)
+
+---
+
 ## 📜 License
 
 Distributed under the **MIT License**.
