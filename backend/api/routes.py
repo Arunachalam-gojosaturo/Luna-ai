@@ -182,11 +182,32 @@ async def pick_folder():
 
 @router.post("/system/open-file-manager")
 async def open_file_manager(req: FolderActionRequest):
-    """Detects and opens the system file manager (Dolphin, Thunar, Nautilus, xdg-open)."""
+    """Detects and opens the system file manager across all Linux DEs and WMs."""
     target_path = req.path.strip() or os.path.expanduser("~")
     import shutil, subprocess
-    fm_bin = next((cmd for cmd in ["dolphin", "thunar", "nautilus", "xdg-open"] if shutil.which(cmd)), "xdg-open")
+    
+    fm_candidates = [
+        "dolphin",             # KDE Plasma
+        "thunar",              # XFCE
+        "nautilus",            # GNOME Files
+        "pcmanfm-qt",          # LXQt
+        "pcmanfm",             # LXDE
+        "nemo",                # Cinnamon
+        "caja",                # MATE
+        "io.elementary.files", # Pantheon
+        "yazi",                # Terminal file manager
+        "ranger",
+        "xdg-open"             # Standard fallback
+    ]
+    
+    fm_bin = next((cmd for cmd in fm_candidates if shutil.which(cmd)), "xdg-open")
     try:
+        if fm_bin in ["yazi", "ranger"]:
+            terminal_bin = next((t for t in ["kitty", "alacritty", "foot", "wezterm", "gnome-terminal", "konsole"] if shutil.which(t)), None)
+            if terminal_bin:
+                subprocess.Popen([terminal_bin, "-e", fm_bin, target_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                return {"status": "success", "message": f"Opened {target_path} in {fm_bin} ({terminal_bin})"}
+        
         subprocess.Popen([fm_bin, target_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return {"status": "success", "message": f"Opened {target_path} in {fm_bin}"}
     except Exception as e:

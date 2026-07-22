@@ -275,6 +275,8 @@ export default function App() {
   const [folderFilesLoading, setFolderFilesLoading] = useState<boolean>(false);
   const [folderFilesError, setFolderFilesError] = useState<string | null>(null);
   const [parentPath, setParentPath] = useState<string | null>(null);
+  const [manualFolderPathInput, setManualFolderPathInput] = useState<string>("");
+  const folderDirectoryInputRef = useRef<HTMLInputElement>(null);
 
   // Draggable Image Viewer Popup state
   const [viewerImage, setViewerImage] = useState<{ name: string, path: string } | null>(null);
@@ -377,10 +379,40 @@ export default function App() {
     }
   };
 
-  const handleOpenRealFolder = async () => {
-    let selectedPath: string | null = null;
+  const addAndLoadProjectFolder = (selectedPath: string) => {
+    if (!selectedPath) return;
+    const pathNormalized = selectedPath.replace(/\\/g, '/');
+    const folderName = pathNormalized.split('/').pop() || pathNormalized;
     
-    // 1. Try FastAPI backend native GTK/Qt file picker
+    if (!realProjects.some(p => p.path === pathNormalized)) {
+      const updated = [...realProjects, { name: folderName, path: pathNormalized }];
+      setRealProjects(updated);
+      localStorage.setItem("realProjects", JSON.stringify(updated));
+    }
+    fetchFolderContents(pathNormalized);
+  };
+
+  const handleNativeDirectoryInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const firstFile = files[0] as any;
+    const filePath = firstFile.path ? firstFile.path : "";
+    if (filePath) {
+      const parts = filePath.replace(/\\/g, '/').split('/');
+      parts.pop(); // remove file name to get folder path
+      const folderPath = parts.join('/');
+      addAndLoadProjectFolder(folderPath);
+    }
+  };
+
+  const handleOpenRealFolder = async () => {
+    // Trigger native browser directory input (same mechanism as background image selection)
+    if (folderDirectoryInputRef.current) {
+      folderDirectoryInputRef.current.click();
+      return;
+    }
+
+    let selectedPath: string | null = null;
     try {
       const res = await fetch("http://localhost:3000/api/system/pick-folder", { method: "POST" });
       if (res.ok) {
@@ -393,29 +425,8 @@ export default function App() {
       console.error("Backend pick-folder error:", e);
     }
 
-    // 2. Tauri Fallback
-    if (!selectedPath && (window as any).__TAURI__) {
-      try {
-        const { open } = await import('@tauri-apps/plugin-dialog');
-        selectedPath = await open({
-          directory: true,
-          multiple: false,
-        }) as string | null;
-      } catch (e) {
-        console.error("Tauri dialog error:", e);
-      }
-    } 
-
     if (selectedPath) {
-      const pathNormalized = selectedPath.replace(/\\/g, '/');
-      const folderName = pathNormalized.split('/').pop() || pathNormalized;
-      
-      if (!realProjects.some(p => p.path === pathNormalized)) {
-        const updated = [...realProjects, { name: folderName, path: pathNormalized }];
-        setRealProjects(updated);
-        localStorage.setItem("realProjects", JSON.stringify(updated));
-      }
-      fetchFolderContents(pathNormalized);
+      addAndLoadProjectFolder(selectedPath);
     }
   };
 
@@ -2125,6 +2136,43 @@ export default function App() {
                       PROJECTS GRID
                     </button>
                   )}
+                  {/* Hidden Native Directory Input */}
+                  <input
+                    type="file"
+                    ref={folderDirectoryInputRef}
+                    style={{ display: 'none' }}
+                    // @ts-ignore
+                    webkitdirectory=""
+                    directory=""
+                    onChange={handleNativeDirectoryInput}
+                  />
+
+                  {/* Direct Path Input Entry Box */}
+                  <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded-xl border border-slate-700/30">
+                    <input
+                      type="text"
+                      value={manualFolderPathInput}
+                      onChange={(e) => setManualFolderPathInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && manualFolderPathInput.trim()) {
+                          addAndLoadProjectFolder(manualFolderPathInput.trim());
+                        }
+                      }}
+                      placeholder="Or enter absolute path (e.g. /home/user/project)"
+                      className="px-3 py-1.5 bg-transparent text-xs font-mono text-cyan-300 placeholder-slate-500 focus:outline-none w-56 sm:w-72"
+                    />
+                    <button
+                      onClick={() => {
+                        if (manualFolderPathInput.trim()) {
+                          addAndLoadProjectFolder(manualFolderPathInput.trim());
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer"
+                    >
+                      LOAD PATH
+                    </button>
+                  </div>
+
                   <button
                     onClick={handleOpenRealFolder}
                     className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold font-mono tracking-wider flex items-center gap-2 transition-all shadow-lg shadow-cyan-600/20 cursor-pointer self-start sm:self-auto"
