@@ -249,7 +249,7 @@ luna-cli
 
 - 📧 **Email**: [arunachalamthehacker@gmail.com](mailto:arunachalamthehacker@gmail.com)
 - 🐙 **GitHub**: [github.com/Arunachalam-gojosaturo](https://github.com/Arunachalam-gojosaturo)
-- 💼 **LinkedIn**: [linkedin.com/in/arunachalam-gojosaturo](https://www.linkedin.com/in/arunachalam-gojosaturo)
+- 💼 **LinkedIn**: [linkedin.com/in/arunachalam-arch](https://www.linkedin.com/in/arunachalam-arch/)
 
 ---
 
