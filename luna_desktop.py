@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """
-Luna AI - Arch Linux Desktop Application Runner
-Launches Luna AI as a native desktop application on Arch Linux / Hyprland.
+Luna AI - Native Arch Linux Desktop Application Launcher (PyQt6 GUI Window)
+Renders a 100% native Arch Linux desktop application window with zero browser chrome, address bar, or tabs.
 """
 
+import os
 import sys
 import time
 import socket
 import subprocess
-import urllib.request
 from pathlib import Path
+
+# Disable GPU flags causing Vulkan/Wayland driver crashes on Hyprland
+os.environ["QT_WEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu --no-sandbox"
 
 BASE_DIR = Path(__file__).parent.resolve()
 VENV_PYTHON = BASE_DIR / "venv" / "bin" / "python"
@@ -27,7 +30,7 @@ def ensure_services():
     
     # 1. Start FastAPI Backend on port 3000 if not running
     if not is_port_open("127.0.0.1", 3000):
-        print("[Desktop Runner] Starting FastAPI backend on http://127.0.0.1:3000 ...")
+        print("[Desktop Application] Starting FastAPI backend on http://127.0.0.1:3000 ...")
         proc_backend = subprocess.Popen(
             [str(VENV_UVICORN), "backend.main:app", "--host", "0.0.0.0", "--port", "3000"],
             cwd=str(BASE_DIR),
@@ -38,7 +41,7 @@ def ensure_services():
 
     # 2. Start Vite Dev Server on port 5173 if not running
     if not is_port_open("127.0.0.1", 5173):
-        print("[Desktop Runner] Starting Vite frontend on http://127.0.0.1:5173 ...")
+        print("[Desktop Application] Starting Vite frontend on http://127.0.0.1:5173 ...")
         proc_vite = subprocess.Popen(
             ["npx", "vite"],
             cwd=str(BASE_DIR),
@@ -48,26 +51,58 @@ def ensure_services():
         processes.append(proc_vite)
 
     # Wait for both FastAPI backend & Vite frontend to become responsive
-    print("[Desktop Runner] Waiting for Luna OS backend & frontend to initialize...")
+    print("[Desktop Application] Initializing Luna OS Core Services...")
     for _ in range(40):
         if is_port_open("127.0.0.1", 3000) and is_port_open("127.0.0.1", 5173):
-            print("[Desktop Runner] Backend and Frontend are online!")
+            print("[Desktop Application] Core Services Online!")
             break
         time.sleep(0.5)
 
     return processes
 
-def launch_desktop_app():
+def launch_native_qt_app():
     procs = ensure_services()
-    url = "http://localhost:5173"
+    url = "http://127.0.0.1:5173"
 
-    print("[Desktop Runner] Launching Luna AI Native Arch Linux Application Window...")
+    print("[Desktop Application] Opening Luna AI Native Qt Application Window...")
     
-    # Standalone Application Window on Arch Linux / Hyprland
     try:
-        subprocess.run(["firefox", "--new-window", url])
+        from PyQt6.QtCore import QUrl
+        from PyQt6.QtWidgets import QApplication, QMainWindow
+        from PyQt6.QtWebEngineWidgets import QWebEngineView
+        from PyQt6.QtGui import QIcon
+
+        app = QApplication(sys.argv)
+        app.setApplicationName("Luna AI")
+        app.setDesktopFileName("Luna-AI")
+
+        window = QMainWindow()
+        window.setWindowTitle("Luna AI | Autonomous Personal AI Operating System")
+        window.resize(1340, 850)
+
+        icon_path = str(BASE_DIR / "public" / "vite.svg")
+        if os.path.exists(icon_path):
+            window.setWindowIcon(QIcon(icon_path))
+
+        web_view = QWebEngineView()
+        web_view.setUrl(QUrl(url))
+        window.setCentralWidget(web_view)
+
+        window.show()
+        sys.exit(app.exec())
     except Exception as e:
-        print(f"[Desktop Runner] Error opening desktop application window: {e}")
+        print(f"[Desktop Application] Native Qt Window fallback error: {e}")
+        try:
+            subprocess.run(["firefox", "--new-window", url])
+        except Exception as e2:
+            print(f"[Desktop Application] Failed to launch window: {e2}")
+
+    # Terminate child processes when application window is closed
+    for p in procs:
+        try:
+            p.terminate()
+        except Exception:
+            pass
 
 if __name__ == "__main__":
-    launch_desktop_app()
+    launch_native_qt_app()
