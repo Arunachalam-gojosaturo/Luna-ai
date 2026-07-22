@@ -156,24 +156,70 @@ class FolderActionRequest(BaseModel):
 async def pick_folder():
     """Opens a native Arch Linux GTK/Qt GUI folder picker dialog."""
     import asyncio, sys, os, shutil
-    from pathlib import Path
-    
-    venv_python = sys.executable
-    script = "from PyQt6.QtWidgets import QApplication, QFileDialog; app = QApplication([]); print(QFileDialog.getExistingDirectory(None, 'Select Project Folder', '/home/arunachalam'))"
     
     selected_path = ""
-    try:
-        proc = await asyncio.create_subprocess_exec(
-            venv_python, "-c", script,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await proc.communicate()
-        out_str = stdout.decode().strip()
-        if out_str and os.path.exists(out_str):
-            selected_path = out_str
-    except Exception as e:
-        print(f"[PickFolder Subprocess Exception]: {e}")
+
+    # 1. Try zenity if available (GTK file chooser)
+    if shutil.which("zenity"):
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "zenity", "--file-selection", "--directory", "--title=Select Project Folder", "--filename=/home/arunachalam/",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, _ = await proc.communicate()
+            out_str = stdout.decode().strip()
+            if out_str and os.path.exists(out_str):
+                selected_path = out_str
+        except Exception as e:
+            print(f"[PickFolder Zenity Exception]: {e}")
+
+    # 2. Try kdialog if available (KDE directory chooser)
+    if not selected_path and shutil.which("kdialog"):
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "kdialog", "--getexistingdirectory", "/home/arunachalam",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, _ = await proc.communicate()
+            out_str = stdout.decode().strip()
+            if out_str and os.path.exists(out_str):
+                selected_path = out_str
+        except Exception as e:
+            print(f"[PickFolder Kdialog Exception]: {e}")
+
+    # 3. Try PyQt6 QFileDialog with DontUseNativeDialog
+    if not selected_path:
+        try:
+            script = "from PyQt6.QtWidgets import QApplication, QFileDialog; app = QApplication([]); res = QFileDialog.getExistingDirectory(None, 'Select Project Folder', '/home/arunachalam', QFileDialog.Option.DontUseNativeDialog); print(res)"
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, "-c", script,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, _ = await proc.communicate()
+            out_str = stdout.decode().strip()
+            if out_str and os.path.exists(out_str):
+                selected_path = out_str
+        except Exception as e:
+            print(f"[PickFolder PyQt6 Exception]: {e}")
+
+    # 4. Try tkinter fallback
+    if not selected_path:
+        try:
+            script_tk = "import tkinter as tk, tkinter.filedialog as fd; root = tk.Tk(); root.withdraw(); root.attributes('-topmost', True); print(fd.askdirectory(title='Select Project Folder'))"
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, "-c", script_tk,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, _ = await proc.communicate()
+            out_str = stdout.decode().strip()
+            if out_str and os.path.exists(out_str):
+                selected_path = out_str
+        except Exception as e2:
+            print(f"[PickFolder Tkinter Exception]: {e2}")
 
     if selected_path:
         return {"status": "success", "path": selected_path}
