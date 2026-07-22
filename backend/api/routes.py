@@ -148,3 +148,54 @@ async def set_tts_status(req: TTSStatusRequest):
     from backend.core.voice_agent import voice_agent
     voice_agent.set_speaking(req.speaking)
     return {"status": "ok"}
+
+class FolderActionRequest(BaseModel):
+    path: str = ""
+
+@router.post("/system/pick-folder")
+async def pick_folder():
+    """Opens a native Arch Linux GTK/Qt GUI folder picker dialog."""
+    selected_path = ""
+    try:
+        from PyQt6.QtWidgets import QApplication, QFileDialog
+        app = QApplication.instance()
+        if not app:
+            app = QApplication([])
+        dialog = QFileDialog()
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
+        dialog.setOption(QFileDialog.Option.ShowDirsOnly, True)
+        if dialog.exec():
+            dirs = dialog.selectedFiles()
+            if dirs:
+                selected_path = dirs[0]
+    except Exception as e:
+        print(f"[PickFolder] PyQt6 dialog exception: {e}")
+
+    if not selected_path:
+        try:
+            import tkinter as tk
+            from tkinter import filedialog
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes('-topmost', True)
+            selected_path = filedialog.askdirectory(title="Select Project Folder")
+            root.destroy()
+        except Exception as e2:
+            print(f"[PickFolder] tkinter fallback exception: {e2}")
+
+    if selected_path:
+        return {"status": "success", "path": selected_path}
+    
+    return {"status": "success", "path": os.path.expanduser("~")}
+
+@router.post("/system/open-file-manager")
+async def open_file_manager(req: FolderActionRequest):
+    """Detects and opens the system file manager (Dolphin, Thunar, Nautilus, xdg-open)."""
+    target_path = req.path.strip() or os.path.expanduser("~")
+    import shutil, subprocess
+    fm_bin = next((cmd for cmd in ["dolphin", "thunar", "nautilus", "xdg-open"] if shutil.which(cmd)), "xdg-open")
+    try:
+        subprocess.Popen([fm_bin, target_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return {"status": "success", "message": f"Opened {target_path} in {fm_bin}"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

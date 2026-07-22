@@ -379,7 +379,22 @@ export default function App() {
 
   const handleOpenRealFolder = async () => {
     let selectedPath: string | null = null;
-    if ((window as any).__TAURI__) {
+    
+    // 1. Try FastAPI backend native GTK/Qt file picker
+    try {
+      const res = await fetch("http://localhost:3000/api/system/pick-folder", { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.path) {
+          selectedPath = data.path;
+        }
+      }
+    } catch (e) {
+      console.error("Backend pick-folder error:", e);
+    }
+
+    // 2. Tauri Fallback
+    if (!selectedPath && (window as any).__TAURI__) {
       try {
         const { open } = await import('@tauri-apps/plugin-dialog');
         selectedPath = await open({
@@ -390,10 +405,6 @@ export default function App() {
         console.error("Tauri dialog error:", e);
       }
     } 
-    
-    if (!selectedPath) {
-      selectedPath = prompt("Enter the absolute path of the project folder:");
-    }
 
     if (selectedPath) {
       const pathNormalized = selectedPath.replace(/\\/g, '/');
@@ -404,6 +415,19 @@ export default function App() {
         setRealProjects(updated);
         localStorage.setItem("realProjects", JSON.stringify(updated));
       }
+      fetchFolderContents(pathNormalized);
+    }
+  };
+
+  const handleOpenFileBrowser = async (folderPath: string) => {
+    try {
+      await fetch("http://localhost:3000/api/system/open-file-manager", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: folderPath })
+      });
+    } catch (e) {
+      console.error("Error opening file manager:", e);
     }
   };
 
@@ -2147,6 +2171,13 @@ export default function App() {
                       </span>
                     </div>
 
+                    <button
+                      onClick={() => handleOpenFileBrowser(currentFolderPath!)}
+                      className="px-3 py-1.5 bg-emerald-600/10 hover:bg-emerald-600/25 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs font-bold font-mono tracking-wide flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                    >
+                      <Folder className="w-3.5 h-3.5" />
+                      OPEN FILE MANAGER
+                    </button>
                     <button
                       onClick={() => executeSystemCommand(`code "${currentFolderPath}"`, false)}
                       className="px-3 py-1.5 bg-cyan-600/10 hover:bg-cyan-600/25 border border-cyan-500/20 text-cyan-400 rounded-lg text-xs font-bold font-mono tracking-wide flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
