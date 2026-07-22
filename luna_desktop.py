@@ -63,33 +63,11 @@ def launch_desktop_app():
 
     print("[Desktop Runner] Launching Luna AI Native Arch Linux Application Window...")
     
-    # Attempt pywebview native GTK/WebKit GUI window launch
+    # Standalone Application Window on Arch Linux / Hyprland
     try:
-        import webview
-        window = webview.create_window(
-            title="Luna AI | Autonomous AI OS",
-            url=url,
-            width=1280,
-            height=820,
-            resizable=True,
-            text_select=True,
-            confirm_close=False
-        )
-        webview.start(debug=False)
+        subprocess.run(["firefox", "--new-window", url])
     except Exception as e:
-        print(f"[Desktop Runner] pywebview fallback: {e}")
-        # Standalone Desktop App Fallback via Firefox on Arch Linux
-        try:
-            subprocess.run(["firefox", "--new-window", url])
-        except Exception as e2:
-            print(f"[Desktop Runner] Failed to open desktop window: {e2}")
-
-    # Clean shutdown of spawned child processes on window exit
-    for p in procs:
-        try:
-            p.terminate()
-        except Exception:
-            pass
+        print(f"[Desktop Runner] Error opening desktop application window: {e}")
 
 if __name__ == "__main__":
     launch_desktop_app()

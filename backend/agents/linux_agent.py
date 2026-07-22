@@ -76,7 +76,33 @@ class LinuxAgent(BaseAgent):
                     all_ok = False
             return {"success": all_ok, "stdout": "\n".join(outputs), "stderr": ""}
 
-        # 1. Mobile Lock, Unlock, PIN Update & App Launch Interceptors
+        # 1. YouTube Play & Search Handler (Desktop & Mobile)
+        yt_play_match = re.search(r"(?:play|search|watch)\s+(.+?)(?:\s+on\s+youtube)?$", cmd_lower) if "youtube" in cmd_lower or "play" in cmd_lower else None
+        if "youtube" in cmd_lower or (yt_play_match and "on mobile" not in cmd_lower and "on phone" not in cmd_lower):
+            is_mobile_req = any(m in cmd_lower for m in ["on mobile", "on phone", "on android", "on device"])
+            if is_mobile_req:
+                res = await adb_manager.launch_app("youtube")
+                return {"success": res["status"] == "success", "stdout": res.get("result", "Launched YouTube on mobile"), "stderr": res.get("stderr", "")}
+            else:
+                query = ""
+                if "play" in cmd_lower:
+                    query = re.sub(r"^(?:luna\s+)?play\s+", "", cmd_lower, flags=re.IGNORECASE)
+                    query = re.sub(r"\s+on\s+youtube$", "", query, flags=re.IGNORECASE).strip()
+                elif "search" in cmd_lower:
+                    query = re.sub(r"^(?:luna\s+)?search\s+", "", cmd_lower, flags=re.IGNORECASE)
+                    query = re.sub(r"\s+on\s+youtube$", "", query, flags=re.IGNORECASE).strip()
+
+                if query:
+                    import urllib.parse
+                    encoded_query = urllib.parse.quote(query)
+                    yt_url = f"https://www.youtube.com/results?search_query={encoded_query}"
+                    await asyncio.create_subprocess_exec("xdg-open", yt_url, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                    return {"success": True, "stdout": f"Playing '{query}' on YouTube in browser", "stderr": ""}
+                else:
+                    await asyncio.create_subprocess_exec("xdg-open", "https://www.youtube.com", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                    return {"success": True, "stdout": "Opened YouTube in browser", "stderr": ""}
+
+        # 2. Mobile Lock, Unlock, PIN Update & Mobile App Interceptors (Strictly scoped)
         pin_update_match = re.search(r"(?:change|set|update|remember)\s+(?:mobile|phone)\s+(?:pin|password)\s+(?:to\s+)?(\d+)", cmd_lower) or re.search(r"(?:pin|password)\s+is\s+(\d+)", cmd_lower)
         if pin_update_match:
             new_pin = pin_update_match.group(1)
@@ -89,23 +115,28 @@ class LinuxAgent(BaseAgent):
             res = await adb_manager.unlock_device(pin=pin_val)
             return {"success": res["status"] == "success", "stdout": res.get("result", "Unlocked mobile device successfully"), "stderr": res.get("stderr", "")}
 
-        if "lock" in cmd_lower and ("mobile" in cmd_lower or "phone" in cmd_lower or "device" in cmd_lower or "android" in cmd_lower or "screen" in cmd_lower) and "session" not in cmd_lower:
+        if "lock" in cmd_lower and ("mobile" in cmd_lower or "phone" in cmd_lower or "device" in cmd_lower or "android" in cmd_lower) and "session" not in cmd_lower:
             res = await adb_manager.lock_device()
             return {"success": res["status"] == "success", "stdout": res.get("result", "Locked mobile device successfully"), "stderr": res.get("stderr", "")}
 
-        if any(app in cmd_lower for app in ["whatsapp", "instagram", "youtube", "facebook", "twitter", "x", "telegram", "spotify", "camera", "gallery", "settings"]):
-            if any(verb in cmd_lower for verb in ["open", "launch", "start", "run"]):
-                for app_candidate in ["whatsapp", "instagram", "youtube", "facebook", "twitter", "telegram", "spotify", "camera", "gallery", "settings"]:
-                    if app_candidate in cmd_lower:
-                        res = await adb_manager.launch_app(app_candidate)
-                        return {"success": res["status"] == "success", "stdout": res.get("result", f"Launched {app_candidate}"), "stderr": res.get("stderr", "")}
+        # Mobile app launch (ONLY when explicitly targeting mobile)
+        if any(kw in cmd_lower for kw in ["on mobile", "on phone", "on android", "on device"]):
+            for app_candidate in ["whatsapp", "instagram", "youtube", "facebook", "twitter", "telegram", "spotify", "camera", "gallery", "settings"]:
+                if app_candidate in cmd_lower:
+                    res = await adb_manager.launch_app(app_candidate)
+                    return {"success": res["status"] == "success", "stdout": res.get("result", f"Launched {app_candidate} on mobile"), "stderr": res.get("stderr", "")}
 
-        mobile_app_match = re.search(r"(?:open|launch|start)\s+(\w+)\s+(?:on|in)?\s*(?:mobile|phone|android|device)?", cmd_lower)
-        if mobile_app_match:
-            app_name = mobile_app_match.group(1)
-            if app_name not in ["code", "firefox", "kitty", "terminal", "browser"]:
-                res = await adb_manager.launch_app(app_name)
-                return {"success": res["status"] == "success", "stdout": res.get("result", f"Launched {app_name}"), "stderr": res.get("stderr", "")}
+        # 3. Desktop Application Launchers (Firefox, Code, Kitty, Browser, Spotify, Discord)
+        if any(verb in cmd_lower for verb in ["open", "launch", "start", "run"]):
+            if "firefox" in cmd_lower or "browser" in cmd_lower:
+                await asyncio.create_subprocess_exec("firefox", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                return {"success": True, "stdout": "Opened Firefox browser", "stderr": ""}
+            elif "code" in cmd_lower or "vscode" in cmd_lower:
+                await asyncio.create_subprocess_exec("code", ".", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                return {"success": True, "stdout": "Opened VS Code editor", "stderr": ""}
+            elif "kitty" in cmd_lower or "terminal" in cmd_lower:
+                await asyncio.create_subprocess_exec("kitty", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                return {"success": True, "stdout": "Opened Kitty terminal", "stderr": ""}
 
         # 2. System Power Actions (Shutdown, Reboot, Suspend, Lock)
         if "poweroff" in cmd_lower or "shutdown" in cmd_lower:
