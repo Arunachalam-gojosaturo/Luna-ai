@@ -1,0 +1,50 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Tauri
+src-tauri/target/
+
+# SQLite databases
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# WhatsApp agent temporary files and credentials
+backend/agents/whatsapp_agent/qr.png
+backend/agents/whatsapp_agent/qr_base64.txt
+backend/agents/whatsapp_agent/auth_info_baileys/
+**/auth_info_baileys/**
+luna_chat.db
+luna_memory.db
+audit.log
+recording.webm

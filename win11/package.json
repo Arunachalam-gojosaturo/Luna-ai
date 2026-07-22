@@ -1,0 +1,53 @@
+{
+  "name": "react-example",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 3000 & vite",
+    "app": "venv/bin/python luna_desktop.py",
+    "desktop:app": "venv/bin/python luna_desktop.py",
+    "tauri": "tauri",
+    "desktop": "tauri dev",
+    "desktop:build": "tauri build",
+    "build": "vite build",
+    "start": "venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 3000",
+    "cli": "venv/bin/python luna_cli_enhanced.py",
+    "cli:old": "venv/bin/python cli.py",
+    "cli:config": "venv/bin/python -c \"from cli_config import ConfigManager; c = ConfigManager(); print('\\nConfiguration Status:'); print(f'Profile: {c.current_profile.name}'); print(f'Model: {c.current_profile.model}'); print(f'Provider: {c.current_profile.provider}')\"",
+    "cli:test": "venv/bin/python cli_utils.py",
+    "clean": "rm -rf dist src-tauri/target",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/genai": "^2.4.0",
+    "@tailwindcss/vite": "^4.1.14",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@vitejs/plugin-react": "^5.0.4",
+    "better-sqlite3": "^12.11.1",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "node-edge-tts": "^1.2.10",
+    "pg": "^8.22.0",
+    "pgvector": "^0.3.0",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "systeminformation": "^5.31.9",
+    "vite": "^6.2.3"
+  },
+  "devDependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/cli": "^2.11.3",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.14.0",
+    "autoprefixer": "^10.4.21",
+    "esbuild": "^0.25.0",
+    "tailwindcss": "^4.1.14",
+    "tsx": "^4.21.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.3"
+  }
+}

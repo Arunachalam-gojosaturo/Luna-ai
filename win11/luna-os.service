@@ -1,0 +1,16 @@
+[Unit]
+Description=Luna OS Backend Service
+After=network.target
+
+[Service]
+Type=simple
+User=%u
+ExecStart=/opt/luna-os/venv/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 3000
+WorkingDirectory=/opt/luna-os
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
