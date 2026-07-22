@@ -100,9 +100,10 @@ def launch_native_qt_app():
         window.setCentralWidget(web_view)
 
         window.show()
-        sys.exit(app.exec())
+        exit_code = app.exec()
     except Exception as e:
         print(f"[Desktop Application] Native Qt Window fallback error: {e}")
+        exit_code = 1
         try:
             subprocess.run(["firefox", "--new-window", url])
         except Exception as e2:
@@ -114,6 +115,8 @@ def launch_native_qt_app():
             p.terminate()
         except Exception:
             pass
+
+    sys.exit(exit_code)
 
 if __name__ == "__main__":
     launch_native_qt_app()

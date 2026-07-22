@@ -88,5 +88,11 @@ class Planner:
             requires_confirmation=requires_conf
         )
 
-# Singleton instance
+    def generate_plan(self, command: str, intent: str, reasoning_depth: str) -> List[str]:
+        """Generate step-by-step plan list for brain_v2."""
+        return [f"Analyze intent: {intent}", f"Execute action for request: {command}", "Verify execution result"]
+
+# Singleton instances
 planner = Planner()
+planner_engine = planner
+
