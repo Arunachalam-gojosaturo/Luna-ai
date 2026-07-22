@@ -406,18 +406,12 @@ export default function App() {
   };
 
   const handleOpenRealFolder = async () => {
-    // Trigger native browser directory input (same mechanism as background image selection)
-    if (folderDirectoryInputRef.current) {
-      folderDirectoryInputRef.current.click();
-      return;
-    }
-
     let selectedPath: string | null = null;
     try {
       const res = await fetch("http://localhost:3000/api/system/pick-folder", { method: "POST" });
       if (res.ok) {
         const data = await res.json();
-        if (data.path) {
+        if (data.status === "success" && data.path) {
           selectedPath = data.path;
         }
       }
@@ -427,6 +421,8 @@ export default function App() {
 
     if (selectedPath) {
       addAndLoadProjectFolder(selectedPath);
+    } else if (folderDirectoryInputRef.current) {
+      folderDirectoryInputRef.current.click();
     }
   };
 

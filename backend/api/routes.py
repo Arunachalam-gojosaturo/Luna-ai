@@ -178,7 +178,7 @@ async def pick_folder():
     if selected_path:
         return {"status": "success", "path": selected_path}
     
-    return {"status": "success", "path": os.path.expanduser("~")}
+    return {"status": "cancelled", "path": ""}
 
 @router.post("/system/open-file-manager")
 async def open_file_manager(req: FolderActionRequest):
@@ -213,9 +213,12 @@ async def open_file_manager(req: FolderActionRequest):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+from fastapi import Request
+from fastapi.responses import StreamingResponse
+
 @router.get("/system/media")
-async def get_system_media(path: str):
-    """Serves local image and video files securely with correct MIME types for thumbnails & players."""
+async def get_system_media(path: str, request: Request):
+    """Serves local image and video files securely with full HTTP 206 Range streaming support for HTML5 video/audio."""
     if not path or not os.path.exists(path):
         return JSONResponse({"status": "error", "message": "File not found"}, status_code=404)
     
@@ -223,7 +226,42 @@ async def get_system_media(path: str):
     mime_type, _ = mimetypes.guess_type(path)
     if not mime_type:
         mime_type = "application/octet-stream"
-        
+
+    file_size = os.path.getsize(path)
+    range_header = request.headers.get("range")
+
+    if range_header and mime_type.startswith(("video/", "audio/")):
+        try:
+            bytes_unit, byte_range = range_header.split("=")
+            start_str, end_str = byte_range.split("-")
+            start = int(start_str) if start_str else 0
+            end = int(end_str) if end_str else file_size - 1
+            if end >= file_size:
+                end = file_size - 1
+            length = end - start + 1
+
+            def chunk_generator():
+                with open(path, "rb") as f:
+                    f.seek(start)
+                    bytes_remaining = length
+                    while bytes_remaining > 0:
+                        chunk_size = min(128 * 1024, bytes_remaining)
+                        data = f.read(chunk_size)
+                        if not data:
+                            break
+                        bytes_remaining -= len(data)
+                        yield data
+
+            headers = {
+                "Content-Range": f"bytes {start}-{end}/{file_size}",
+                "Accept-Ranges": "bytes",
+                "Content-Length": str(length),
+                "Content-Type": mime_type,
+            }
+            return StreamingResponse(chunk_generator(), status_code=206, headers=headers)
+        except Exception as e:
+            print(f"[MediaRangeStreaming Exception]: {e}")
+
     return FileResponse(path, media_type=mime_type)
 
 class OpenMediaRequest(BaseModel):
