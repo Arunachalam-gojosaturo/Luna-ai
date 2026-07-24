@@ -9,13 +9,27 @@ import sys
 import time
 import socket
 import subprocess
+import shutil
 from pathlib import Path
 
 os.environ["QT_WEBENGINE_CHROMIUM_FLAGS"] = "--no-sandbox --autoplay-policy=no-user-gesture-required --enable-features=NetworkService,NetworkServiceInProcess"
 
 BASE_DIR = Path(__file__).parent.resolve()
-VENV_PYTHON = BASE_DIR / "venv" / "bin" / "python"
-VENV_UVICORN = BASE_DIR / "venv" / "bin" / "uvicorn"
+
+def get_python_exe():
+    venv_py = BASE_DIR / "venv" / "bin" / "python"
+    if venv_py.exists():
+        return str(venv_py)
+    return sys.executable
+
+def get_uvicorn_cmd():
+    venv_uv = BASE_DIR / "venv" / "bin" / "uvicorn"
+    if venv_uv.exists():
+        return [str(venv_uv)]
+    uv_bin = shutil.which("uvicorn")
+    if uv_bin:
+        return [uv_bin]
+    return [get_python_exe(), "-m", "uvicorn"]
 
 def is_port_open(host: str, port: int) -> bool:
     try:
@@ -30,24 +44,36 @@ def ensure_services():
     # 1. Start FastAPI Backend on port 3000 if not running
     if not is_port_open("127.0.0.1", 3000):
         print("[Desktop Application] Starting FastAPI backend on http://127.0.0.1:3000 ...")
+        uv_cmd = get_uvicorn_cmd() + ["backend.main:app", "--host", "0.0.0.0", "--port", "3000"]
         proc_backend = subprocess.Popen(
-            [str(VENV_UVICORN), "backend.main:app", "--host", "0.0.0.0", "--port", "3000"],
+            uv_cmd,
             cwd=str(BASE_DIR),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
         processes.append(proc_backend)
 
-    # 2. Start Vite Dev Server on port 5173 if not running
+    # 2. Start Frontend Server on port 5173 if not running
     if not is_port_open("127.0.0.1", 5173):
-        print("[Desktop Application] Starting Vite frontend on http://127.0.0.1:5173 ...")
-        proc_vite = subprocess.Popen(
-            ["npx", "vite"],
-            cwd=str(BASE_DIR),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-        processes.append(proc_vite)
+        dist_dir = BASE_DIR / "dist"
+        if dist_dir.exists() and (dist_dir / "index.html").exists():
+            print("[Desktop Application] Serving production frontend on http://127.0.0.1:5173 ...")
+            proc_frontend = subprocess.Popen(
+                [get_python_exe(), "-m", "http.server", "5173", "--directory", str(dist_dir)],
+                cwd=str(BASE_DIR),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            processes.append(proc_frontend)
+        else:
+            print("[Desktop Application] Starting Vite frontend on http://127.0.0.1:5173 ...")
+            proc_frontend = subprocess.Popen(
+                ["npx", "vite"],
+                cwd=str(BASE_DIR),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            processes.append(proc_frontend)
 
     # Wait for both FastAPI backend & Vite frontend to become responsive
     print("[Desktop Application] Initializing Luna OS Core Services...")

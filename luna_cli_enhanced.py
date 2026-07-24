@@ -154,7 +154,7 @@ class BootAnimation:
             print(f" {Colors.GREEN}✓{Colors.RESET}")
         
         print(f"\n{Colors.BRIGHT_MAGENTA}{'='*60}{Colors.RESET}\n")
-        print(f"{Colors.BRIGHT_GREEN}Luna OS X CLI v2.0 Ready!{Colors.RESET}")
+        print(f"{Colors.BRIGHT_GREEN}Luna AI CLI v2.1.0 Ready!{Colors.RESET}")
         print(f"{Colors.DIM}Type 'help' for available commands or 'exit' to quit.{Colors.RESET}\n")
 
 

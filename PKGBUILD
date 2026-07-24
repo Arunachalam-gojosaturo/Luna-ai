@@ -11,11 +11,20 @@ depends=(
     'npm'
     'python'
     'python-pip'
+    'python-fastapi'
+    'python-uvicorn'
+    'python-pydantic'
+    'python-dotenv'
+    'python-requests'
+    'python-psutil'
+    'python-httpx'
+    'python-websockets'
+    'python-pyqt6'
+    'python-pyqt6-webengine'
     'mpv'
     'xdg-utils'
     'polkit'
     'qt6-webengine'
-    'python-pyqt6'
 )
 optdepends=(
     'scrcpy: Wireless Android screen mirroring'
@@ -46,16 +55,24 @@ package() {
           generate_reports.py luna_cli_enhanced.py luna_desktop.py server.py \
           package.json pyproject.toml requirements.txt public src dist node_modules "$pkgdir/opt/luna-ai/"
 
-    # Install launcher script
+    # Install launcher script for GUI
     cat << 'EOF' > "$pkgdir/usr/bin/luna-ai"
 #!/usr/bin/env bash
 cd /opt/luna-ai
-exec python luna_desktop.py "$@"
+exec python3 luna_desktop.py "$@"
 EOF
     chmod 755 "$pkgdir/usr/bin/luna-ai"
 
     # Install short command symlink
     ln -s /usr/bin/luna-ai "$pkgdir/usr/bin/luna"
+
+    # Install CLI launcher script
+    cat << 'EOF' > "$pkgdir/usr/bin/luna-cli"
+#!/usr/bin/env bash
+cd /opt/luna-ai
+exec python3 luna_cli_enhanced.py "$@"
+EOF
+    chmod 755 "$pkgdir/usr/bin/luna-cli"
 
     # Install Desktop Entry
     cat << 'EOF' > "$pkgdir/usr/share/applications/Luna-AI.desktop"

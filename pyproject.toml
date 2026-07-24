@@ -3,9 +3,9 @@ requires = ["setuptools>=65.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "luna-os"
-version = "2.0.0"
-description = "AI-powered Operating System Ecosystem for Arch Linux"
+name = "luna-ai"
+version = "2.1.0"
+description = "Autonomous Personal AI Operating System & Desktop Assistant for Arch Linux"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -68,7 +68,8 @@ Repository = "https://github.com/Arunachalam-gojosaturo/Luna-eco-system.git"
 Issues = "https://github.com/Arunachalam-gojosaturo/Luna-eco-system/issues"
 
 [project.scripts]
-luna-os = "backend.cli:main"
+luna-ai = "luna_desktop:launch_native_qt_app"
+luna-cli = "luna_cli_enhanced:main"
 
 [tool.setuptools]
 packages = ["backend", "backend.agents", "backend.api", "backend.core", "backend.memory", "backend.providers", "backend.tools", "backend.voice", "backend.config"]
