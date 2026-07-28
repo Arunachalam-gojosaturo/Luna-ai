@@ -17,6 +17,8 @@
 
 ## 🌌 What is Luna AI?
 
+**Arunachalam's Autonomous Personal AI Operating System & Desktop Assistant for Arch Linux.** Developed by a 7-year veteran builder based in (Tamil Nadu), India.
+
 **Luna AI** (also known as **Luna OS X**) is an autonomous personal AI operating system designed to deeply integrate with your Linux environment (optimized for **Arch Linux, Hyprland, Wayland, and GTK/Qt desktop environments**).
 
 Unlike simple chat web pages, Luna acts as an **always-on digital companion and system manager**. She combines continuous voice recognition, real-time audio synthesis, native desktop application embedding, wireless Android (ADB) device management, WhatsApp automation, and multi-provider LLM intelligence routing into one unified ecosystem.
