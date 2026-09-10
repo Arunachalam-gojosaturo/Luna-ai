@@ -86,6 +86,36 @@ class ADBManager:
         except Exception as e:
             print(f"[ADBManager] Failed to save device info: {e}")
 
+    async def is_device_connected(self) -> bool:
+        """Fast check to see if any Android device is actively connected via ADB."""
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "adb", "devices",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=2.0)
+            lines = stdout.decode().strip().split("\n")
+            for line in lines[1:]:
+                parts = line.strip().split()
+                if len(parts) >= 2 and parts[1] == "device":
+                    return True
+        except Exception:
+            pass
+        return False
+
+    async def get_connected_devices_summary(self) -> str:
+        """Returns human-readable summary of connected ADB devices."""
+        try:
+            devices = await self.scan_and_auto_connect()
+            online = [d for d in devices if d.get("status") == "device"]
+            if online:
+                details = [f"{d.get('model', 'Android')} ({d.get('serial')})" for d in online]
+                return f"Connected: {', '.join(details)}"
+        except Exception:
+            pass
+        return "Disconnected (No mobile device detected via ADB)"
+
     async def _resolve_device_serial(self, serial: Optional[str] = None) -> Optional[str]:
         """Resolves target device serial to avoid 'more than one device' errors."""
         devices = await self.scan_and_auto_connect()

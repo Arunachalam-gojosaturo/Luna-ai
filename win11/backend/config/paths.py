@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 def get_data_dir() -> Path:
-    """
+    r"""
     Get Windows %LOCALAPPDATA%\LunaAI or XDG_DATA_HOME path
     Used for databases, cache, runtime data
     """
@@ -27,7 +27,7 @@ def get_data_dir() -> Path:
 
 
 def get_config_dir() -> Path:
-    """
+    r"""
     Get Windows %APPDATA%\LunaAI or XDG_CONFIG_HOME path
     Used for configuration files
     """
@@ -46,7 +46,7 @@ def get_config_dir() -> Path:
 
 
 def get_cache_dir() -> Path:
-    """
+    r"""
     Get Windows %TEMP%\LunaAI or XDG_CACHE_HOME path
     Used for temporary files and cache
     """

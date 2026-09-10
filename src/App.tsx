@@ -4,7 +4,8 @@ import {
   Home, Mic, Folder, Smartphone, Code, BarChart2, MessageSquare, Settings,
   Cpu, Activity, CheckCircle2, AlertTriangle, ShieldAlert, Wifi, Battery, Play,
   Send, Plus, Trash2, Heart, Sparkles, Volume2, Globe, Server, Check, HelpCircle,
-  Sun, Moon, Gauge, Terminal, ArrowLeft, FileText, FileImage, File, X, ChevronRight
+  Sun, Moon, Gauge, Terminal, ArrowLeft, FileText, FileImage, File, X, ChevronRight,
+  Copy
 } from "lucide-react";
 
 import { 
@@ -43,7 +44,7 @@ export default function App() {
     "Hardware matrix calibration node ready."
   ]);
   const [coreState, setCoreState] = useState<CoreState>("Idle");
-  const [speechText, setSpeechText] = useState<string>("Hello, Boss. I'm Luna. Everything is online and ready. I've finished checking the system, and we're good to go. What would you like to work on today?");
+  const [speechText, setSpeechText] = useState<string>("Hello! I am Luna — an advanced autonomous AI operating system and intelligent workstation companion. All core systems are online and running at peak performance. What are we conquering today?");
   const [transcript, setTranscript] = useState<string>("");
   const [chatHistory, setChatHistory] = useState<{ role: string, content: string }[]>([]);
   
@@ -497,15 +498,23 @@ export default function App() {
 
   // Chat message backlog
   const [chatInput, setChatInput] = useState<string>("");
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [chatMessages, setChatMessages] = useState<{ sender: 'user' | 'luna'; text: string; timestamp: string }[]>(() => {
     try {
       const saved = localStorage.getItem("chatMessages");
       if (saved) return JSON.parse(saved);
     } catch {}
     return [
-      { sender: 'luna', text: "Hello, Boss. I'm Luna. Everything is online and ready. I've finished checking the system, and we're good to go. What would you like to work on today?", timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) }
+      { sender: 'luna', text: "Hello! I am Luna — an advanced autonomous AI operating system and intelligent workstation companion. All core systems are online and running at peak performance. What are we conquering today?", timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) }
     ];
   });
+
+  useEffect(() => {
+    if (activeView === 'chat') {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, isThinking, activeView]);
 
   // Persist State to Local Storage
   useEffect(() => {
@@ -915,7 +924,7 @@ export default function App() {
 
       // Trigger structural side effects based on system response actions
       if (data.action) {
-        handleSystemAction(data.action, data.targetDevice, data.logs || [], data.sysCommand, data.requiresPrivilege);
+        handleSystemAction(data.action, data.targetDevice, data.logs || [], data.sysCommand, data.requiresPrivilege, data.alreadyExecuted);
       }
 
       // Insert any triggered notifications
@@ -943,7 +952,7 @@ export default function App() {
   };
 
   // Side-effect action dispatcher
-  const handleSystemAction = (action: string, targetDevice: string, actionLogs: string[], sysCommand?: string, requiresPrivilege?: boolean) => {
+  const handleSystemAction = (action: string, targetDevice: string, actionLogs: string[], sysCommand?: string, requiresPrivilege?: boolean, alreadyExecuted?: boolean) => {
     pushActivity(`Action dispatched: ${action} on ${targetDevice || 'system'}`, 'action');
 
     switch (action) {
@@ -952,7 +961,7 @@ export default function App() {
       case "FILE_OPERATION":
       case "EXECUTE_SYSTEM_COMMAND":
       case "GIT_AUTOMATION":
-        if (sysCommand) {
+        if (sysCommand && !alreadyExecuted) {
           if (requiresPrivilege) {
             setPendingCommand({ command: sysCommand, requiresPrivilege, category: action });
             setCoreState("Warning");
@@ -961,6 +970,8 @@ export default function App() {
           } else {
             executeSystemCommand(sysCommand, false, action);
           }
+        } else if (sysCommand && alreadyExecuted) {
+          pushTerminalLog(`[OS COMPLETED] ${sysCommand}`, 'system');
         }
         break;
       case "SYNC_DEVICE":
@@ -2469,37 +2480,43 @@ export default function App() {
           )}
 
           {activeView === "chat" && (
-            <motion.div
+<motion.div
               key="chat"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className={`w-full max-w-4xl mx-auto flex-1 flex flex-col border rounded-3xl overflow-hidden h-[540px] shadow-2xl transition-all duration-500 ${
+              className={`w-full max-w-4xl mx-auto flex-1 flex flex-col border rounded-3xl overflow-hidden h-[580px] shadow-2xl transition-all duration-500 ${
                 isLight 
                   ? "bg-white/40 border-white/60 text-slate-850" 
                   : "bg-slate-950/60 border border-slate-900 text-slate-100 shadow-2xl"
               }`}
             >
               {/* Chat Header */}
-              <div className={`border-b px-6 py-4 flex items-center justify-between ${
+              <div className={`border-b px-6 py-3.5 flex items-center justify-between ${
                 isLight ? "bg-white/60 border-slate-200" : "bg-slate-900/40 border-slate-900/80"
               }`}>
                 <div className="flex items-center gap-2.5">
-                  <div className="h-2 w-2 rounded-full bg-cyan-500 animate-pulse" />
+                  <div className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
                   <div>
-                    <h2 className={`text-sm font-bold font-display ${isLight ? "text-slate-950" : "text-white"}`}>Neural Link Terminal</h2>
-                    <p className="text-[10px] text-slate-400 font-mono">SECURE IPC CONNECTION</p>
+                    <div className="flex items-center gap-2">
+                      <h2 className={`text-sm font-bold font-display ${isLight ? "text-slate-950" : "text-white"}`}>Neural Link Terminal</h2>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono font-medium flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
+                        Gemini 3.5 Flash (~1.4s)
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 font-mono">ARCH LINUX IPC CORE • REAL-TIME ACCELERATION</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   <button 
                     onClick={() => {
                       setChatMessages([{ sender: 'luna', text: "LUNA Operating System chat interface initialized. Standard command syntax is supported.", timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) }]);
                       setChatHistory([]);
                       pushTerminalLog("Chat session cleared.", "system");
                     }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                       isLight ? "text-slate-600 hover:bg-slate-100 hover:text-red-500" : "text-slate-400 hover:bg-slate-800 hover:text-red-400"
                     }`}
                     title="Clear Chat"
@@ -2509,27 +2526,51 @@ export default function App() {
                   </button>
                   <button 
                     onClick={() => {
-                      setChatMessages([{ sender: 'luna', text: "New session started. How can I assist you?", timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) }]);
+                      setChatMessages([{ sender: 'luna', text: "New session started. Luna OS core initialized and standing by. What are we conquering today?", timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) }]);
                       setChatHistory([]);
                       pushTerminalLog("New chat session started.", "system");
                     }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                       isLight ? "bg-slate-900 text-white hover:bg-slate-800" : "bg-white text-slate-900 hover:bg-slate-200"
                     }`}
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>New Chat</span>
+                    <span>New</span>
                   </button>
-                  <span className={`hidden sm:inline-block text-[10px] font-mono px-2.5 py-1 rounded-full border ${
-                    isLight ? "bg-slate-100 border-slate-200 text-slate-600" : "bg-slate-900 border-slate-850 text-slate-500"
-                  }`}>
-                    LUNA V4 CORE
-                  </span>
                 </div>
               </div>
 
+              {/* Quick Action Suggestion Chips */}
+              <div className={`px-5 py-2 border-b flex items-center gap-2 overflow-x-auto text-[11px] font-mono no-scrollbar ${
+                isLight ? "bg-slate-50/70 border-slate-200" : "bg-slate-950/40 border-slate-900/60"
+              }`}>
+                <span className="text-slate-500 text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1 shrink-0">
+                  <Sparkles className="w-3 h-3 text-cyan-400" /> Prompts:
+                </span>
+                {[
+                  { label: "⚡ System Health", cmd: "Check system health and CPU usage" },
+                  { label: "📦 Arch Updates", cmd: "Check for Arch Linux package updates" },
+                  { label: "🖥️ Active Windows", cmd: "List active Hyprland windows and workspaces" },
+                  { label: "🛡️ Audit Log", cmd: "Show recent system security and audit logs" },
+                  { label: "💡 Explain Code", cmd: "Explain how Luna OS handles Hyprland keybindings" }
+                ].map((chip, cIdx) => (
+                  <button
+                    key={cIdx}
+                    type="button"
+                    onClick={() => handleCommand(chip.cmd)}
+                    className={`shrink-0 px-2.5 py-1 rounded-full border transition-all text-[11px] cursor-pointer ${
+                      isLight
+                        ? "bg-white border-slate-300 hover:border-cyan-500 hover:bg-cyan-50/50 text-slate-700"
+                        : "bg-slate-900/90 border-slate-800 hover:border-cyan-500/50 hover:bg-cyan-950/20 text-slate-300"
+                    }`}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+
               {/* Chat Messages */}
-              <div className={`flex-1 overflow-y-auto p-6 space-y-4 ${
+              <div className={`flex-1 overflow-y-auto p-5 space-y-4 ${
                 isLight ? "bg-white/10" : "bg-slate-950/35"
               }`}>
                 {chatMessages.map((msg, idx) => (
@@ -2537,60 +2578,142 @@ export default function App() {
                     key={idx} 
                     className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`max-w-[70%] p-4 rounded-2xl text-xs leading-relaxed border ${
+                    <div className={`group relative max-w-[80%] p-4 rounded-2xl text-xs leading-relaxed border transition-all shadow-sm ${
                       msg.sender === 'user'
                         ? 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white rounded-tr-none border-transparent'
                         : isLight
-                          ? 'bg-white/80 border-slate-200/80 text-slate-800 rounded-tl-none shadow-sm'
-                          : 'bg-slate-900/80 border border-slate-850 text-slate-200 rounded-tl-none'
+                          ? 'bg-white/90 border-slate-200 text-slate-850 rounded-tl-none'
+                          : 'bg-slate-900/90 border-slate-800/90 text-slate-200 rounded-tl-none'
                     }`}>
-                      <p>{msg.text}</p>
-                      <span className="text-[9px] text-slate-400 font-mono block mt-1 text-right">{msg.timestamp}</span>
+                      {/* Copy message button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(msg.text);
+                          setCopiedIndex(idx);
+                          setTimeout(() => setCopiedIndex(null), 1800);
+                        }}
+                        className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md text-[10px] cursor-pointer ${
+                          isLight ? "bg-slate-100 text-slate-600 hover:bg-slate-200" : "bg-slate-800/90 text-slate-400 hover:text-white"
+                        }`}
+                        title="Copy message text"
+                      >
+                        {copiedIndex === idx ? (
+                          <span className="flex items-center gap-1 text-emerald-400"><Check className="w-3 h-3" /> Copied</span>
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
+                      </button>
+
+                      {/* Message Content with Code Block and Markdown Rendering */}
+                      <div className="pr-6">
+                        {msg.text.includes("```") ? (
+                          msg.text.split(/(```[\s\S]*?```)/g).map((chunk, cIdx) => {
+                            if (chunk.startsWith("```") && chunk.endsWith("```")) {
+                              const lines = chunk.slice(3, -3).trim().split("\n");
+                              const lang = lines[0].match(/^[a-zA-Z0-9_-]+$/) ? lines[0] : "";
+                              const code = (lang ? lines.slice(1) : lines).join("\n");
+                              return (
+                                <div key={cIdx} className="my-2.5 rounded-xl overflow-hidden border border-slate-700/80 bg-black/70 text-slate-100 font-mono text-[11px]">
+                                  <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-slate-800 text-[10px] text-slate-400">
+                                    <span className="uppercase tracking-wider font-semibold text-cyan-400">{lang || "code"}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => navigator.clipboard.writeText(code)}
+                                      className="flex items-center gap-1 text-slate-400 hover:text-cyan-300 transition-colors cursor-pointer"
+                                    >
+                                      <Copy className="w-3 h-3" />
+                                      <span>Copy</span>
+                                    </button>
+                                  </div>
+                                  <pre className="p-3 overflow-x-auto selection:bg-cyan-500/40">
+                                    <code>{code}</code>
+                                  </pre>
+                                </div>
+                              );
+                            }
+                            return <p key={cIdx} className="whitespace-pre-wrap">{chunk}</p>;
+                          })
+                        ) : (
+                          <p className="whitespace-pre-wrap">{msg.text}</p>
+                        )}
+                      </div>
+
+                      <span className="text-[9px] text-slate-400 font-mono block mt-1.5 text-right">{msg.timestamp}</span>
                     </div>
                   </div>
                 ))}
                 {isThinking && (
                   <div className="flex justify-start">
                     <div className={`max-w-[70%] p-4 rounded-2xl rounded-tl-none text-xs border ${
-                      isLight ? 'bg-white/80 border-slate-200/80' : 'bg-slate-900/80 border-slate-850'
+                      isLight ? 'bg-white/90 border-slate-200' : 'bg-slate-900/90 border-slate-800'
                     }`}>
                       <div className="flex items-center gap-2">
                         <div className="flex gap-1">
-                          <span className="h-2 w-2 rounded-full bg-cyan-500 animate-bounce" style={{animationDelay: '0ms'}} />
-                          <span className="h-2 w-2 rounded-full bg-cyan-500 animate-bounce" style={{animationDelay: '150ms'}} />
-                          <span className="h-2 w-2 rounded-full bg-cyan-500 animate-bounce" style={{animationDelay: '300ms'}} />
+                          <span className="h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{animationDelay: '0ms'}} />
+                          <span className="h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{animationDelay: '150ms'}} />
+                          <span className="h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{animationDelay: '300ms'}} />
                         </div>
-                        <span className="text-slate-400 font-mono text-[10px]">Luna is thinking...</span>
+                        <span className="text-cyan-400 font-mono text-[10px] font-medium">Luna is thinking via Gemini 3.5 Flash...</span>
                       </div>
                     </div>
                   </div>
                 )}
+                <div ref={chatEndRef} />
               </div>
 
               {/* Chat Input Bar */}
               <form 
-                onSubmit={(e) => { e.preventDefault(); handleCommand(chatInput); setChatInput(""); }}
-                className={`border-t p-4 flex gap-2 ${
-                  isLight ? "bg-white/40 border-slate-200" : "bg-slate-900/40 border-slate-900"
+                onSubmit={(e) => { 
+                  e.preventDefault(); 
+                  if (chatInput.trim() && !isThinking) {
+                    handleCommand(chatInput); 
+                    setChatInput(""); 
+                  }
+                }}
+                className={`border-t p-3.5 flex items-center gap-2 ${
+                  isLight ? "bg-white/60 border-slate-200" : "bg-slate-900/50 border-slate-900"
                 }`}
               >
+                <button
+                  type="button"
+                  onClick={startListening}
+                  className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                    isListening
+                      ? "bg-red-500/20 border-red-500/50 text-red-400 animate-pulse"
+                      : isLight
+                        ? "bg-white border-slate-200 text-slate-600 hover:text-cyan-600 hover:border-cyan-300"
+                        : "bg-slate-950/80 border-slate-800 text-slate-400 hover:text-cyan-400 hover:border-slate-700"
+                  }`}
+                  title="Voice command input"
+                >
+                  <Mic className="w-4 h-4" />
+                </button>
+
                 <input
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Query Luna core routing..."
+                  disabled={isThinking}
+                  placeholder={isThinking ? "Luna is processing..." : "Ask Luna anything or issue an Arch Linux command..."}
                   className={`flex-1 rounded-xl px-4 py-2.5 text-xs outline-none border transition-all ${
                     isLight 
-                      ? "bg-white/85 border-slate-200 text-slate-800 placeholder:text-slate-400 focus:border-slate-350" 
-                      : "bg-slate-950/80 border-slate-850 hover:border-slate-800 text-slate-200 placeholder:text-slate-500 focus:border-slate-700"
-                  }`}
+                      ? "bg-white/90 border-slate-200 text-slate-800 placeholder:text-slate-400 focus:border-cyan-400" 
+                      : "bg-slate-950/80 border-slate-800 hover:border-slate-750 text-slate-200 placeholder:text-slate-500 focus:border-cyan-500/50"
+                  } ${isThinking ? "opacity-60 cursor-not-allowed" : ""}`}
                 />
+
                 <button 
                   type="submit"
-                  className="px-4 bg-cyan-650 hover:bg-cyan-600 border border-cyan-800/30 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  disabled={isThinking || !chatInput.trim()}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    isThinking || !chatInput.trim()
+                      ? "bg-slate-800 text-slate-500 border border-slate-800 cursor-not-allowed"
+                      : "bg-cyan-600 hover:bg-cyan-500 border border-cyan-500/30 text-white shadow-md shadow-cyan-900/20"
+                  }`}
                 >
                   <Send className="w-3.5 h-3.5" />
-                  SEND
+                  <span>SEND</span>
                 </button>
               </form>
             </motion.div>

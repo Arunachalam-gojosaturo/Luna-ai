@@ -117,35 +117,43 @@ class PackageManagerAgent:
         await task_manager.start_task(task_id, f"Remove {package_name}", self._remove_task(package_name, task_id))
         return f"Started removal task {task_id}. Awaiting your confirmation."
 
-    async def execute(self, intent: str) -> dict:
-        # Simple intent parsing for demonstration
-        if "install" in intent.lower():
-            # Extract package name (e.g. "install firefox")
-            words = intent.split()
-            idx = words.index("install") if "install" in words else -1
-            if idx != -1 and idx + 1 < len(words):
-                pkg = words[idx + 1]
-                msg = await self.install_package(pkg)
-                return {"status": "success", "action": "PACKAGE_MANAGER", "sysCommand": f"Install {pkg}", "msg": msg}
-        elif "remove" in intent.lower() or "uninstall" in intent.lower():
-            words = intent.split()
-            idx = words.index("remove") if "remove" in words else (words.index("uninstall") if "uninstall" in words else -1)
-            if idx != -1 and idx + 1 < len(words):
-                pkg = words[idx + 1]
-                msg = await self.remove_package(pkg)
-                return {"status": "success", "action": "PACKAGE_MANAGER", "sysCommand": f"Remove {pkg}", "msg": msg}
-        elif "search" in intent.lower():
-            words = intent.split()
-            idx = words.index("search") if "search" in words else -1
-            # Usually "search for firefox"
-            if idx != -1:
-                pkg = words[-1] # Simplification
-                msg = await self.search_package(pkg)
-                return {"status": "success", "action": "PACKAGE_MANAGER", "sysCommand": f"Search {pkg}", "msg": msg[:500]}
+    async def execute(self, command: str = "", *args, **kwargs) -> dict:
+        intent = command or (args[0] if args else "")
+        words = intent.lower().split()
         
-        return {"status": "error", "action": "NONE", "stderr": "Could not understand package manager intent."}
+        # Package installation
+        filler_words = {"the", "a", "an", "package", "app", "application", "for", "please"}
+        if "install" in words:
+            idx = words.index("install")
+            target_idx = idx + 1
+            while target_idx < len(words) and words[target_idx] in filler_words:
+                target_idx += 1
+            if target_idx < len(words):
+                pkg = words[target_idx].strip("'\"")
+                msg = await self.install_package(pkg)
+                return {"status": "success", "action": "PACKAGE_MANAGER", "sysCommand": f"Install {pkg}", "msg": msg, "alreadyExecuted": True}
+        elif "remove" in words or "uninstall" in words:
+            idx = words.index("remove") if "remove" in words else words.index("uninstall")
+            target_idx = idx + 1
+            while target_idx < len(words) and words[target_idx] in filler_words:
+                target_idx += 1
+            if target_idx < len(words):
+                pkg = words[target_idx].strip("'\"")
+                msg = await self.remove_package(pkg)
+                return {"status": "success", "action": "PACKAGE_MANAGER", "sysCommand": f"Remove {pkg}", "msg": msg, "alreadyExecuted": True}
+        elif "search" in words:
+            idx = words.index("search")
+            target_idx = idx + 1
+            while target_idx < len(words) and words[target_idx] in filler_words:
+                target_idx += 1
+            if target_idx < len(words):
+                pkg = words[target_idx].strip("'\"")
+                msg = await self.search_package(pkg)
+                return {"status": "success", "action": "PACKAGE_MANAGER", "sysCommand": f"Search {pkg}", "msg": msg[:500], "alreadyExecuted": True}
+        
+        return {"status": "error", "action": "NONE", "stderr": "Could not understand package manager intent.", "alreadyExecuted": True}
 
-    async def verify(self, exec_result: dict) -> bool:
-        return exec_result.get("status") == "success"
+    async def verify(self, execution_result: dict) -> bool:
+        return execution_result.get("status") == "success" or execution_result.get("success", False)
 
 package_manager_agent = PackageManagerAgent()

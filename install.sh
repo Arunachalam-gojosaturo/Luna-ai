@@ -44,29 +44,29 @@ fi
 echo "▸ Installing system dependencies..."
 case "$DISTRO" in
     arch|manjaro|artix|endeavouros|garuda)
-        $SUDO pacman -S --needed --noconfirm nodejs npm python python-pip mpv polkit qt6-webengine python-pyqt6 git curl || true
+        $SUDO pacman -S --needed --noconfirm nodejs npm python python-pip mpv polkit qt6-webengine python-pyqt6 git curl wl-clipboard jq libnotify espeak-ng soundfile libpulse alsa-utils || true
         ;;
     ubuntu|debian|pop|mint|elementary)
         $SUDO apt-get update -qq || true
-        $SUDO apt-get install -y nodejs npm python3 python3-pip python3-venv mpv policykit-1 git curl python3-pyqt6 || true
+        $SUDO apt-get install -y nodejs npm python3 python3-pip python3-venv mpv policykit-1 git curl python3-pyqt6 wl-clipboard jq libnotify-bin espeak-ng libsndfile1 portaudio19-dev || true
         ;;
     fedora|rhel|centos|rocky|almalinux)
-        $SUDO dnf install -y nodejs npm python3 python3-pip mpv polkit git curl python3-pyqt6 python3-pyqt6-webengine || true
+        $SUDO dnf install -y nodejs npm python3 python3-pip mpv polkit git curl python3-pyqt6 python3-pyqt6-webengine wl-clipboard jq libnotify espeak-ng libsndfile portaudio-devel || true
         ;;
     opensuse*|suse)
-        $SUDO zypper install -y nodejs npm python3 python3-pip mpv polkit git curl python3-qt6 || true
+        $SUDO zypper install -y nodejs npm python3 python3-pip mpv polkit git curl python3-qt6 wl-clipboard jq libnotify-tools espeak-ng libsndfile portaudio-devel || true
         ;;
     alpine)
-        $SUDO apk add nodejs npm python3 py3-pip mpv polkit git curl || true
+        $SUDO apk add nodejs npm python3 py3-pip mpv polkit git curl jq || true
         ;;
     *)
         if [[ "$LIKE" == *"arch"* ]]; then
-            $SUDO pacman -S --needed --noconfirm nodejs npm python python-pip mpv polkit qt6-webengine python-pyqt6 git curl || true
+            $SUDO pacman -S --needed --noconfirm nodejs npm python python-pip mpv polkit qt6-webengine python-pyqt6 git curl wl-clipboard jq libnotify espeak-ng soundfile libpulse alsa-utils || true
         elif [[ "$LIKE" == *"debian"* ]] || [[ "$LIKE" == *"ubuntu"* ]]; then
             $SUDO apt-get update -qq || true
-            $SUDO apt-get install -y nodejs npm python3 python3-pip python3-venv mpv policykit-1 git curl || true
+            $SUDO apt-get install -y nodejs npm python3 python3-pip python3-venv mpv policykit-1 git curl python3-pyqt6 wl-clipboard jq libnotify-bin espeak-ng libsndfile1 || true
         elif [[ "$LIKE" == *"fedora"* ]]; then
-            $SUDO dnf install -y nodejs npm python3 python3-pip mpv polkit git curl || true
+            $SUDO dnf install -y nodejs npm python3 python3-pip mpv polkit git curl python3-pyqt6 python3-pyqt6-webengine wl-clipboard jq libnotify espeak-ng libsndfile || true
         else
             echo "⚠️ Custom Linux distribution detected. Proceeding with environment packages..."
         fi
@@ -98,7 +98,7 @@ fi
 
 cd "$TARGET_DIR"
 
-# 3. Create Python Virtual Environment
+# 3. Create Python Virtual Environment & Install Dependencies
 echo "▸ Setting up Python virtual environment..."
 if [ ! -d "venv" ]; then
     python3 -m venv venv
@@ -106,20 +106,53 @@ fi
 
 ./venv/bin/python -m pip install --upgrade pip -q
 if [ -f "requirements.txt" ]; then
+    echo "▸ Installing Python dependencies from requirements.txt..."
     ./venv/bin/pip install -r requirements.txt -q
 fi
 
-# Ensure PyQt6 is installed in venv if missing
+# Ensure PyQt6 & Kokoro ONNX are properly loaded
 ./venv/bin/python -c "import PyQt6" 2>/dev/null || ./venv/bin/pip install PyQt6 PyQt6-WebEngine -q || true
+./venv/bin/python -c "import kokoro_onnx, soundfile" 2>/dev/null || ./venv/bin/pip install kokoro-onnx soundfile sounddevice -q || true
 
-# 4. Install Node Dependencies & Build Frontend Assets
+# 4. Provision Kokoro-ONNX Offline Neural TTS Models
+MODEL_DIR="$HOME/.local/share/luna-ai/models"
+mkdir -p "$MODEL_DIR"
+mkdir -p "$TARGET_DIR/models"
+
+echo "▸ Checking Kokoro-ONNX offline TTS models..."
+# Check kokoro-v1.0.onnx
+if [ ! -f "$MODEL_DIR/kokoro-v1.0.onnx" ] && [ ! -f "$TARGET_DIR/models/kokoro-v1.0.onnx" ]; then
+    if [ -f "/home/arunachalam/testtts/kokoro-v1.0.onnx" ]; then
+        echo "▸ Linking existing local Kokoro model from /home/arunachalam/testtts..."
+        cp "/home/arunachalam/testtts/kokoro-v1.0.onnx" "$MODEL_DIR/kokoro-v1.0.onnx"
+    else
+        echo "▸ Downloading Kokoro-ONNX v1.0 offline model (325MB)..."
+        curl -L --progress-bar "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx" -o "$MODEL_DIR/kokoro-v1.0.onnx" || echo "⚠️ Kokoro model download skipped. Fallback TTS will be used."
+    fi
+fi
+
+# Check voices-v1.0.bin
+if [ ! -f "$MODEL_DIR/voices-v1.0.bin" ] && [ ! -f "$TARGET_DIR/models/voices-v1.0.bin" ]; then
+    if [ -f "/home/arunachalam/testtts/voices-v1.0.bin" ]; then
+        echo "▸ Linking existing local Kokoro voices from /home/arunachalam/testtts..."
+        cp "/home/arunachalam/testtts/voices-v1.0.bin" "$MODEL_DIR/voices-v1.0.bin"
+    else
+        echo "▸ Downloading Kokoro voice bank (voices-v1.0.bin)..."
+        curl -L --progress-bar "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin" -o "$MODEL_DIR/voices-v1.0.bin" || echo "⚠️ Kokoro voices download skipped."
+    fi
+fi
+
+# 5. Install Node Dependencies & Build Frontend Assets
 echo "▸ Installing Node.js dependencies..."
 npm install --silent
 
 echo "▸ Building production web assets..."
 npm run build
 
-# 5. Install Binary Launchers & Desktop Application Entry
+# Make auxiliary scripts executable
+chmod +x "$TARGET_DIR/scripts/luna_hypr_ai.sh" 2>/dev/null || true
+
+# 6. Install Binary Launchers & Desktop Application Entry
 echo "▸ Installing system launcher scripts and menu desktop entry..."
 mkdir -p "$BIN_DIR"
 mkdir -p "$DESKTOP_DIR"
@@ -146,6 +179,13 @@ cd "$TARGET_DIR"
 exec "$TARGET_DIR/venv/bin/python" "$TARGET_DIR/luna_cli_enhanced.py" "\$@"
 EOF
 chmod +x "$BIN_DIR/luna-cli"
+
+# Hyprland Quick-Action Launcher 'luna-hypr'
+cat << EOF > "$BIN_DIR/luna-hypr"
+#!/usr/bin/env bash
+exec "$TARGET_DIR/scripts/luna_hypr_ai.sh" "\$@"
+EOF
+chmod +x "$BIN_DIR/luna-hypr"
 
 # Desktop Application Entry (.desktop)
 cat << EOF > "$DESKTOP_DIR/Luna-AI.desktop"
@@ -177,14 +217,20 @@ echo " ✨ SUCCESS! Luna AI has been installed successfully on your system!"
 echo "======================================================================"
 echo ""
 echo " 🚀 How to Launch Luna AI:"
-echo "   1. GUI App:      Type 'luna-ai' or 'luna' in your terminal"
-echo "   2. App Launcher: Select 'Luna AI' from Rofi, Wofi, or Hyprland menu"
-echo "   3. CLI Mode:     Type 'luna-cli' in your terminal"
+echo "   1. GUI App:        Type 'luna-ai' or 'luna' in your terminal"
+echo "   2. App Launcher:   Select 'Luna AI' from Rofi, Wofi, or Hyprland menu"
+echo "   3. CLI Mode:       Type 'luna-cli' in your terminal"
+echo "   4. Hyprland AI:    Run 'luna-hypr --prompt' or 'luna-hypr --selection'"
 echo ""
 if [ -n "$PATH_NOTICE" ]; then
     echo "$PATH_NOTICE"
     echo ""
 fi
+echo " 💡 Hyprland Recommended Keybindings (~/.config/hypr/hyprland.conf):"
+echo "   bind = \$mainMod, SPACE, exec, luna-hypr --selection"
+echo "   bind = \$mainMod SHIFT, SPACE, exec, luna-hypr --prompt"
+echo "   bind = \$mainMod, V, exec, luna-hypr --voice"
+echo ""
 echo " 🌐 Universal One-Line Install Command:"
 echo "   curl -sSL https://raw.githubusercontent.com/Arunachalam-gojosaturo/Luna-ai/main/install.sh | bash"
 echo "======================================================================"

@@ -1,3 +1,4 @@
+import asyncio
 import chromadb
 from typing import List, Dict, Any
 from backend.config.paths import get_chroma_db_path
@@ -18,14 +19,15 @@ class LongTermMemory:
             self.collection = None
 
     async def save_interaction(self, session_id: str, role: str, content: str):
-        if not self.collection: return
+        if not self.collection:
+            return
         
-        # In a real app, generate proper IDs
         import os
         doc_id = f"{session_id}_{os.urandom(4).hex()}"
         
         try:
-            self.collection.add(
+            await asyncio.to_thread(
+                self.collection.add,
                 documents=[content],
                 metadatas=[{"role": role, "session_id": session_id}],
                 ids=[doc_id]
@@ -34,16 +36,18 @@ class LongTermMemory:
             print(f"Memory save error: {e}")
 
     async def semantic_search(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
-        if not self.collection: return []
+        if not self.collection:
+            return []
         
         try:
-            results = self.collection.query(
+            results = await asyncio.to_thread(
+                self.collection.query,
                 query_texts=[query],
                 n_results=limit
             )
             
             memories = []
-            if results and results['documents'] and results['documents'][0]:
+            if results and results.get('documents') and results['documents'][0]:
                 for doc, meta in zip(results['documents'][0], results['metadatas'][0]):
                     memories.append({"content": doc, "role": meta.get("role", "unknown")})
             return memories

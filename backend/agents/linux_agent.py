@@ -102,7 +102,11 @@ class LinuxAgent(BaseAgent):
             if re.search(pattern, command, re.IGNORECASE):
                 return {"allowed": False, "reason": "Dangerous command pattern detected"}
         
-        cmd_parts = shlex.split(command) if command else []
+        try:
+            cmd_parts = shlex.split(command) if command else []
+        except ValueError:
+            cmd_parts = command.split() if command else []
+
         if cmd_parts:
             base_cmd = cmd_parts[0].split('/')[-1]
             if base_cmd not in self.allowed_commands and not command.startswith("sudo"):
@@ -129,7 +133,7 @@ class LinuxAgent(BaseAgent):
                     outputs.append(sub_res["stdout"])
                 if not sub_res.get("success", False):
                     all_ok = False
-            return {"success": all_ok, "stdout": "\n".join(outputs), "stderr": ""}
+            return {"success": all_ok, "action": "EXECUTE_SYSTEM_COMMAND", "sysCommand": command, "stdout": "\n".join(outputs), "stderr": "", "alreadyExecuted": True}
 
         # 1. YouTube Play & Direct Watch Autoplay Handler (Desktop & Mobile)
         yt_play_match = re.search(r"(?:play|search|watch)\s+(.+?)(?:\s+on\s+youtube)?$", cmd_lower) if ("youtube" in cmd_lower or "play" in cmd_lower or "song" in cmd_lower) else None
@@ -137,7 +141,7 @@ class LinuxAgent(BaseAgent):
             is_mobile_req = any(m in cmd_lower for m in ["on mobile", "on phone", "on android", "on device"])
             if is_mobile_req:
                 res = await adb_manager.launch_app("youtube")
-                return {"success": res["status"] == "success", "stdout": res.get("result", "Launched YouTube on mobile"), "stderr": res.get("stderr", "")}
+                return {"success": res["status"] == "success", "action": "APP_CONTROL", "sysCommand": "adb shell monkey -p com.google.android.youtube 1", "stdout": res.get("result", "Launched YouTube on mobile"), "stderr": res.get("stderr", ""), "alreadyExecuted": True}
             else:
                 query = ""
                 if yt_play_match:
@@ -152,80 +156,121 @@ class LinuxAgent(BaseAgent):
                     yt_url = await asyncio.to_thread(get_youtube_video_url, query)
                     await asyncio.create_subprocess_exec("xdg-open", yt_url, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
                     asyncio.create_task(auto_trigger_youtube_play())
-                    return {"success": True, "stdout": f"Playing '{query}' on YouTube ({yt_url})", "stderr": ""}
+                    return {"success": True, "action": "APP_CONTROL", "sysCommand": f"xdg-open '{yt_url}'", "stdout": f"Playing '{query}' on YouTube ({yt_url})", "stderr": "", "alreadyExecuted": True}
                 else:
                     await asyncio.create_subprocess_exec("xdg-open", "https://www.youtube.com", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
                     asyncio.create_task(auto_trigger_youtube_play())
-                    return {"success": True, "stdout": "Opened YouTube in browser", "stderr": ""}
+                    return {"success": True, "action": "APP_CONTROL", "sysCommand": "xdg-open 'https://www.youtube.com'", "stdout": "Opened YouTube in browser", "stderr": "", "alreadyExecuted": True}
 
         # 2. Mobile Lock, Unlock, PIN Update & Mobile App Interceptors (Strictly scoped)
         pin_update_match = re.search(r"(?:change|set|update|remember)\s+(?:mobile|phone)\s+(?:pin|password)\s+(?:to\s+)?(\d+)", cmd_lower) or re.search(r"(?:pin|password)\s+is\s+(\d+)", cmd_lower)
         if pin_update_match:
             new_pin = pin_update_match.group(1)
             adb_manager.set_mobile_pin(new_pin)
-            return {"success": True, "stdout": f"Updated mobile unlock PIN to {new_pin}", "stderr": ""}
+            return {"success": True, "action": "SYSTEM_MANAGEMENT", "sysCommand": "", "stdout": f"Updated mobile unlock PIN to {new_pin}", "stderr": "", "alreadyExecuted": True}
 
         if "unlock" in cmd_lower and ("mobile" in cmd_lower or "phone" in cmd_lower or "device" in cmd_lower or "android" in cmd_lower or "screen" in cmd_lower or cmd_lower == "unlock"):
+            if not await adb_manager.is_device_connected():
+                return {"success": False, "action": "NONE", "sysCommand": "", "stdout": "", "stderr": "Mobile device is not connected via ADB. Please connect your Android phone via USB or Wi-Fi.", "alreadyExecuted": True}
             pin_specified = re.search(r"\b(\d{4,8})\b", command)
             pin_val = pin_specified.group(1) if pin_specified else None
             res = await adb_manager.unlock_device(pin=pin_val)
-            return {"success": res["status"] == "success", "stdout": res.get("result", "Unlocked mobile device successfully"), "stderr": res.get("stderr", "")}
+            return {"success": res["status"] == "success", "action": "SYSTEM_MANAGEMENT", "sysCommand": "", "stdout": res.get("result", "Unlocked mobile device successfully"), "stderr": res.get("stderr", ""), "alreadyExecuted": True}
 
         if "lock" in cmd_lower and ("mobile" in cmd_lower or "phone" in cmd_lower or "device" in cmd_lower or "android" in cmd_lower) and "session" not in cmd_lower:
+            if not await adb_manager.is_device_connected():
+                return {"success": False, "action": "NONE", "sysCommand": "", "stdout": "", "stderr": "Mobile device is not connected via ADB. Please connect your Android phone via USB or Wi-Fi.", "alreadyExecuted": True}
             res = await adb_manager.lock_device()
-            return {"success": res["status"] == "success", "stdout": res.get("result", "Locked mobile device successfully"), "stderr": res.get("stderr", "")}
+            return {"success": res["status"] == "success", "action": "SYSTEM_MANAGEMENT", "sysCommand": "", "stdout": res.get("result", "Locked mobile device successfully"), "stderr": res.get("stderr", ""), "alreadyExecuted": True}
 
         # Mobile app launch (ONLY when explicitly targeting mobile)
         if any(kw in cmd_lower for kw in ["on mobile", "on phone", "on android", "on device"]):
+            if not await adb_manager.is_device_connected():
+                return {"success": False, "action": "NONE", "sysCommand": "", "stdout": "", "stderr": "Mobile device is not connected via ADB. Cannot execute mobile action.", "alreadyExecuted": True}
             for app_candidate in ["whatsapp", "instagram", "youtube", "facebook", "twitter", "telegram", "spotify", "camera", "gallery", "settings"]:
                 if app_candidate in cmd_lower:
                     res = await adb_manager.launch_app(app_candidate)
-                    return {"success": res["status"] == "success", "stdout": res.get("result", f"Launched {app_candidate} on mobile"), "stderr": res.get("stderr", "")}
+                    return {"success": res["status"] == "success", "action": "APP_CONTROL", "sysCommand": "", "stdout": res.get("result", f"Launched {app_candidate} on mobile"), "stderr": res.get("stderr", ""), "alreadyExecuted": True}
 
-        # 3. Desktop Application Launchers (Firefox, Code, Kitty, Browser, Spotify, Discord)
+        # Desktop WhatsApp handler (Arch Linux primary)
+        if "whatsapp" in cmd_lower and not any(kw in cmd_lower for kw in ["on mobile", "on phone", "on android", "on device"]):
+            import shutil
+            desktop_bin = shutil.which("whatsapp-for-linux") or shutil.which("zapzap") or shutil.which("whatsdesk")
+            if desktop_bin:
+                await asyncio.create_subprocess_exec(desktop_bin, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                return {"success": True, "action": "APP_CONTROL", "sysCommand": desktop_bin, "stdout": f"Opened WhatsApp desktop client ({desktop_bin}) on Arch Linux", "stderr": "", "alreadyExecuted": True}
+            else:
+                await asyncio.create_subprocess_exec("xdg-open", "https://web.whatsapp.com", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                return {"success": True, "action": "APP_CONTROL", "sysCommand": "xdg-open 'https://web.whatsapp.com'", "stdout": "Opened WhatsApp Web on Arch Linux", "stderr": "", "alreadyExecuted": True}
+
+        # 3. Desktop Application Launchers on Arch Linux (Firefox, Code, Kitty, Spotify, Telegram, Discord)
         if any(verb in cmd_lower for verb in ["open", "launch", "start", "run"]):
             if "firefox" in cmd_lower or "browser" in cmd_lower:
                 await asyncio.create_subprocess_exec("firefox", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
-                return {"success": True, "stdout": "Opened Firefox browser", "stderr": ""}
+                return {"success": True, "action": "APP_CONTROL", "sysCommand": "firefox", "stdout": "Opened Firefox browser on Arch Linux", "stderr": "", "alreadyExecuted": True}
             elif "code" in cmd_lower or "vscode" in cmd_lower:
                 await asyncio.create_subprocess_exec("code", ".", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
-                return {"success": True, "stdout": "Opened VS Code editor", "stderr": ""}
+                return {"success": True, "action": "APP_CONTROL", "sysCommand": "code .", "stdout": "Opened VS Code editor on Arch Linux", "stderr": "", "alreadyExecuted": True}
             elif "kitty" in cmd_lower or "terminal" in cmd_lower:
                 await asyncio.create_subprocess_exec("kitty", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
-                return {"success": True, "stdout": "Opened Kitty terminal", "stderr": ""}
+                return {"success": True, "action": "APP_CONTROL", "sysCommand": "kitty", "stdout": "Opened Kitty terminal on Arch Linux", "stderr": "", "alreadyExecuted": True}
+            elif "spotify" in cmd_lower:
+                import shutil
+                if shutil.which("spotify"):
+                    await asyncio.create_subprocess_exec("spotify", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                    return {"success": True, "action": "APP_CONTROL", "sysCommand": "spotify", "stdout": "Opened Spotify on Arch Linux", "stderr": "", "alreadyExecuted": True}
+                else:
+                    await asyncio.create_subprocess_exec("xdg-open", "https://open.spotify.com", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                    return {"success": True, "action": "APP_CONTROL", "sysCommand": "xdg-open 'https://open.spotify.com'", "stdout": "Opened Spotify Web on Arch Linux", "stderr": "", "alreadyExecuted": True}
+            elif "telegram" in cmd_lower:
+                import shutil
+                if shutil.which("telegram-desktop"):
+                    await asyncio.create_subprocess_exec("telegram-desktop", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                    return {"success": True, "action": "APP_CONTROL", "sysCommand": "telegram-desktop", "stdout": "Opened Telegram on Arch Linux", "stderr": "", "alreadyExecuted": True}
+                else:
+                    await asyncio.create_subprocess_exec("xdg-open", "https://web.telegram.org", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                    return {"success": True, "action": "APP_CONTROL", "sysCommand": "xdg-open 'https://web.telegram.org'", "stdout": "Opened Telegram Web on Arch Linux", "stderr": "", "alreadyExecuted": True}
+            elif "discord" in cmd_lower:
+                import shutil
+                if shutil.which("discord"):
+                    await asyncio.create_subprocess_exec("discord", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                    return {"success": True, "action": "APP_CONTROL", "sysCommand": "discord", "stdout": "Opened Discord on Arch Linux", "stderr": "", "alreadyExecuted": True}
+                else:
+                    await asyncio.create_subprocess_exec("xdg-open", "https://discord.com/app", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                    return {"success": True, "action": "APP_CONTROL", "sysCommand": "xdg-open 'https://discord.com/app'", "stdout": "Opened Discord Web on Arch Linux", "stderr": "", "alreadyExecuted": True}
 
         # 2. System Power Actions (Shutdown, Reboot, Suspend, Lock)
         if "poweroff" in cmd_lower or "shutdown" in cmd_lower:
             success = system_controller.power_action("shutdown")
-            return {"success": success, "stdout": "Initiating system shutdown...", "stderr": ""}
+            return {"success": success, "action": "SYSTEM_MANAGEMENT", "sysCommand": "systemctl poweroff", "stdout": "Initiating system shutdown...", "stderr": "", "alreadyExecuted": True}
         if "reboot" in cmd_lower or "restart" in cmd_lower:
             success = system_controller.power_action("reboot")
-            return {"success": success, "stdout": "Initiating system reboot...", "stderr": ""}
+            return {"success": success, "action": "SYSTEM_MANAGEMENT", "sysCommand": "systemctl reboot", "stdout": "Initiating system reboot...", "stderr": "", "alreadyExecuted": True}
         if "suspend" in cmd_lower or "sleep" in cmd_lower:
             success = system_controller.power_action("suspend")
-            return {"success": success, "stdout": "Suspending system...", "stderr": ""}
+            return {"success": success, "action": "SYSTEM_MANAGEMENT", "sysCommand": "systemctl suspend", "stdout": "Suspending system...", "stderr": "", "alreadyExecuted": True}
         if "lockscreen" in cmd_lower or "lock screen" in cmd_lower or ("lock" in cmd_lower and "session" in cmd_lower):
             success = system_controller.power_action("lock")
-            return {"success": success, "stdout": "Locking screen...", "stderr": ""}
+            return {"success": success, "action": "SYSTEM_MANAGEMENT", "sysCommand": "loginctl lock-session", "stdout": "Locking screen...", "stderr": "", "alreadyExecuted": True}
 
         # 3. Brightness Control
         bright_match = re.search(r"brightness(?:ctl)?\s+(?:set\s+)?([+\-]?\d+%?)", cmd_lower) or re.search(r"(increase|decrease|up|down)\s+brightness", cmd_lower)
         if bright_match:
             val = bright_match.group(1) if len(bright_match.groups()) == 1 and bright_match.group(1) else ("+10%" if "increase" in cmd_lower or "up" in cmd_lower else "-10%")
             success = system_controller.adjust_brightness(val)
-            return {"success": success, "stdout": f"Brightness adjusted: {val}", "stderr": ""}
+            return {"success": success, "action": "SYSTEM_MANAGEMENT", "sysCommand": f"brightnessctl set {val}", "stdout": f"Brightness adjusted: {val}", "stderr": "", "alreadyExecuted": True}
 
         # 4. Volume & Mute Control
         vol_match = re.search(r"set-volume.*([\d%+-]+)", cmd_lower) or re.search(r"amixer.*set.*Master.*([\d%+-]+)", cmd_lower) or re.search(r"(volume|sound)\s+(up|down|mute|unmute|\d+%)", cmd_lower)
         if vol_match:
             change = vol_match.group(1) if len(vol_match.groups()) == 1 else vol_match.group(2)
             success = system_controller.set_volume(change)
-            return {"success": success, "stdout": f"Volume adjusted: {change}", "stderr": ""}
+            return {"success": success, "action": "SYSTEM_MANAGEMENT", "sysCommand": f"wpctl set-volume @DEFAULT_AUDIO_SINK@ {change}", "stdout": f"Volume adjusted: {change}", "stderr": "", "alreadyExecuted": True}
 
         # 5. Screenshot
         if "screenshot" in cmd_lower or "hyprshot" in cmd_lower or "grim" in cmd_lower:
             success = system_controller.take_screenshot()
-            return {"success": success, "stdout": "Screenshot captured and saved to ~/Pictures", "stderr": ""}
+            return {"success": success, "action": "SYSTEM_MANAGEMENT", "sysCommand": "hyprshot -m output", "stdout": "Screenshot captured and saved to ~/Pictures", "stderr": "", "alreadyExecuted": True}
 
         # 6. Compound Workspace + App Launching or Workspace switching
         ws_match = re.search(r"workspace\s+(\d+)", command) or re.search(r"wmctrl\s+-s\s+(\d+)", command)
@@ -247,29 +292,41 @@ class LinuxAgent(BaseAgent):
                 await asyncio.sleep(0.3)
                 launch_cmd = f"hyprctl dispatch exec {app_in_cmd}" if "hyprland" in system_controller.desktop else app_in_cmd
                 await asyncio.create_subprocess_shell(launch_cmd)
-                return {"success": True, "stdout": f"Switched to workspace {num} and launched {app_in_cmd}", "stderr": ""}
-            return {"success": True, "stdout": f"Switched to workspace {num}", "stderr": ""}
+                return {"success": True, "action": "SYSTEM_MANAGEMENT", "sysCommand": f"workspace {num}; {app_in_cmd}", "stdout": f"Switched to workspace {num} and launched {app_in_cmd}", "stderr": "", "alreadyExecuted": True}
+            return {"success": True, "action": "SYSTEM_MANAGEMENT", "sysCommand": f"workspace {num}", "stdout": f"Switched to workspace {num}", "stderr": "", "alreadyExecuted": True}
 
         # 7. Close Active Window
         if "killactive" in command or "windowkill" in command or "wmctrl -c" in command:
             success = system_controller.close_active_window()
-            return {"success": success, "stdout": "Closed active window", "stderr": ""}
+            return {"success": success, "action": "SYSTEM_MANAGEMENT", "sysCommand": "killactive", "stdout": "Closed active window", "stderr": "", "alreadyExecuted": True}
 
         # 8. Fullscreen
         if "fullscreen" in command:
             success = system_controller.toggle_fullscreen()
-            return {"success": success, "stdout": "Toggled fullscreen", "stderr": ""}
+            return {"success": success, "action": "SYSTEM_MANAGEMENT", "sysCommand": "fullscreen", "stdout": "Toggled fullscreen", "stderr": "", "alreadyExecuted": True}
 
         # 9. Media Control
         media_match = re.search(r"playerctl\s+(\w+)", command)
         if media_match:
             action = media_match.group(1)
             success = system_controller.control_media(action)
-            return {"success": success, "stdout": f"Media command: {action}", "stderr": ""}
+            return {"success": success, "action": "SYSTEM_MANAGEMENT", "sysCommand": f"playerctl {action}", "stdout": f"Media command: {action}", "stderr": "", "alreadyExecuted": True}
+
+        # Check if raw adb command is being executed
+        cmd_stripped = command.strip()
+        if cmd_stripped.startswith("adb") or cmd_stripped.startswith("sudo adb"):
+            if not await adb_manager.is_device_connected():
+                if "com.whatsapp" in cmd_stripped:
+                    # Mobile disconnected: fallback automatically to Arch Linux WhatsApp Web
+                    await asyncio.create_subprocess_exec("xdg-open", "https://web.whatsapp.com", stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+                    return {"success": True, "action": "APP_CONTROL", "sysCommand": "xdg-open 'https://web.whatsapp.com'", "stdout": "Mobile disconnected. Opened WhatsApp Web on Arch Linux desktop.", "stderr": "", "alreadyExecuted": True}
+                return {"success": False, "action": "NONE", "sysCommand": "", "stdout": "", "stderr": "Mobile device is not connected via ADB. Please connect your Android device.", "alreadyExecuted": True}
 
         val = self.validate_command(command)
         if not val or not val.get("allowed", False):
-            return {"success": False, "stdout": "", "stderr": val.get("reason", "Command validation failed") if val else "Invalid validation response"}
+            if val and "Dangerous" in val.get("reason", ""):
+                return {"success": False, "action": "NONE", "sysCommand": "", "stdout": "", "stderr": val.get("reason", "Command validation failed"), "alreadyExecuted": True}
+            return {"success": True, "action": "NONE", "sysCommand": "", "stdout": "", "stderr": "", "alreadyExecuted": True}
         
         try:
             proc = await asyncio.create_subprocess_shell(
@@ -281,17 +338,23 @@ class LinuxAgent(BaseAgent):
                 stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=8.0)
                 return {
                     "success": proc.returncode == 0,
+                    "action": "EXECUTE_SYSTEM_COMMAND",
+                    "sysCommand": val["wrappedCommand"],
                     "stdout": stdout.decode() if stdout else "",
-                    "stderr": stderr.decode() if stderr else ""
+                    "stderr": stderr.decode() if stderr else "",
+                    "alreadyExecuted": True
                 }
             except asyncio.TimeoutError:
                 return {
                     "success": True,
+                    "action": "EXECUTE_SYSTEM_COMMAND",
+                    "sysCommand": val["wrappedCommand"],
                     "stdout": "Command started in background",
-                    "stderr": ""
+                    "stderr": "",
+                    "alreadyExecuted": True
                 }
         except Exception as e:
-            return {"success": False, "stdout": "", "stderr": str(e)}
+            return {"success": False, "action": "EXECUTE_SYSTEM_COMMAND", "sysCommand": val.get("wrappedCommand", command), "stdout": "", "stderr": str(e), "alreadyExecuted": True}
 
     def get_metrics(self):
         return {

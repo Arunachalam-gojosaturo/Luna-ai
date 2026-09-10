@@ -43,7 +43,7 @@ export default function App() {
     "Hardware matrix calibration node ready."
   ]);
   const [coreState, setCoreState] = useState<CoreState>("Idle");
-  const [speechText, setSpeechText] = useState<string>("Hello, Boss. I'm Luna. Everything is online and ready. I've finished checking the system, and we're good to go. What would you like to work on today?");
+  const [speechText, setSpeechText] = useState<string>("Hello! I am Luna — an advanced autonomous AI operating system and intelligent workstation companion. All core systems are online and running at peak performance. What are we conquering today?");
   const [transcript, setTranscript] = useState<string>("");
   const [chatHistory, setChatHistory] = useState<{ role: string, content: string }[]>([]);
   
@@ -503,7 +503,7 @@ export default function App() {
       if (saved) return JSON.parse(saved);
     } catch {}
     return [
-      { sender: 'luna', text: "Hello, Boss. I'm Luna. Everything is online and ready. I've finished checking the system, and we're good to go. What would you like to work on today?", timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) }
+      { sender: 'luna', text: "Hello! I am Luna — an advanced autonomous AI operating system and intelligent workstation companion. All core systems are online and running at peak performance. What are we conquering today?", timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) }
     ];
   });
 
@@ -2509,7 +2509,7 @@ export default function App() {
                   </button>
                   <button 
                     onClick={() => {
-                      setChatMessages([{ sender: 'luna', text: "New session started. How can I assist you?", timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) }]);
+                      setChatMessages([{ sender: 'luna', text: "New session started. Luna OS core initialized and standing by. What are we conquering today?", timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) }]);
                       setChatHistory([]);
                       pushTerminalLog("New chat session started.", "system");
                     }}

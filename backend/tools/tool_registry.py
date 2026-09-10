@@ -2,6 +2,7 @@ from backend.agents.linux_agent import LinuxAgent
 from backend.agents.file_agent import FileAgent
 from backend.agents.git_agent import GitAgent
 from backend.agents.package_manager import package_manager_agent
+from backend.agents.developer_copilot import developer_copilot_agent
 
 class ToolRegistry:
     """
@@ -12,7 +13,8 @@ class ToolRegistry:
             "linux": LinuxAgent(),
             "file": FileAgent(),
             "git": GitAgent(),
-            "package_manager": package_manager_agent
+            "package_manager": package_manager_agent,
+            "developer_copilot": developer_copilot_agent
         }
 
     def get_agent(self, name: str):

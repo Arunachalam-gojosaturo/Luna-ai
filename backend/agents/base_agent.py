@@ -7,12 +7,13 @@ class BaseAgent(ABC):
     """
     
     @abstractmethod
-    async def execute(self, command: str, **kwargs) -> Dict[str, Any]:
+    async def execute(self, command: str, *args, **kwargs) -> Dict[str, Any]:
         """
         Executes the agent's specific task.
         Returns a dictionary with 'status', 'stdout', 'stderr', etc.
         """
         pass
+
 
     @abstractmethod
     async def verify(self, execution_result: Dict[str, Any]) -> bool:

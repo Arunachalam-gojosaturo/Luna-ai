@@ -40,7 +40,7 @@ class CommandRequest(BaseModel):
     cohereKey: str = ""
     openaiKey: str = ""
     modelSelection: str = ""
-    activeProvider: str = "groq"
+    activeProvider: str = "gemini" if os.getenv("GEMINI_API_KEY") else "groq"
     isLocalLlm: bool = False
     localLlmUrl: str = ""
     localLlmModel: str = ""
@@ -80,7 +80,8 @@ class TTSRequest(BaseModel):
 @router.post("/tts")
 async def tts(req: TTSRequest):
     audio_data = await generate_tts(req)
-    return Response(content=audio_data, media_type="audio/mpeg")
+    media_type = "audio/wav" if getattr(req, "provider", "edge") in ["kokoro", "offline"] else "audio/mpeg"
+    return Response(content=audio_data, media_type=media_type)
 
 @router.post("/tts/play_local")
 async def tts_play_local(req: TTSRequest):

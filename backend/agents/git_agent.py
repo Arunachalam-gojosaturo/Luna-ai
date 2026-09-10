@@ -9,9 +9,23 @@ class GitAgent(BaseAgent):
     """
     Handles version control operations including AI auto-commits.
     """
-    async def execute(self, command: str, **kwargs) -> Dict[str, Any]:
+    async def execute(self, command: str, *args, **kwargs) -> Dict[str, Any]:
         cwd = kwargs.get("cwd", ".")
-        git_cmd = kwargs.get("git_cmd", "status")
+        git_cmd = kwargs.get("git_cmd")
+        if not git_cmd:
+            cmd_lower = command.lower().strip()
+            if "auto_commit" in cmd_lower or "auto commit" in cmd_lower:
+                git_cmd = "auto_commit"
+            elif "push" in cmd_lower:
+                git_cmd = "push"
+            elif "pull" in cmd_lower:
+                git_cmd = "pull"
+            elif "diff" in cmd_lower:
+                git_cmd = "diff"
+            elif "log" in cmd_lower:
+                git_cmd = "log"
+            else:
+                git_cmd = "status"
         api_key = kwargs.get("api_key", os.getenv("GEMINI_API_KEY") or os.getenv("GROQ_API_KEY") or "")
         provider = "gemini" if os.getenv("GEMINI_API_KEY") else ("groq" if os.getenv("GROQ_API_KEY") else "openai")
 
@@ -65,18 +79,23 @@ class GitAgent(BaseAgent):
         try:
             if provider == "groq":
                 headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-                data = {"model": "llama3-70b-8192", "messages": [{"role": "user", "content": prompt}], "temperature": 0.2}
+                data = {"model": "llama-3.3-70b-versatile", "messages": [{"role": "user", "content": prompt}], "temperature": 0.2}
                 res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=data)
                 return res.json()["choices"][0]["message"]["content"].strip()
             elif provider == "gemini":
                 from google import genai
-                from google.genai import types
                 client = genai.Client(api_key=api_key)
-                response = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=prompt
-                )
-                return response.text.strip()
+                for m in ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-3.5-flash-lite"]:
+                    try:
+                        response = client.models.generate_content(
+                            model=m,
+                            contents=prompt
+                        )
+                        if response and response.text:
+                            return response.text.strip()
+                    except Exception:
+                        continue
+                return "Auto-commit: Updates applied."
             else:
                 return "Auto-commit: Updates applied."
         except Exception:

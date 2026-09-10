@@ -12,6 +12,27 @@ class GitHubAgent:
             "User-Agent": "Luna-AI-OS-X"
         }
 
+    async def create_repository(self, token: str, name: str, description: str = "", private: bool = False):
+        headers = self._get_headers(token)
+        data = {
+            "name": name,
+            "description": description or f"Repository {name} managed by Luna AI Developer Co-Pilot",
+            "private": private,
+            "auto_init": False
+        }
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(f"{self.base_url}/user/repos", headers=headers, json=data)
+            if resp.status_code in [200, 201]:
+                return resp.json()
+            elif resp.status_code == 422:
+                # Repo might already exist, fetch it
+                user_info = await self.get_user_profile(token)
+                owner = user_info.get("login")
+                fetch_resp = await client.get(f"{self.base_url}/repos/{owner}/{name}", headers=headers)
+                if fetch_resp.status_code == 200:
+                    return fetch_resp.json()
+            raise Exception(f"GitHub API Error ({resp.status_code}): {resp.text}")
+
     async def get_user_repos(self, token: str):
         headers = self._get_headers(token)
         async with httpx.AsyncClient() as client:

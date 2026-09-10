@@ -26,8 +26,8 @@ class ProviderManager:
     def __init__(self):
         self.default_openai_model = "gpt-4o-mini"
         self.default_groq_model = "llama-3.3-70b-versatile"
-        self.default_gemini_model = "gemini-2.5-flash"
-        self.default_openrouter_model = "google/gemini-2.5-flash:free"
+        self.default_gemini_model = "gemini-3.8-flash"
+        self.default_openrouter_model = "google/gemini-2.0-flash-001"
         self.default_github_model = "gpt-4o"
         self.default_nvidia_model = "deepseek-ai/deepseek-r1"
         self.default_cerebras_model = "llama3.3-70b"

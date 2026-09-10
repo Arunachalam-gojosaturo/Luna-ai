@@ -82,8 +82,8 @@ class CLISession:
     session_id: str
     created_at: datetime
     user: str = "default"
-    model: str = "groq"
-    provider: str = "groq"
+    model: str = "gemini-3.8-flash" if os.getenv("GEMINI_API_KEY") else "llama-3.3-70b-versatile"
+    provider: str = "gemini" if os.getenv("GEMINI_API_KEY") else "groq"
     history: List[Dict[str, str]] = field(default_factory=list)
     total_commands: int = 0
     successful_commands: int = 0
@@ -307,16 +307,30 @@ class LunaCliEnhanced:
     async def handle_model(self) -> None:
         """Handle model switching"""
         print(self._format_header("AI Model Selection"))
+        print(f"Current Provider: {Colors.CYAN}{self.session.provider}{Colors.RESET} | Model: {Colors.CYAN}{self.session.model}{Colors.RESET}\n")
         
         providers = [
-            ("1", "Groq (Fast, Free)", "groq"),
-            ("2", "OpenAI (Advanced)", "openai"),
-            ("3", "Google GenAI", "google"),
-            ("4", "OpenRouter", "openrouter"),
+            ("1", "Google GenAI (Gemini 3.8 Flash)", "gemini", "gemini-3.8-flash"),
+            ("2", "Groq (Llama 3.3 70B)", "groq", "llama-3.3-70b-versatile"),
+            ("3", "OpenAI (GPT-4o Mini)", "openai", "gpt-4o-mini"),
+            ("4", "OpenRouter (Gemini 2.0 Flash)", "openrouter", "google/gemini-2.0-flash-001"),
         ]
         
-        for num, name, key in providers:
-            print(f"  {Colors.BRIGHT_YELLOW}{num}{Colors.RESET}. {name}")
+        for num, name, prov, mdl in providers:
+            active_mark = f" {Colors.GREEN}(Active){Colors.RESET}" if prov == self.session.provider else ""
+            print(f"  {Colors.BRIGHT_YELLOW}{num}{Colors.RESET}. {name}{active_mark}")
+        
+        try:
+            choice = await asyncio.to_thread(input, f"\n{Colors.BRIGHT_BLUE}Select provider (1-4) or press Enter to keep current: {Colors.RESET}")
+            choice = choice.strip()
+            for num, name, prov, mdl in providers:
+                if choice == num or choice.lower() == prov:
+                    self.session.provider = prov
+                    self.session.model = mdl
+                    print(f"\n{Colors.GREEN}✓ Switched active provider to {name} ({prov}){Colors.RESET}")
+                    return
+        except (EOFError, KeyboardInterrupt):
+            pass
     
     async def process_local_command(self, cmd: str) -> bool:
         """Process local CLI commands, return True if handled locally"""
@@ -395,6 +409,7 @@ class LunaCliEnhanced:
             "deviceStates": [],
             "history": self.session.history,
             "groqKey": os.getenv("GROQ_API_KEY", ""),
+            "geminiKey": os.getenv("GEMINI_API_KEY", ""),
             "openRouterKey": os.getenv("OPENROUTER_API_KEY", ""),
             "openaiKey": os.getenv("OPENAI_API_KEY", ""),
             "modelSelection": self.session.model,

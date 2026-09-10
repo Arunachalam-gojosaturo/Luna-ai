@@ -10,6 +10,7 @@ class ExecutionData(BaseModel):
     sysCommand: str = ""
     logs: list[str] = []
     stderr: str = ""
+    alreadyExecuted: bool = True
 
 class AgentOrchestrator:
     """
@@ -22,6 +23,7 @@ class AgentOrchestrator:
         result = "Successfully executed plan."
         status = "success"
         stderr = ""
+        already_executed = True
 
         logs.append(f"Starting execution of intent: {plan.intent}")
         
@@ -38,13 +40,20 @@ class AgentOrchestrator:
             try:
                 cmd_to_run = plan.user_input if plan.user_input else plan.intent
                 exec_res = await agent.execute(cmd_to_run, plan.intent)
-                verified = await agent.verify(exec_res)
+                if hasattr(agent, "verify"):
+                    v = agent.verify(exec_res)
+                    import inspect
+                    verified = await v if inspect.isawaitable(v) else v
+                else:
+                    verified = exec_res.get("status") == "success" or exec_res.get("success", False)
                 logs.append(f"[{agent_name.upper()} AGENT] Execution {'verified' if verified else 'failed verification'}.")
                 
                 if exec_res.get("action") and exec_res.get("action") != "NONE":
                     action = exec_res["action"]
                 if exec_res.get("sysCommand"):
                     sysCommand = exec_res["sysCommand"]
+                if "alreadyExecuted" in exec_res:
+                    already_executed = exec_res["alreadyExecuted"]
                 if not verified:
                     status = "error"
                     stderr += exec_res.get("stderr", "")
@@ -59,7 +68,8 @@ class AgentOrchestrator:
             action=action,
             sysCommand=sysCommand,
             logs=logs,
-            stderr=stderr
+            stderr=stderr,
+            alreadyExecuted=already_executed
         )
 
 agent_orchestrator = AgentOrchestrator()

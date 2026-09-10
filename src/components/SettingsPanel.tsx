@@ -117,10 +117,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <label className={labelClass}>TTS Provider</label>
             <select 
               value={ttsSettings.provider}
-              onChange={(e) => setTtsSettings({ ...ttsSettings, provider: e.target.value as 'edge' | 'elevenlabs' })}
+              onChange={(e) => setTtsSettings({ ...ttsSettings, provider: e.target.value as any })}
               className={`text-xs p-2 rounded-lg border outline-none transition-all ${inputClass}`}
             >
-              <option value="edge">Edge TTS (Free)</option>
+              <option value="edge">Edge TTS (Online Free • AriaNeural)</option>
+              <option value="kokoro">Kokoro-ONNX (Offline Neural TTS • af_bella)</option>
               <option value="elevenlabs">ElevenLabs (Premium)</option>
             </select>
           </div>

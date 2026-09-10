@@ -47,10 +47,11 @@ async def send_command(cmd: str):
         "deviceStates": [],
         "history": [], # Handled by backend now
         "groqKey": os.getenv("GROQ_API_KEY", ""),
+        "geminiKey": os.getenv("GEMINI_API_KEY", ""),
         "openRouterKey": os.getenv("OPENROUTER_API_KEY", ""),
         "openaiKey": os.getenv("OPENAI_API_KEY", ""),
         "modelSelection": "",
-        "activeProvider": "groq"
+        "activeProvider": "gemini" if os.getenv("GEMINI_API_KEY") else "groq"
     }
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:

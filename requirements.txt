@@ -20,4 +20,13 @@ markdownify
 chromadb
 pyaudio
 litellm
-
+kokoro-onnx
+soundfile
+sounddevice
+langchain-core
+PyQt6
+PyQt6-WebEngine
+typer
+rich
+httpx
+websockets

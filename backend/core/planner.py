@@ -20,72 +20,106 @@ class Planner:
     Creates dynamic execution plans based on user input, context, and memory.
     """
     async def create_plan(self, user_input: str, context: dict, memory: dict) -> ExecutionPlan:
-        # Fast path heuristics (bypasses LLM for simple requests)
-        words = user_input.lower().split()
-        fast_keywords = {"what", "who", "where", "why", "how", "hello", "hi"}
-        action_keywords = {"create", "debug", "install", "update", "search", "run", "make", "delete", "remove", "unlock", "lock", "open", "launch", "start", "take", "turn", "set", "adjust", "send", "call"}
-        
-        # Check for specialized agent keywords first
-        has_specialized_keyword = any(kw in user_input.lower() for kw in [
-            "git", "commit", "push", "pull", "file", "read", "write", "code", "package", "pacman",
-            "mobile", "phone", "android", "device", "whatsapp", "instagram", "youtube", "app",
-            "volume", "brightness", "screenshot", "pin", "screen"
-        ])
-        
-        # Only use fast path if short, no action keywords, AND no specialized keywords
-        if len(words) < 8 and not any(kw in user_input.lower() for kw in action_keywords) and not has_specialized_keyword:
-            return ExecutionPlan(
-                depth=ReasoningDepth.FAST,
-                intent="casual_conversation",
-                user_input=user_input,
-                steps=["respond_directly"],
-                required_agents=[],
-                requires_confirmation=False
-            )
-            
-        # In a full implementation, you would use ProviderManager to ask a fast LLM for the plan.
-        # For now, we use local heuristics for demonstration.
-        
-        intent = "general_task"
+        text = user_input.strip()
+        text_lower = text.lower()
+        words = text_lower.split()
+
+        # Check for explicit question or conversational intent
+        question_starters = (
+            "what", "who", "where", "when", "why", "how", "which",
+            "is ", "are ", "can ", "could ", "would ", "should ",
+            "do ", "does ", "did ", "tell me", "explain", "describe",
+            "write ", "create a function", "generate", "summarize",
+            "help me understand", "define ", "meaning of"
+        )
+        conversational_words = {
+            "hello", "hi", "hey", "hola", "greetings", "thanks", "thank",
+            "good morning", "good afternoon", "good evening", "howdy",
+            "who are you", "what are you", "what is your name"
+        }
+
+        is_question = (
+            text.endswith("?") or
+            any(text_lower.startswith(q) for q in question_starters) or
+            any(cw in text_lower for cw in conversational_words) or
+            "tell me" in text_lower or
+            "explain" in text_lower
+        )
+
+        # Check for explicit system/OS action commands
+        action_match = False
         agents = []
+        intent = "casual_conversation" if not is_question else "information_query"
         requires_conf = False
-        depth = ReasoningDepth.NORMAL
-        
-        # Check for package management
-        if ("remove" in user_input or "uninstall" in user_input or "delete" in user_input or "rm -rf" in user_input):
-            intent = "package_management"
-            agents.append("package_manager")
-            requires_conf = True
-        elif ("install" in user_input or "search" in user_input or "package" in user_input):
-            intent = "package_management"
-            agents.append("package_manager")
-            requires_conf = False
-        elif "pacman" in user_input or "update" in user_input or "system" in user_input or "mobile" in user_input or "phone" in user_input or "unlock" in user_input or "lock" in user_input or "whatsapp" in user_input:
-            intent = "system_management"
-            agents.append("linux")
-            requires_conf = False
-        
-        if "git" in user_input or "commit" in user_input or "push" in user_input:
-            intent = "git_operation"
-            agents.append("git")
-            
-        if "file" in user_input or "read" in user_input or "write" in user_input or "code" in user_input:
-            intent = "file_operation"
-            agents.append("file")
-            
-        if "complex" in user_input or "analyze" in user_input or len(action_keywords.intersection(set(words))) > 1:
+        depth = ReasoningDepth.FAST
+
+        # 1. Developer Co-Pilot: GitHub Repo Creation, Workflow Automation & Code Debugging
+        if any(k in text_lower for k in [
+            "github repo", "create repo", "create a repo", "create a new repo",
+            "create repository", "commit my latest changes", "commit and push",
+            "developer copilot", "debug my code", "debug code", "troubleshoot error"
+        ]):
+            intent = "developer_copilot"
+            agents.append("developer_copilot")
+            action_match = True
+
+        # 2. Package management actions (imperative only, not informational questions)
+        elif not is_question:
+            if any(text_lower.startswith(p) for p in ["install ", "uninstall ", "remove ", "pacman -", "yay -", "paru -"]):
+                intent = "package_management"
+                agents.append("package_manager")
+                action_match = True
+                requires_conf = any(k in text_lower for k in ["remove", "uninstall", "delete", "rm -rf"])
+
+            # 3. Git operations (imperative)
+            elif any(text_lower.startswith(g) for g in ["git ", "auto_commit", "auto commit", "auto_push", "auto push"]):
+                intent = "git_operation"
+                agents.append("git")
+                action_match = True
+
+            # 3. File operations (imperative)
+            elif any(text_lower.startswith(f) for f in ["read file", "write file", "save to file", "create file"]):
+                intent = "file_operation"
+                agents.append("file")
+                action_match = True
+
+            # 4. System / Linux actions (imperative system controls)
+            elif any(kw in text_lower for kw in [
+                "play ", "youtube", "volume", "brightness", "screenshot",
+                "unlock phone", "unlock mobile", "lock phone", "lock mobile", "mobile pin",
+                "open whatsapp", "launch whatsapp", "whatsapp",
+                "open firefox", "open browser", "open terminal", "open kitty", "open code", "launch code", "launch vscode",
+                "open spotify", "open telegram", "open discord",
+                "poweroff", "shutdown", "reboot", "restart", "suspend", "hyprlock", "killactive", "close window",
+                "workspace ", "wmctrl "
+            ]) or (len(words) > 0 and words[0] in ["ls", "cat", "ps", "df", "free", "uname", "htop", "run", "exec"]):
+                intent = "system_management"
+                agents.append("linux")
+                action_match = True
+
+        if action_match:
+            depth = ReasoningDepth.NORMAL
+            return ExecutionPlan(
+                depth=depth,
+                intent=intent,
+                user_input=user_input,
+                steps=[f"Analyze intent: {intent}", f"Invoke {', '.join(agents)} agents", "Verify result"],
+                required_agents=agents,
+                requires_confirmation=requires_conf
+            )
+
+        # For all questions, queries, conversations, writing, and explanations:
+        # Route directly to LLM with no system agents!
+        if len(words) > 25 or "analyze" in text_lower or "complex" in text_lower or "compare" in text_lower:
             depth = ReasoningDepth.DEEP
-            
-        if not agents:
-            agents.append("linux") # Default fallback agent
 
         return ExecutionPlan(
             depth=depth,
             intent=intent,
             user_input=user_input,
-            steps=[f"Analyze intent: {intent}", f"Invoke {', '.join(agents)} agents", "Verify result"],
-            required_agents=agents,
-            requires_confirmation=requires_conf
+            steps=["respond_directly"],
+            required_agents=[],
+            requires_confirmation=False
         )
 
     def generate_plan(self, command: str, intent: str, reasoning_depth: str) -> List[str]:

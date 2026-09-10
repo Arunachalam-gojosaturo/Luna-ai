@@ -117,13 +117,14 @@ She combines continuous voice recognition, real-time neural audio synthesis, nat
 
 ## 🚀 Recent Release
 
-### 📦 Version v0.9 Highlights
-- 🎙️ **Voice Intelligence**: Continuous Voice Activity Detection (VAD), Groq Whisper STT (`whisper-large-v3-turbo`), and Edge TTS speech synthesis.
-- 🧠 **Multi-Tier Memory Engine**: Active working memory, SQLite conversation history, and PostgreSQL/PGVector semantic long-term memory.
-- 📱 **Wireless Android Bridge**: Wireless ADB auto-discovery, screen mirroring (`scrcpy`), and tap/swipe automation.
-- 🐙 **GitHub Integration**: Real-time repository metrics, commit/push tracking, and workspace file control.
-- 💻 **Enhanced TUI CLI**: Terminal interface (`luna-cli`) with ANSI color themes, ASCII status dashboard, and WebSocket streaming.
-- 🛡️ **Command Safety Engine**: Native `pkexec` authentication dialogs for privileged operations to protect host integrity.
+### 📦 Version v1.0 Highlights (Developer & Offline Neural Core)
+- ⚡ **Level 4 Developer Co-Pilot**: Autonomous coding, auto git init, GitHub repository creation via REST API, automated multi-file staging/commits, and proactive test/build troubleshooting.
+- 🎙️ **Kokoro-ONNX Offline Neural Voice**: 100% offline, crystal-clear, high-speed neural speech synthesis using ONNX runtime and voice banks (`af_bella`, `am_adam`, etc.) with zero cloud latency.
+- 🐧 **Arch Linux Hyprland AI Quick-Actions (`luna-hypr`)**: Wayland-native screen selection analysis, fuzzy interactive prompt overlays (`fuzzel`/`rofi`), terminal error explainers, and instant voice triggers via global hotkeys.
+- 🧠 **Multi-Tier Memory & Context Engine**: Dynamic telemetry ingestion (`psutil`), SQLite conversation history, and PostgreSQL/PGVector semantic long-term memory.
+- 📱 **Wireless Android Ecosystem**: Auto-discovery via wireless ADB, screen mirroring (`scrcpy`), PIN unlock, and touch automation.
+- 🐙 **Integrated GitHub Workspace**: Live repo telemetry, commit/push management, diff inspection, and file operations.
+- 🛡️ **Zero-Risk Security Engine**: Whitelist verification with native `pkexec` privilege escalation dialogs.
 
 ---
 
@@ -147,7 +148,7 @@ paru -S luna-ai
 
 ---
 
-### 🛠️ Option C: Manual Build
+### 🛠️ Option C: Local Clone & Setup
 ```bash
 git clone https://github.com/Arunachalam-gojosaturo/Luna-ai.git
 cd Luna-ai
@@ -158,8 +159,9 @@ cd Luna-ai
 
 ## 🗺️ Roadmap
 
-- [x] 🎙️ **Voice Engine** (Continuous listening, Whisper VAD, Neural TTS)
-- [x] 🐧 **Linux Automation** (Arch Linux, Hyprland, system control, pkexec whitelist)
+- [x] 🎙️ **Voice Engine** (Continuous listening, Whisper VAD, Kokoro-ONNX Offline & Edge TTS)
+- [x] 🐧 **Linux Automation** (Arch Linux, Hyprland quick actions, system control, pkexec whitelist)
+- [x] ⚡ **Developer Co-Pilot** (Autonomous Git provisioning, repository sync, code troubleshooting)
 - [x] 🐙 **GitHub Workspace** (Repo monitoring, git status, file management)
 - [x] 🧠 **Multi-Tier Memory** (SQLite logs + PostgreSQL / PGVector vector storage)
 - [ ] 👁️ **Vision & Multimodal Intelligence** (Real-time screen vision & camera understanding)
@@ -183,9 +185,20 @@ cd Luna-ai
 
 ## ✨ Core Features & Capabilities
 
+* ⚡ **Level 4 Developer Co-Pilot**:
+  * Fully autonomous software engineering agent powered by Python & LangChain tools.
+  * Supports complex multi-step instructions (e.g. *"create a new GitHub repo named 'Test' and commit my latest changes"*).
+  * Automatically initializes Git repositories, configures remotes via authenticated GitHub REST APIs, handles branches, generates clean commit messages, pushes upstream, and debugs runtime errors.
+* 🎙️ **Kokoro-ONNX 100% Offline High-Fidelity Voice Synthesis**:
+  * Instant, local, crystal-clear neural speech synthesis running directly on ONNX runtime with zero cloud latency and no API fees.
+  * Packaged with neural voice banks (`af_bella`, `am_adam`, `bf_alice`, etc.).
+  * Automatic fallback pipeline: Kokoro-ONNX ➔ Microsoft Edge TTS ➔ ElevenLabs.
+* 🐧 **Arch Linux & Hyprland AI Controller (`luna-hypr`)**:
+  * **Screen Selection Analysis**: Highlight any error trace, terminal command, or code snippet, press a keybind, and receive instant explanations copied to your Wayland clipboard with desktop notifications.
+  * **Interactive Fuzzy Prompt**: Instant overlay HUD powered by `fuzzel` or `rofi` to query Luna AI anywhere without switching windows.
+  * **Voice Global Trigger**: Direct hotkey trigger to invoke voice listening.
 * 🎙️ **Always-On Voice Recognition**: Continuous background listening with automatic silence detection powered by Groq Whisper (`whisper-large-v3-turbo`) & Google Speech Recognition fallback.
-* 🗣️ **Native Neural TTS Synthesis**: Real-time voice generation streaming through Microsoft Edge TTS or ElevenLabs, played via `mpv`/`ffplay`/`paplay`.
-* 🖥️ **Deep Arch Linux & Hyprland Integration**:
+* 🖥️ **Deep Desktop Integration**:
   * **App Control**: Launch or terminate desktop applications (`xdg-open`, `kitty`, `rofi`, etc.).
   * **Hyprland Workspace Management**: Switch active workspaces via `hyprctl`.
   * **Volume & Media**: Native system audio adjustments (`wpctl`, `pactl`, `playerctl`).
@@ -196,9 +209,10 @@ cd Luna-ai
 * 💬 **WhatsApp Web Automation**: Headless WhatsApp Web manager for sending and receiving messages via AI.
 * 🛠️ **Developer Workspace & GitHub Dashboard**: View repositories, inspect git status, stage commits, push updates, and view system files directly inside Luna's UI.
 * 🛡️ **Secure Command Whitelisting**: Pattern-based safety engine intercepting privileged commands and prompting visual `pkexec` dialogs. No silent background `sudo` risks.
-* 💻 **Dual GUI & CLI Interfaces**:
-  * **Native Desktop App**: 100% native PyQt6 QWebEngine application window with zero browser tabs or address bar.
-  * **Enhanced TUI CLI**: Terminal UI (`luna-cli`) featuring ANSI color themes, ASCII banners, session telemetry, and live WebSocket event streams.
+* 💻 **Multiple Native Interfaces**:
+  * **Native Desktop App**: 100% native PyQt6 QWebEngine application window (`luna-ai` / `luna`).
+  * **Enhanced TUI CLI**: Rich Terminal UI (`luna-cli`) featuring ANSI color themes, ASCII banners, session telemetry, and live streaming.
+  * **Wayland Quick-Action**: Global shortcut helper (`luna-hypr`) for Hyprland/Sway desktops.
 
 ---
 
@@ -208,12 +222,13 @@ Luna AI follows a **Decoupled Client-Server & Multi-Agent Microservice Architect
 
 ```mermaid
 graph TD
-    A[User Voice / GUI / CLI] -->|WebSockets & HTTP REST| B[FastAPI AI Core - Port 3000]
+    A[User Voice / GUI / CLI / Hyprland] -->|WebSockets & HTTP REST| B[FastAPI AI Core - Port 3000]
     
-    subgraph Frontend Presentation Layer
-        A1[PyQt6 QWebEngine Native Window]
+    subgraph Frontend & System Layers
+        A1[PyQt6 QWebEngine Native Window - luna-ai]
         A2[React 19 + Vite Web App]
-        A3[luna-cli TUI Terminal]
+        A3[Enhanced Rich TUI - luna-cli]
+        A4[Hyprland Global Action Controller - luna-hypr]
     end
 
     subgraph Intelligence Core & Decision Engine
@@ -227,21 +242,23 @@ graph TD
         F --> F1[Groq API - Llama 3 / Whisper]
         F --> F2[Google Gemini 2.0 / 2.5 Flash]
         F --> F3[OpenRouter / OpenAI GPT-4o]
-        F --> F4[Local Ollama / OpenClaw]
+        F --> F4[Local Ollama / luna-2.5b]
     end
 
     subgraph Modular Microservice Agents
-        E --> G1[Linux System Agent - hyprctl / pacman]
-        E --> G2[Android ADB Agent - wireless / scrcpy]
-        E --> G3[WhatsApp Agent - headless web]
-        E --> G4[GitHub & Git Agents - REST / CLI]
-        E --> G5[File Agent - GTK / Qt Chooser]
+        E --> G1[Developer Co-Pilot Agent - Auto Repo / Git / Debug]
+        E --> G2[Linux System Agent - hyprctl / pacman]
+        E --> G3[Android ADB Agent - wireless / scrcpy]
+        E --> G4[WhatsApp Agent - headless web]
+        E --> G5[GitHub & Git Agents - REST / CLI]
+        E --> G6[File Agent - GTK / Qt Chooser]
     end
 
-    subgraph Memory & Voice Engine
+    subgraph Memory & Audio Engine
         C --> H1[SQLite Chat History]
         C --> H2[PostgreSQL + PGVector Semantic Memory]
-        C --> H3[Groq Whisper STT & Edge TTS Engine]
+        C --> H3[Kokoro-ONNX 100% Offline Neural Voice]
+        C --> H4[Groq Whisper STT & Edge TTS Pipeline]
     end
 ```
 
@@ -259,6 +276,7 @@ Luna-ai/
 ├── backend/                        # Python FastAPI AI Operating System Core
 │   ├── agents/                     # Specialized Microservice Agents
 │   │   ├── base_agent.py           # Base Agent Interface Class
+│   │   ├── developer_copilot.py    # Level 4 Autonomous Developer Co-Pilot Agent
 │   │   ├── file_agent.py           # Local File System Operations Agent
 │   │   ├── git_agent.py            # Local Git Repository Manager
 │   │   ├── github_agent.py         # GitHub REST API Integration Agent
@@ -301,7 +319,7 @@ Luna-ai/
 │   │   └── sys_control.py          # Media Key & Hyprland Window Controller
 │   ├── voice/                      # Audio Signal Processing Pipelines
 │   │   ├── stt.py                  # Groq Whisper & Speech Recognition STT
-│   │   └── tts.py                  # Microsoft Edge TTS & ElevenLabs Pipeline
+│   │   └── tts.py                  # Kokoro-ONNX Offline TTS & Edge TTS Pipeline
 │   └── main.py                     # FastAPI ASGI Server Entry Point (Port 3000)
 ├── public/                         # Web Engine Static Assets
 │   ├── background.png              # UI Background Image
@@ -318,7 +336,8 @@ Luna-ai/
 │   ├── App.tsx                     # Main React Application & State Machine
 │   ├── main.tsx                    # React DOM Entry Point
 │   └── types.ts                    # TypeScript Interfaces & Enums
-├── scripts/                        # Utility Scripts
+├── scripts/                        # Utility & System Integration Scripts
+│   ├── luna_hypr_ai.sh             # Hyprland Quick-Action AI Controller
 │   └── read_web.py                 # Scraping & Web Extraction Utility
 ├── .env.example                    # Sample Environment Variables Configuration
 ├── CLI_GUIDE.md                    # Detailed CLI User Guide
@@ -347,6 +366,10 @@ OPENAI_API_KEY=your_openai_api_key
 GEMINI_API_KEY=your_gemini_api_key
 OPENROUTER_API_KEY=your_openrouter_api_key
 
+# Offline Local Models (Optional)
+OLLAMA_URL=http://localhost:11434/api/generate
+KOKORO_MODELS_DIR=~/.local/share/luna-ai/models
+
 # Integrations
 GITHUB_TOKEN=your_github_personal_access_token
 ELEVENLABS_API_KEY=your_elevenlabs_key
@@ -366,6 +389,20 @@ luna
 
 # 2. Start Rich Terminal CLI
 luna-cli
+
+# 3. Trigger Hyprland Quick Actions
+luna-hypr --selection   # Summarize/explain highlighted text
+luna-hypr --prompt      # Open fuzzy overlay prompt (fuzzel / rofi)
+luna-hypr --voice       # Trigger voice assistant
+```
+
+### 💡 Recommended Hyprland Keybindings (`~/.config/hypr/hyprland.conf`)
+
+```ini
+# Luna AI Global Shortcuts
+bind = $mainMod, SPACE, exec, luna-hypr --selection
+bind = $mainMod SHIFT, SPACE, exec, luna-hypr --prompt
+bind = $mainMod, V, exec, luna-hypr --voice
 ```
 
 ---

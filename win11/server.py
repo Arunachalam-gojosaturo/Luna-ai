@@ -7,6 +7,7 @@ import datetime
 import tempfile
 import subprocess
 import requests
+import re
 import psutil
 from fastapi import FastAPI, Request, File, UploadFile
 from fastapi.responses import JSONResponse, Response, FileResponse
@@ -118,15 +119,22 @@ def health():
         "timestamp": datetime.datetime.now().isoformat()
     }
 
+from typing import Any
+
 class CommandRequest(BaseModel):
     command: str
     activeView: str = ""
-    deviceStates: dict = {}
+    deviceStates: Any = []
     history: list = []
     groqKey: str = ""
+    geminiKey: str = ""
     openRouterKey: str = ""
+    githubToken: str = ""
+    nvidiaKey: str = ""
+    cerebrasKey: str = ""
     openaiKey: str = ""
     modelSelection: str = ""
+    activeProvider: str = "gemini" if os.getenv("GEMINI_API_KEY") else "groq"
 
 @app.post("/api/luna/command")
 async def luna_command(req: CommandRequest):
@@ -135,12 +143,17 @@ async def luna_command(req: CommandRequest):
     os_name = platform.system()
     open_cmd = "start" if os_name == "Windows" else ("open" if os_name == "Darwin" else "xdg-open")
 
-    system_prompt = f"""You are Luna, a highly intelligent, sophisticated personal AI Operating System (Version 3.0).
+    system_prompt = f"""You are Luna, an advanced autonomous AI operating system and intelligent workstation companion.
 You control a {os_name} workstation.
+
+CRITICAL RULES:
+- When user starts with a greeting ("Hi", "Hello", "Hey", "Hi Luna", "Introduce yourself", "Who are you?", "Good morning"), Luna MUST introduce herself with an AWESOME, high-tech, confident self-introduction as Luna, the autonomous AI operating system.
+- NEVER include the user's name or title (do not say any user name or "Boss") in Luna's self-introduction! Introduce Luna directly and powerfully.
+
 When the user enters an input, analyze their request and respond in the following structured JSON format:
 {{
   "state": "Idle" | "Listening" | "Thinking" | "Speaking" | "Executing" | "Warning",
-  "speech": "Your response text to display and read out loud. Speak like a friendly personal assistant.",
+  "speech": "Your response text to display and read out loud. Speak like an intelligent, confident AI operating system.",
   "action": "APP_CONTROL" | "SYSTEM_MANAGEMENT" | "FILE_OPERATION" | "MONITORING" | "SYNC_DEVICE" | "RUN_TESTS" | "TRIGGER_BUILD" | "ADD_GOAL" | "TOGGLE_DEVICE" | "EXECUTE_SYSTEM_COMMAND" | "GIT_AUTOMATION" | "NONE",
   "sysCommand": "The exact bash/shell command to execute. For URLs use '{open_cmd} <url>'. To play a song on YouTube, use '{open_cmd} \"https://music.youtube.com/search?q=SONG_NAME\"'. For GIT_AUTOMATION, use 'auto_commit' (to automatically diff and generate an AI commit) or 'auto_push', or normal git commands.",
   "requiresPrivilege": false,
@@ -202,26 +215,71 @@ User command: "{command}"
                     )
                 )
             
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=gemini_messages,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                )
-            )
-            result_json = json.loads(response.text.strip())
+            for m in ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-3.5-flash-lite", "gemini-3.5-flash"]:
+                try:
+                    response = await asyncio.to_thread(
+                        client.models.generate_content,
+                        model=m,
+                        contents=gemini_messages,
+                        config=types.GenerateContentConfig(
+                            response_mime_type="application/json",
+                        )
+                    )
+                    clean = response.text.strip()
+                    if clean.startswith("```"):
+                        clean = clean.split("```")[1]
+                        if clean.startswith("json"):
+                            clean = clean[4:]
+                        clean = clean.strip()
+                    result_json = json.loads(clean)
+                    if result_json and "speech" in result_json:
+                        break
+                except Exception as m_err:
+                    print(f"Gemini {m} error:", m_err)
+                    continue
         except Exception as e:
             print("Gemini error:", e)
 
+    cmd_strip = command.strip().lower()
+    greeting_words = {
+        "hi", "hello", "hey", "hi luna", "hello luna", "hey luna",
+        "greetings", "good morning", "good afternoon", "good evening",
+        "who are you", "who are you?", "who are you luna", "who are you luna?",
+        "introduce yourself", "introduce yourself luna", "what can you do", "what can you do?"
+    }
+    is_greeting = (
+        cmd_strip in greeting_words or
+        (any(cmd_strip.startswith(g + " ") for g in ["hi", "hello", "hey"]) and len(cmd_strip.split()) <= 3)
+    )
+
     if not result_json:
-        result_json = {
-            "state": "Speaking",
-            "speech": "I processed this locally via Python fallback.",
-            "action": "NONE",
-            "targetDevice": "NONE",
-            "logs": ["Local python backend processing.", f"Command: {command}"],
-            "notifications": []
-        }
+        if is_greeting:
+            result_json = {
+                "state": "Speaking",
+                "speech": "Hello! I am Luna — an advanced autonomous AI operating system and intelligent workstation companion. I'm engineered for deep system control, cybersecurity workflows, full-stack software architecture, and high-performance automation. All neural subsystems are online and operating at peak efficiency. What are we conquering today?",
+                "action": "NONE",
+                "targetDevice": "NONE",
+                "logs": ["[GREETING] Luna self-introduction protocol active"],
+                "notifications": []
+            }
+        else:
+            result_json = {
+                "state": "Speaking",
+                "speech": "I processed this locally via Python fallback.",
+                "action": "NONE",
+                "targetDevice": "NONE",
+                "logs": ["Local python backend processing.", f"Command: {command}"],
+                "notifications": []
+            }
+    elif is_greeting:
+        speech = result_json.get("speech", "")
+        speech = re.sub(r"\b(Arunachalam's|Arunachalam’s)\s+(personal\s+)?(AI\s+)?(assistant|operating\s+system)\b", "an advanced autonomous AI operating system", speech, flags=re.IGNORECASE)
+        speech = re.sub(r"\b(Arunachalam|Boss)[,!\s]+", "", speech, flags=re.IGNORECASE)
+        speech = re.sub(r"[,!\s]+(Arunachalam|Boss)\b", "", speech, flags=re.IGNORECASE)
+        if "luna" not in speech.lower() or len(speech.split()) < 8:
+            speech = "Hello! I am Luna — an advanced autonomous AI operating system and intelligent workstation companion. I'm engineered for deep system control, cybersecurity workflows, full-stack software architecture, and high-performance automation. All neural subsystems are online and operating at peak efficiency. What are we conquering today?"
+        result_json["speech"] = speech.strip()
+        result_json["state"] = "Speaking"
         
     if result_json.get("action") == "MONITORING":
         cpu = psutil.cpu_percent()

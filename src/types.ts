@@ -25,7 +25,7 @@ export interface ActivityEvent {
 }
 
 export interface TTSSettings {
-  provider: 'edge' | 'elevenlabs';
+  provider: 'edge' | 'elevenlabs' | 'kokoro' | 'offline';
   voiceId: string;
   speed: number;
   pitch: number;

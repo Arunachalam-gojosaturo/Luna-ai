@@ -7,8 +7,8 @@ from typing import Dict, Any, List
 class ProviderManager:
     def __init__(self):
         self.default_openai_model = "gpt-4o-mini"
-        self.default_groq_model = "llama3-70b-8192"
-        self.default_gemini_model = "gemini-2.5-flash"
+        self.default_groq_model = "llama-3.3-70b-versatile"
+        self.default_gemini_model = "gemini-3.8-flash"
         
         # Async HTTP client pool for low latency
         self.client = httpx.AsyncClient(

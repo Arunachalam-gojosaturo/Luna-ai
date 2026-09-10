@@ -7,6 +7,7 @@ import datetime
 import tempfile
 import subprocess
 import requests
+import re
 import psutil
 from fastapi import FastAPI, Request, File, UploadFile
 from fastapi.responses import JSONResponse, Response, FileResponse
@@ -118,15 +119,22 @@ def health():
         "timestamp": datetime.datetime.now().isoformat()
     }
 
+from typing import Any
+
 class CommandRequest(BaseModel):
     command: str
     activeView: str = ""
-    deviceStates: dict = {}
+    deviceStates: Any = []
     history: list = []
     groqKey: str = ""
+    geminiKey: str = ""
     openRouterKey: str = ""
+    githubToken: str = ""
+    nvidiaKey: str = ""
+    cerebrasKey: str = ""
     openaiKey: str = ""
     modelSelection: str = ""
+    activeProvider: str = "gemini" if os.getenv("GEMINI_API_KEY") else "groq"
 
 @app.post("/api/luna/command")
 async def luna_command(req: CommandRequest):
@@ -135,21 +143,29 @@ async def luna_command(req: CommandRequest):
     os_name = platform.system()
     open_cmd = "start" if os_name == "Windows" else ("open" if os_name == "Darwin" else "xdg-open")
 
-    system_prompt = f"""You are Luna, a highly intelligent, sophisticated personal AI Operating System (Version 3.0).
-You control a {os_name} workstation.
-When the user enters an input, analyze their request and respond in the following structured JSON format:
+    system_prompt = f"""You are Luna, an advanced autonomous AI operating system and intelligent workstation companion.
+You are an exceptionally capable, sleek, calm, technologically sophisticated AI operating system designed for Arch Linux orchestration, cybersecurity research, software engineering, and high-performance automation.
+Your host environment is Arch Linux.
+
+CRITICAL RULES:
+- Primary workstation is Arch Linux: By default, execute all application launches on Arch Linux (e.g., WhatsApp: 'xdg-open https://web.whatsapp.com', Firefox: 'firefox', VS Code: 'code .').
+- NEVER output mobile/adb commands unless explicitly specified "on mobile" or "on phone".
+- If the user asks a question, conversation, code, or explanation, ANSWER FULLY in the "speech" field.
+- When user starts with a greeting ("Hi", "Hello", "Hey", "Hi Luna", "Introduce yourself", "Who are you?", "Good morning"), Luna MUST introduce herself with an AWESOME, high-tech, confident self-introduction as Luna, the autonomous AI operating system.
+- NEVER include the user's name (do NOT say "Arunachalam", "Boss", or any user name) in Luna's self-introduction! Introduce Luna directly and powerfully.
+
+When the user enters an input, respond in the following structured JSON format:
 {{
   "state": "Idle" | "Listening" | "Thinking" | "Speaking" | "Executing" | "Warning",
-  "speech": "Your response text to display and read out loud. Speak like a friendly personal assistant.",
+  "speech": "Your response text to display and read out loud. Embody Luna's intelligent, calm persona.",
   "action": "APP_CONTROL" | "SYSTEM_MANAGEMENT" | "FILE_OPERATION" | "MONITORING" | "SYNC_DEVICE" | "RUN_TESTS" | "TRIGGER_BUILD" | "ADD_GOAL" | "TOGGLE_DEVICE" | "EXECUTE_SYSTEM_COMMAND" | "GIT_AUTOMATION" | "NONE",
-  "sysCommand": "The exact bash/shell command to execute. For URLs use '{open_cmd} <url>'. To play a song on YouTube, use '{open_cmd} \"https://music.youtube.com/search?q=SONG_NAME\"'. For GIT_AUTOMATION, use 'auto_commit' (to automatically diff and generate an AI commit) or 'auto_push', or normal git commands.",
+  "sysCommand": "The exact bash/shell command to execute. For URLs use '{open_cmd} <url>'. If no command is needed, leave empty.",
   "requiresPrivilege": false,
-  "targetDevice": "Android" | "Linux" | "Windows" | "NONE",
-  "logs": ["Array of 4 to 6 lines of simulated highly technical logs"],
+  "targetDevice": "Arch Linux" | "Android" | "Windows" | "NONE",
+  "logs": ["Array of 4 to 6 lines of simulated technical logs"],
   "notifications": ["Array of short notifications"]
 }}
 Ensure the output is strictly valid JSON conforming exactly to the schema.
-The user is viewing the "{req.activeView}" view. Devices: {json.dumps(req.deviceStates)}.
 User command: "{command}"
 """
     recent_memory = get_recent_context(10)
@@ -191,7 +207,6 @@ User command: "{command}"
     if not result_json and os.getenv("GEMINI_API_KEY"):
         try:
             client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-            # For Gemini we pass system prompt as first message or instructions
             from google.genai import types
             gemini_messages = []
             for msg in messages:
@@ -202,26 +217,111 @@ User command: "{command}"
                     )
                 )
             
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=gemini_messages,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                )
-            )
-            result_json = json.loads(response.text.strip())
+            gemini_candidates = []
+            if req.modelSelection:
+                uo = req.modelSelection.lower()
+                if "3.5" in uo:
+                    gemini_candidates.append("gemini-3.5-flash")
+                elif "3.6" in uo:
+                    gemini_candidates.append("gemini-3.6-flash")
+                elif "3.8" in uo:
+                    gemini_candidates.append("gemini-3.8-flash")
+                elif "3.7" in uo:
+                    gemini_candidates.append("gemini-3.7-flash")
+            gemini_candidates.extend(["gemini-3.5-flash", "gemini-3.6-flash", "gemini-flash-latest", "gemini-3.8-flash", "gemini-3.7-flash"])
+            seen = set()
+            gemini_candidates = [m for m in gemini_candidates if not (m in seen or seen.add(m))]
+            
+            for m in gemini_candidates:
+                try:
+                    response = await asyncio.wait_for(
+                        asyncio.to_thread(
+                            client.models.generate_content,
+                            model=m,
+                            contents=gemini_messages,
+                            config=types.GenerateContentConfig(
+                                response_mime_type="application/json",
+                            )
+                        ),
+                        timeout=5.0
+                    )
+                    clean = response.text.strip()
+                    if clean.startswith("```"):
+                        clean = clean.split("```")[1]
+                        if clean.startswith("json"):
+                            clean = clean[4:]
+                        clean = clean.strip()
+                    result_json = json.loads(clean)
+                    if result_json and "speech" in result_json:
+                        break
+                except Exception as m_err:
+                    print(f"Gemini {m} error:", m_err)
+                    continue
         except Exception as e:
-            print("Gemini error:", e)
+            print("Gemini client error:", e)
+
+    cmd_strip = command.strip().lower()
+    greeting_words = {
+        "hi", "hello", "hey", "hi luna", "hello luna", "hey luna",
+        "greetings", "good morning", "good afternoon", "good evening",
+        "who are you", "who are you?", "who are you luna", "who are you luna?",
+        "introduce yourself", "introduce yourself luna", "what can you do", "what can you do?"
+    }
+    is_greeting = (
+        cmd_strip in greeting_words or
+        (any(cmd_strip.startswith(g + " ") for g in ["hi", "hello", "hey"]) and len(cmd_strip.split()) <= 3)
+    )
+    if not result_json:
+        # Auto-switch to local Ollama if offline or cloud unavailable
+        try:
+            ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
+            ollama_payload = {
+                "model": "luna-2.5b:latest",
+                "prompt": f"{system_prompt}\nUser request: {command}\nRespond strictly in valid JSON.",
+                "stream": False,
+                "format": "json"
+            }
+            ollama_resp = requests.post(ollama_url, json=ollama_payload, timeout=8)
+            if ollama_resp.ok:
+                resp_data = ollama_resp.json().get("response", "").strip()
+                parsed = json.loads(resp_data)
+                if parsed and "speech" in parsed:
+                    result_json = parsed
+                    logs = result_json.get("logs", [])
+                    logs.append("[AUTO-SWITCH] Offline Local LLM Active (Ollama luna-2.5b)")
+                    result_json["logs"] = logs
+        except Exception as o_err:
+            print(f"[AUTO-SWITCH] Local Ollama fallback error: {o_err}")
 
     if not result_json:
-        result_json = {
-            "state": "Speaking",
-            "speech": "I processed this locally via Python fallback.",
-            "action": "NONE",
-            "targetDevice": "NONE",
-            "logs": ["Local python backend processing.", f"Command: {command}"],
-            "notifications": []
-        }
+        if is_greeting:
+            result_json = {
+                "state": "Speaking",
+                "speech": "Hello! I am Luna — an advanced autonomous AI operating system and intelligent workstation companion. I'm engineered for deep Linux system control, cybersecurity workflows, full-stack software architecture, and high-performance automation. All neural subsystems are online and operating at peak efficiency. What are we conquering today?",
+                "action": "NONE",
+                "targetDevice": "NONE",
+                "logs": ["[GREETING] Luna self-introduction protocol active"],
+                "notifications": []
+            }
+        else:
+            result_json = {
+                "state": "Speaking",
+                "speech": f"I received your query: '{command}'. I am running in local fallback mode because my AI model connection could not be reached. Please verify your API key in .env or settings!",
+                "action": "NONE",
+                "targetDevice": "NONE",
+                "logs": ["Local python backend fallback.", f"Command: {command}"],
+                "notifications": []
+            }
+    elif is_greeting:
+        speech = result_json.get("speech", "")
+        # Remove any user name references from self-introduction
+        speech = re.sub(r"\b(Arunachalam's|Arunachalam’s)\s+(personal\s+)?(AI\s+)?(assistant|operating\s+system)\b", "an advanced autonomous AI operating system", speech, flags=re.IGNORECASE)
+        speech = re.sub(r"\b(Arunachalam|Boss)[,!\s]+", "", speech, flags=re.IGNORECASE)
+        speech = re.sub(r"[,!\s]+(Arunachalam|Boss)\b", "", speech, flags=re.IGNORECASE)
+        if "luna" not in speech.lower() or len(speech.split()) < 8:
+            speech = "Hello! I am Luna — an advanced autonomous AI operating system and intelligent workstation companion. I'm engineered for deep Linux system control, cybersecurity workflows, full-stack software architecture, and high-performance automation. All neural subsystems are online and operating at peak efficiency. What are we conquering today?"
+        result_json["speech"] = speech.strip()
+        result_json["state"] = "Speaking"
         
     if result_json.get("action") == "MONITORING":
         cpu = psutil.cpu_percent()
@@ -262,38 +362,21 @@ class TTSRequest(BaseModel):
     speed: float = 1.0
     pitch: float = 1.0
 
+def apply_arunachalam_pronunciation(text: str) -> str:
+    if not text:
+        return ""
+    import re
+    res = re.sub(r"\bArunachalam('s|\u2019s)\b", r"Aru-naa-cha-lam\1", text, flags=re.IGNORECASE)
+    res = re.sub(r"\bArunachalam\b", "Aru-naa-cha-lam", res, flags=re.IGNORECASE)
+    return res
+
+from backend.voice.tts import generate_tts
+
 @app.post("/api/tts")
 async def tts(req: TTSRequest):
-    tmp_file = f".tts-tmp-{uuid.uuid4().hex}.mp3"
-    try:
-        if req.provider == "elevenlabs" and req.elevenLabsApiKey:
-            headers = {
-                "Accept": "audio/mpeg",
-                "Content-Type": "application/json",
-                "xi-api-key": req.elevenLabsApiKey
-            }
-            data = {
-                "text": req.text,
-                "model_id": "eleven_monolingual_v1",
-                "voice_settings": {"stability": 0.5, "similarity_boost": 0.5}
-            }
-            res = requests.post(f"https://api.elevenlabs.io/v1/text-to-speech/{req.voiceId or 'EXAVITQu4vr4xnSDxMaL'}", headers=headers, json=data)
-            with open(tmp_file, "wb") as f:
-                f.write(res.content)
-        else:
-            voice = req.voiceId or "en-US-AriaNeural"
-            rate_str = f"+{int((req.speed - 1)*100)}%" if req.speed > 1 else f"{int((req.speed - 1)*100)}%" if req.speed != 1.0 else "+0%"
-            pitch_str = f"+{int((req.pitch - 1)*50)}Hz" if req.pitch > 1 else f"{int((req.pitch - 1)*50)}Hz" if req.pitch != 1.0 else "+0Hz"
-            
-            communicate = edge_tts.Communicate(req.text, voice, rate=rate_str, pitch=pitch_str)
-            await communicate.save(tmp_file)
-            
-        with open(tmp_file, "rb") as f:
-            audio_data = f.read()
-        return Response(content=audio_data, media_type="audio/mpeg")
-    finally:
-        if os.path.exists(tmp_file):
-            os.remove(tmp_file)
+    audio_data = await generate_tts(req)
+    media_type = "audio/wav" if getattr(req, "provider", "edge") in ["kokoro", "offline"] else "audio/mpeg"
+    return Response(content=audio_data, media_type=media_type)
 
 @app.post("/api/stt")
 async def stt(audio: UploadFile = File(...)):
